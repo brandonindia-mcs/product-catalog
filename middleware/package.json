@@ -1,0 +1,17 @@
+{
+  "name": "product-catalog-middleware",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "fastify": "^5.6.0",
+    "pg": "^8.16.3"
+  }
+}
