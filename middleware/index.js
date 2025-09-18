@@ -20,4 +20,7 @@ fastify.get('/products/:id', async (req) => {
   return rows[0] || fastify.httpErrors.notFound();
 });
 
-fastify.listen(3000, '0.0.0.0');
+fastify.listen({
+  port: 3000,
+  host: '0.0.0.0'
+});
