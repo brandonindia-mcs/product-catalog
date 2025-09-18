@@ -26,8 +26,8 @@ build_frontend
 
 function build_frontend {
 image_version=1.12
-cd ./product-catalog-frontend
-cp -rf ../src .
+if [ ! -d ./frontend ];then echo must be a project root && return 1;fi
+cp -rf ./frontend/src ./frontend/product-catalog-frontend/
 docker build -t product-catalog-frontend:$image_version  --no-cache frontend
 docker tag product-catalog-frontend $DOCKERHUB/product-catalog-frontend
 docker tag product-catalog-frontend:$image_version $DOCKERHUB/product-catalog-frontend:$image_version
