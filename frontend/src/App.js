@@ -1,16 +1,15 @@
-import React from 'react';
-import { Router, Link } from '@reach/router';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import ProductList from './ProductList';
 import ProductDetail from './ProductDetail';
 
 export default function App() {
   return (
-    <>
+    <BrowserRouter>
       <header><Link to="/">Catalog</Link></header>
-      <Router>
-        <ProductList path="/" />
-        <ProductDetail path="/products/:id" />
-      </Router>
-    </>
+      <Routes>
+        <Route path="/" element={<ProductList />} />
+        <Route path="/products/:id" element={<ProductDetail />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

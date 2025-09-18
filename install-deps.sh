@@ -20,9 +20,15 @@ npx -y create-react-app product-catalog-frontend && cd $_
 cp ../package.json .
 npm install react@18.2.0 react-dom@18.2.0 react-router-dom@6 axios --legacy-peer-deps
 npm install
-image_version=1.11
-popd && docker build -t product-catalog-frontend:$image_version  --no-cache frontend
+popd
+build_frontend
+}
 
+function build_frontend {
+image_version=1.12
+cd ./product-catalog-frontend
+cp -rf ../src .
+docker build -t product-catalog-frontend:$image_version  --no-cache frontend
 docker tag product-catalog-frontend $DOCKERHUB/product-catalog-frontend
 docker tag product-catalog-frontend:$image_version $DOCKERHUB/product-catalog-frontend:$image_version
 docker push $DOCKERHUB/product-catalog-frontend
@@ -62,7 +68,20 @@ docker build -t product-catalog-backend:$image_version  --no-cache backend
 
 
 
-function container_build {
+
+function k8s {
+# Load local image into Docker Desktop's Kubernetes
+kubectl apply -f backend/k8s/postgres.yaml 
+kubectl apply -f middleware/k8s/api.yaml
+kubectl apply -f frontend/k8s/web.yaml
+
+kubectl get pods,svc
+
+kubectl port-forward svc/web-service 8081:80
+}
+
+
+function app_build {
 image_version=1.11
 docker build -t product-catalog-backend:$image_version  --no-cache backend
 
@@ -79,15 +98,7 @@ docker push $DOCKERHUB/product-catalog-frontend
 docker push $DOCKERHUB/product-catalog-frontend::$image_version
 
 }
-function k8s {
-# Load local image into Docker Desktop's Kubernetes
-kubectl apply -f backend/k8s/postgres.yaml 
-kubectl apply -f middleware/k8s/api.yaml
-kubectl apply -f frontend/k8s/web.yaml
 
-kubectl get pods,svc
-
-}
 
 function install_nvm() {
   echo && blue "------------------ INSTALL NVM ------------------" && echo
