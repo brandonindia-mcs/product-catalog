@@ -29,10 +29,13 @@ image_version=$1
 if [ ! -d ./frontend ];then echo must be at project root && return 1;fi
 cp -rf ./frontend/src ./frontend/product-catalog-frontend/
 docker build -t product-catalog-frontend:$image_version  --no-cache frontend
+
 docker tag product-catalog-frontend $DOCKERHUB/product-catalog-frontend
 docker tag product-catalog-frontend:$image_version $DOCKERHUB/product-catalog-frontend:$image_version
 docker push $DOCKERHUB/product-catalog-frontend
-docker push $DOCKERHUB/product-catalog-frontend::$image_version 
+docker push $DOCKERHUB/product-catalog-frontend:$image_version 
+
+echo Pushed $DOCKERHUB/product-catalog-frontend:$image_version
 }
 
 
@@ -60,10 +63,13 @@ function build_middleware {
 image_version=$1
 if [ ! -d ./middleware ];then echo must be at project root && return 1;fi
 docker build -t product-catalog-middleware:$image_version  --no-cache middleware
+
 docker tag product-catalog-middleware $DOCKERHUB/product-catalog-middleware
 docker tag product-catalog-middleware:$image_version $DOCKERHUB/product-catalog-middleware:$image_version
 docker push $DOCKERHUB/product-catalog-middleware
-docker push $DOCKERHUB/product-catalog-middleware::$image_version 
+docker push $DOCKERHUB/product-catalog-middleware:$image_version
+
+echo Pushed $DOCKERHUB/product-catalog-middleware:$image_version
 }
 
 
@@ -72,6 +78,12 @@ function build_backend {
 image_version=$1
 if [ ! -d ./backend ];then echo must be at project root && return 1;fi
 docker build -t product-catalog-backend:$image_version  --no-cache backend
+docker tag product-catalog-backend $DOCKERHUB/product-catalog-backend
+docker tag product-catalog-backend:$image_version $DOCKERHUB/product-catalog-backend:$image_version
+docker push $DOCKERHUB/product-catalog-backend
+docker push $DOCKERHUB/product-catalog-backend:$image_version
+
+echo Pushed $DOCKERHUB/product-catalog-backend:$image_version
 }
 
 
