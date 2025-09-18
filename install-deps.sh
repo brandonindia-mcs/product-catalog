@@ -21,12 +21,12 @@ cp ../package.json .
 npm install react@18.2.0 react-dom@18.2.0 react-router-dom@6 axios --legacy-peer-deps
 npm install
 popd
-build_frontend
+build_frontend 1.12
 }
 
 function build_frontend {
-image_version=1.12
-if [ ! -d ./frontend ];then echo must be a project root && return 1;fi
+image_version=$1
+if [ ! -d ./frontend ];then echo must be at project root && return 1;fi
 cp -rf ./frontend/src ./frontend/product-catalog-frontend/
 docker build -t product-catalog-frontend:$image_version  --no-cache frontend
 docker tag product-catalog-frontend $DOCKERHUB/product-catalog-frontend
@@ -51,17 +51,26 @@ mkdir product-catalog-middleware && cd $_
 cp ../package.json .
 npm install fastify pg
 npm install
-image_version=1.11
-popd && docker build -t product-catalog-middleware:$image_version  --no-cache middleware
+popd
+build_middleware 1.11
 
+}
+
+function build_middleware {
+image_version=$1
+if [ ! -d ./middleware ];then echo must be at project root && return 1;fi
+docker build -t product-catalog-middleware:$image_version  --no-cache middleware
 docker tag product-catalog-middleware $DOCKERHUB/product-catalog-middleware
 docker tag product-catalog-middleware:$image_version $DOCKERHUB/product-catalog-middleware:$image_version
 docker push $DOCKERHUB/product-catalog-middleware
 docker push $DOCKERHUB/product-catalog-middleware::$image_version 
-
 }
 
-function backend {
+
+
+function build_backend {
+image_version=$1
+if [ ! -d ./backend ];then echo must be at project root && return 1;fi
 docker build -t product-catalog-backend:$image_version  --no-cache backend
 }
 
@@ -81,23 +90,12 @@ kubectl port-forward svc/web-service 8081:80
 }
 
 
-function app_build {
-image_version=1.11
-docker build -t product-catalog-backend:$image_version  --no-cache backend
+# function app_build {
+# build_backend 1.11
+# build_middleware 1.11
+# build_frontend 1.12
 
-docker build -t product-catalog-middleware:$image_version  --no-cache middleware
-docker tag product-catalog-middleware $DOCKERHUB/product-catalog-middleware
-docker tag product-catalog-middleware:$image_version $DOCKERHUB/product-catalog-middleware:$image_version
-docker push $DOCKERHUB/product-catalog-middleware
-docker push $DOCKERHUB/product-catalog-middleware::$image_version
-
-docker build -t product-catalog-frontend:$image_version  --no-cache frontend
-docker tag product-catalog-frontend $DOCKERHUB/product-catalog-frontend
-docker tag product-catalog-frontend:$image_version $DOCKERHUB/product-catalog-frontend:$image_version
-docker push $DOCKERHUB/product-catalog-frontend
-docker push $DOCKERHUB/product-catalog-frontend::$image_version
-
-}
+# }
 
 
 function install_nvm() {
