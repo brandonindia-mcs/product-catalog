@@ -4,60 +4,57 @@ function gitinit {
 git init
 }
 
+
+
 function frontend {
-pushd $FRONTEND
-export NVM_HOME=$FRONTEND/.nvm
-export NVM_DIR=$NVM_HOME/.nvm
+pushd ./frontend
+export NVM_HOME=$(pwd)/.nvm
+export NVM_DIR=$(pwd)/.nvm
 echo NVM_HOME is $NVM_HOME
 if [ ! -d $NVM_DIR ];then
     install_nvm;
-fi
-if [ -d $NVM_DIR ];then
     installnode;
-    getyarn;
     nodever 18;
-    nodever;
 fi
 npx -y create-react-app product-catalog-frontend && cd $_
-npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps
-# npm install @reach/router axios --legacy-peer-deps
-npm install axios --legacy-peer-deps
-# npm uninstall @reach/router
-npm install react-router-dom@6 --legacy-peer-deps
-popd
-docker build -t product-catalog-frontend:latest frontend
+cp ../package.json .
+npm install react@18.2.0 react-dom@18.2.0 react-router-dom@6 axios --legacy-peer-deps
+npm install
+popd && docker build -t product-catalog-frontend:1.11 --no-cache frontend
 }
 
+
+
 function middleware {
-pushd $MIDDLEWARE
-export NVM_HOME=$MIDDLEWARE/.nvm
-export NVM_DIR=$NVM_HOME/.nvm
+pushd ./middleware
+export NVM_HOME=$(pwd)/.nvm
+export NVM_DIR=$(pwd)/.nvm
 echo NVM_HOME is $NVM_HOME
 if [ ! -d $NVM_DIR ];then
     install_nvm;
-fi
-if [ -d $NVM_DIR ];then
     installnode;
-    getyarn;
     nodever 18;
-    nodever;
 fi
-mkdir create-react-app product-catalog-middleware && cd $_
-npm init -y
+mkdir product-catalog-middleware && cd $_
+cp ../package.json .
 npm install fastify pg
-popd
-docker build -t product-catalog-middleware:latest middleware
+npm install
+popd && docker build -t product-catalog-middleware:1.11 --no-cache middleware
 
 }
 
 function backend {
-docker build -t product-catalog-backend:latest backend
+docker build -t product-catalog-backend:1.11 --no-cache backend
 }
 
+
+
+
 function container_build {
-docker build -t product-catalog-backend:latest backend
-docker build -t product-catalog-middleware:latest middleware
-docker build -t product-catalog-frontend:latest frontend
+ver=1.11
+docker build -t product-catalog-backend:$ver backend
+docker build -t product-catalog-middleware:$ver middleware
+docker build -t product-catalog-frontend:$ver frontend
 }
 function k8s {
 kubectl apply -f backend/k8s
@@ -68,6 +65,33 @@ kubectl get pods,svc
 
 }
 
-gitinit
-middleware
-frontend
+function install_nvm() {
+  echo && blue "------------------ INSTALL NVM ------------------" && echo
+  git clone https://github.com/nvm-sh/nvm.git $NVM_DIR
+  echo $([ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && [ -s $NVM_DIR/bash_completion ] && . $NVM_DIR/bash_completion && nvm install --lts)
+}
+
+function installnode() {
+  echo && blue "------------------ NODE VIA NVM ------------------" && echo
+  cyan "Updating nvm:" && echo $(pushd $NVM_DIR && git pull && popd || popd)
+  if  ! command -v nvm >/dev/null; then
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+  [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+  fi
+}
+
+function nodever() {
+  if [ ! -z $1 ]; then
+    nvm install ${1} >/dev/null 2>&1 && nvm use ${_} > /dev/null 2>&1\
+      && nvm alias default ${_} > /dev/null 2>&1; blue "Node:"; node -v; else
+    yellow "INFORMATIONAL: Use nodever to install or switch node versions:" && echo -e "\tusage: nodever [ver]"
+    blue "Node:" && node -v
+    blue "npm:" && npm -v
+    blue "nvm:" && nvm -v
+  fi
+}
+function getyarn() {
+  echo && blue "------------------ YARN - NEEDS NVM ------------------" && echo
+  if ! command -v yarn >/dev/null 2>&1; then grey "Getting yarn: " && npm install --global yarn >/dev/null; fi
+}
+
