@@ -96,9 +96,12 @@ kubectl apply -f backend/k8s/postgres.yaml
 kubectl apply -f middleware/k8s/api.yaml
 kubectl apply -f frontend/k8s/web.yaml
 
-kubectl get pods,svc
+kubectl get pods,svc,deployment
 
 kubectl port-forward svc/web-service 8081:80
+kubectl port-forward svc/api-service 3000:3000
+
+kubectl rollout restart deployment api
 }
 
 
