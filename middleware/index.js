@@ -20,6 +20,15 @@ fastify.get('/products/:id', async (req) => {
   return rows[0] || fastify.httpErrors.notFound();
 });
 
+fastify.get('/health/db', async (request, reply) => {
+  try {
+    const { rows } = await pool.query('SELECT 1');
+    reply.send({ status: 'ok', db: true });
+  } catch (err) {
+    reply.code(500).send({ status: 'error', db: false, error: err.message });
+  }
+});
+
 fastify.listen({
   port: 3000,
   host: '0.0.0.0'

@@ -102,6 +102,10 @@ kubectl port-forward svc/web-service 8081:80
 kubectl port-forward svc/api-service 3000:3000
 
 kubectl rollout restart deployment api
+
+curl http://localhost:3000/health/db
+curl http://localhost:3000/products
+
 }
 
 
