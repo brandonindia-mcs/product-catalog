@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: product-catalog-backend:1.11
+        image: contosorealtime/product-catalog-backend:1.12
         env:
         - name: POSTGRES_DB
           value: catalog
