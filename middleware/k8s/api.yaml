@@ -4,7 +4,7 @@ metadata:
   name: api-service
 spec:
   ports:
-    - port: 3000
+  - port: 3000
   selector:
     app: api
 ---
@@ -23,16 +23,23 @@ spec:
         app: api
     spec:
       containers:
-        - name: api
-          image: product-catalog-middleware:latest
-          env:
-            - name: PGHOST
-              value: pg-service
-            - name: PGDATABASE
-              value: catalog
-            - name: PGUSER
-              value: catalog
-            - name: PGPASSWORD
-              value: catalog
-          ports:
-            - containerPort: 3000
+      - name: api
+        image: contosorealtime/product-catalog-middleware:1.11
+        env:
+        - name: PGHOST
+          value: pg-service
+        - name: PGDATABASE
+          value: catalog
+        - name: PGUSER
+          value: catalog
+        - name: PGPASSWORD
+          value: catalog
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"

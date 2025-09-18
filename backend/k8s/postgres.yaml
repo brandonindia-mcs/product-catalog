@@ -4,7 +4,7 @@ metadata:
   name: pg-service
 spec:
   ports:
-    - port: 5432
+  - port: 5432
   selector:
     app: postgres
 ---
@@ -23,14 +23,21 @@ spec:
         app: postgres
     spec:
       containers:
-        - name: postgres
-          image: product-catalog-backend:latest
-          env:
-            - name: POSTGRES_DB
-              value: catalog
-            - name: POSTGRES_USER
-              value: catalog
-            - name: POSTGRES_PASSWORD
-              value: catalog
-          ports:
-            - containerPort: 5432
+      - name: postgres
+        image: product-catalog-backend:1.11
+        env:
+        - name: POSTGRES_DB
+          value: catalog
+        - name: POSTGRES_USER
+          value: catalog
+        - name: POSTGRES_PASSWORD
+          value: catalog
+        ports:
+        - containerPort: 5432
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"

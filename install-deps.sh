@@ -20,7 +20,13 @@ npx -y create-react-app product-catalog-frontend && cd $_
 cp ../package.json .
 npm install react@18.2.0 react-dom@18.2.0 react-router-dom@6 axios --legacy-peer-deps
 npm install
-popd && docker build -t product-catalog-frontend:1.11 --no-cache frontend
+image_version=1.11
+popd && docker build -t product-catalog-frontend:$image_version  --no-cache frontend
+
+docker tag product-catalog-frontend $DOCKERHUB/product-catalog-frontend
+docker tag product-catalog-frontend:$image_version $DOCKERHUB/product-catalog-frontend:$image_version
+docker push $DOCKERHUB/product-catalog-frontend
+docker push $DOCKERHUB/product-catalog-frontend::$image_version 
 }
 
 
@@ -39,27 +45,45 @@ mkdir product-catalog-middleware && cd $_
 cp ../package.json .
 npm install fastify pg
 npm install
-popd && docker build -t product-catalog-middleware:1.11 --no-cache middleware
+image_version=1.11
+popd && docker build -t product-catalog-middleware:$image_version  --no-cache middleware
+
+docker tag product-catalog-middleware $DOCKERHUB/product-catalog-middleware
+docker tag product-catalog-middleware:$image_version $DOCKERHUB/product-catalog-middleware:$image_version
+docker push $DOCKERHUB/product-catalog-middleware
+docker push $DOCKERHUB/product-catalog-middleware::$image_version 
 
 }
 
 function backend {
-docker build -t product-catalog-backend:1.11 --no-cache backend
+docker build -t product-catalog-backend:$image_version  --no-cache backend
 }
 
 
 
 
 function container_build {
-ver=1.11
-docker build -t product-catalog-backend:$ver backend
-docker build -t product-catalog-middleware:$ver middleware
-docker build -t product-catalog-frontend:$ver frontend
+image_version=1.11
+docker build -t product-catalog-backend:$image_version  --no-cache backend
+
+docker build -t product-catalog-middleware:$image_version  --no-cache middleware
+docker tag product-catalog-middleware $DOCKERHUB/product-catalog-middleware
+docker tag product-catalog-middleware:$image_version $DOCKERHUB/product-catalog-middleware:$image_version
+docker push $DOCKERHUB/product-catalog-middleware
+docker push $DOCKERHUB/product-catalog-middleware::$image_version
+
+docker build -t product-catalog-frontend:$image_version  --no-cache frontend
+docker tag product-catalog-frontend $DOCKERHUB/product-catalog-frontend
+docker tag product-catalog-frontend:$image_version $DOCKERHUB/product-catalog-frontend:$image_version
+docker push $DOCKERHUB/product-catalog-frontend
+docker push $DOCKERHUB/product-catalog-frontend::$image_version
+
 }
 function k8s {
-kubectl apply -f backend/k8s
-kubectl apply -f middleware/k8s
-kubectl apply -f frontend/k8s
+# Load local image into Docker Desktop's Kubernetes
+kubectl apply -f backend/k8s/postgres.yaml 
+kubectl apply -f middleware/k8s/api.yaml
+kubectl apply -f frontend/k8s/web.yaml
 
 kubectl get pods,svc
 
