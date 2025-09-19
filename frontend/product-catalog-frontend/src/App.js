@@ -1,10 +1,15 @@
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import ProductList from './ProductList';
+import ProductDetail from './ProductDetail';
 import logo from './logo.svg';
 import './App.css';
 
-function App() {
+export default function App() {
   return (
-    <div className="App">
-      <header className="App-header">
+    <BrowserRouter>
+      <header>
+        <Link to="/">Catalog</Link>
+
         <img src={logo} className="App-logo" alt="logo" />
         <p>
           Edit <code>src/App.js</code> and save to reload.
@@ -17,9 +22,12 @@ function App() {
         >
           Learn React
         </a>
+
       </header>
-    </div>
+      <Routes>
+        <Route path="/" element={<ProductList />} />
+        <Route path="/products/:id" element={<ProductDetail />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;
