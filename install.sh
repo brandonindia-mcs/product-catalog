@@ -50,9 +50,8 @@ set -u
 image_version=$1
 if [ -z "$image_version" ];then image_version=latest;fi
 if [ ! -d ./frontend ];then echo must be at project root && return 1;fi
-NOCACHE=''
+NOCACHE=
 if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
-# NOCACHE=--no-cache
 cp -rf ./frontend/src ./frontend/product-catalog-frontend/
 docker build -t product-catalog-frontend:$image_version $NOCACHE frontend\
   || return 1
@@ -89,6 +88,8 @@ build_frontend $1\
   && deploy_webservice $1
 }
 
+
+
 function middleware {
 pushd ./middleware
 export NVM_HOME=$(pwd)/.nvm
@@ -109,10 +110,12 @@ build_middleware
 }
 
 function build_middleware {
+(
 image_version=$1
 if [ -z "$image_version" ];then image_version=latest;fi
 if [ ! -d ./middleware ];then echo must be at project root && return 1;fi
-NOCACHE=--no-cache 
+NOCACHE=
+if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 docker build -t product-catalog-middleware:$image_version $NOCACHE middleware\
   || return 1
 
@@ -122,9 +125,31 @@ docker push $DOCKERHUB/product-catalog-middleware
 docker push $DOCKERHUB/product-catalog-middleware:$image_version
 
 echo Pushed $DOCKERHUB/product-catalog-middleware:$image_version
+)
+}
+
+function deploy_api {
+set -u
+(
+image_version=$1
+set_keyvalue TAG $image_version ./middleware/k8s/$sdenv.env
+set -a
+source ./middleware/k8s/$sdenv.env
+set +a
+# envsubst < ./middleware/k8s/api.template.yaml | kubectl apply -f -
+envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
+# kubectl apply -f middleware/k8s/api.yaml
+# kubectl port-forward svc/api-service 3000:3000
+# kubectl rollout restart deployment api
+)
 }
 
 
+function install_api {
+set -u
+build_middleware $1\
+  && deploy_api $1
+}
 
 function build_backend {
 image_version=$1
