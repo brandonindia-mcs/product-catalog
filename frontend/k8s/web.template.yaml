@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: localhost:5001/product-catalog-frontend:1.17
+        image: $HUB/$REPOSITORY:$TAG
         ports:
         - containerPort: 80
         resources:
