@@ -8,14 +8,6 @@ set +a
 }
 setenv
 
-function gitinit {
-git init
-}
-
-function update_tag() {
-  sed -i "s/^TAG=.*/TAG=$1/" .env
-}
-
 function set_keyvalue {
 set -u
 (
@@ -26,6 +18,7 @@ sed -i "s/^$key=.*/$key=$value/" $path
 )
 }
 
+export FRONTEND_APPNAME=product-catalog-frontend
 function frontend {
 pushd ./frontend
 export NVM_HOME=$(pwd)/.nvm
@@ -36,7 +29,7 @@ if [ ! -d $NVM_DIR ];then
     installnode;
     nodever 18;
 fi
-npx -y create-react-app product-catalog-frontend && cd $_
+npx -y create-react-app $FRONTEND_APPNAME && cd $_
 cp ../package.json .
 npm install react@18.2.0 react-dom@18.2.0 react-router-dom@6 axios --legacy-peer-deps
 npm install
@@ -52,16 +45,20 @@ if [ -z "$image_version" ];then image_version=latest;fi
 if [ ! -d ./frontend ];then echo must be at project root && return 1;fi
 NOCACHE=
 if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
-cp -rf ./frontend/src ./frontend/product-catalog-frontend/
-docker build -t product-catalog-frontend:$image_version $NOCACHE frontend\
+appname=$FRONTEND_APPNAME
+echo -e \\n Building $appname:$image_version
+
+cp -rf ./frontend/src ./frontend/$appname/
+cp -rf ./frontend/$sdenv.env ./frontend/$appname/.env
+docker build -t $appname:$image_version $NOCACHE frontend\
   || return 1
 
-docker tag product-catalog-frontend $DOCKERHUB/product-catalog-frontend
-docker tag product-catalog-frontend:$image_version $DOCKERHUB/product-catalog-frontend:$image_version
-docker push $DOCKERHUB/product-catalog-frontend
-docker push $DOCKERHUB/product-catalog-frontend:$image_version 
+docker tag $appname $DOCKERHUB/$appname
+docker tag $appname:$image_version $DOCKERHUB/$appname:$image_version
+docker push $DOCKERHUB/$appname
+docker push $DOCKERHUB/$appname:$image_version 
 
-echo Pushed $DOCKERHUB/product-catalog-frontend:$image_version
+echo Pushed $DOCKERHUB/$appname:$image_version
 )
 }
 
@@ -75,12 +72,22 @@ source ./frontend/k8s/$sdenv.env
 set +a
 # envsubst < ./frontend/k8s/web.template.yaml | kubectl apply -f -
 envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
-# kubectl apply -f frontend/k8s/web.yaml
-# kubectl port-forward svc/web-service 8081:80
-# kubectl rollout restart deployment web
+k8s_webservice
 )
 }
 
+function k8s_webservice {
+# kubectl apply -f ./frontend/k8s/web.yaml\
+#   && kubectl wait  --namespace default --for=condition=Ready pod -l app=web --timeout=60s\
+#   && kubectl port-forward svc/web-service 8081:80
+
+echo -e "
+kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
+ && kubectl wait  --namespace default --for=condition=Ready pod -l app=web --timeout=60s\\\\\n\
+ && kubectl port-forward svc/web-service 8081:80
+"
+# kubectl rollout restart deployment web
+}
 
 function install_webservice {
 set -u
@@ -88,8 +95,7 @@ build_frontend $1\
   && deploy_webservice $1
 }
 
-
-
+export MIDDLEWARE_APPNAME=product-catalog-middleware
 function middleware {
 pushd ./middleware
 export NVM_HOME=$(pwd)/.nvm
@@ -100,7 +106,7 @@ if [ ! -d $NVM_DIR ];then
     installnode;
     nodever 18;
 fi
-mkdir product-catalog-middleware && cd $_
+mkdir $MIDDLEWARE_APPNAME && cd $_
 cp ../package.json .
 npm install fastify pg
 npm install
@@ -116,15 +122,18 @@ if [ -z "$image_version" ];then image_version=latest;fi
 if [ ! -d ./middleware ];then echo must be at project root && return 1;fi
 NOCACHE=
 if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
-docker build -t product-catalog-middleware:$image_version $NOCACHE middleware\
+appname=$MIDDLEWARE_APPNAME
+echo -e \\nBuilding $appname:$image_version
+
+docker build -t $appname:$image_version $NOCACHE middleware\
   || return 1
 
-docker tag product-catalog-middleware $DOCKERHUB/product-catalog-middleware
-docker tag product-catalog-middleware:$image_version $DOCKERHUB/product-catalog-middleware:$image_version
-docker push $DOCKERHUB/product-catalog-middleware
-docker push $DOCKERHUB/product-catalog-middleware:$image_version
+docker tag $appname $DOCKERHUB/$appname
+docker tag $appname:$image_version $DOCKERHUB/$appname:$image_version
+docker push $DOCKERHUB/$appname
+docker push $DOCKERHUB/$appname:$image_version
 
-echo Pushed $DOCKERHUB/product-catalog-middleware:$image_version
+echo Pushed $DOCKERHUB/$appname:$image_version
 )
 }
 
@@ -138,10 +147,22 @@ source ./middleware/k8s/$sdenv.env
 set +a
 # envsubst < ./middleware/k8s/api.template.yaml | kubectl apply -f -
 envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
-# kubectl apply -f middleware/k8s/api.yaml
-# kubectl port-forward svc/api-service 3000:3000
 # kubectl rollout restart deployment api
+k8s_api
 )
+}
+
+function k8s_api {
+echo -e "
+kubectl apply -f ./middleware/k8s/api.yaml\\\\\n\
+  && kubectl wait  --namespace default --for=condition=Ready pod -l app=api --timeout=60s\\\\\n\
+  && kubectl port-forward svc/api-service 3000:3000
+"
+# kubectl apply -f ./middleware/k8s/api.yaml\
+#   && kubectl wait  --namespace default --for=condition=Ready pod -l app=api --timeout=60s\
+#   && kubectl port-forward svc/api-service 3000:3000
+validate_api
+# kubectl rollout restart deployment api
 }
 
 
@@ -150,6 +171,36 @@ set -u
 build_middleware $1\
   && deploy_api $1
 }
+
+function validate_api {
+echo -e "
+curl http://localhost:3000/health/db\\\\\n\
+&& curl http://localhost:3000/products\\\\\n\
+&& curl http://localhost:3000/products/1\\\\\n\
+&& weblist=\$(kubectl get pods --no-headers -o custom-columns=":metadata.name"|$(which grep) -E ^web) &&\\\\\n\
+for pod in \${weblist[@]};do
+  echo -e \"\\\\n\$pod http://api-service:3000/products\"
+  kubectl exec -it \$pod -- curl http://api-service:3000/products|jq
+  kubectl exec -it \$pod -- curl http://api-service:3000/products/1|jq
+done
+"
+# curl http://localhost:3000/health/db\
+# && curl http://localhost:3000/products\
+# && curl http://localhost:3000/products/1\
+# && weblist=$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
+# for pod in ${weblist[@]};do
+#   echo -e "\n$pod http://api-service:3000/products"
+#   kubectl exec -it $pod -- curl http://api-service:3000/products|jq
+#   kubectl exec -it $pod -- curl http://api-service:3000/products/1|jq
+# done
+}
+
+function go {
+set -u
+install_webservice $1\
+  && install_api $1
+}
+
 
 function build_backend {
 image_version=$1
@@ -173,17 +224,11 @@ echo Pushed $DOCKERHUB/product-catalog-backend:$image_version
 function k8s {
 # Load local image into Docker Desktop's Kubernetes
 kubectl apply -f backend/k8s/postgres.yaml 
-kubectl apply -f middleware/k8s/api.yaml
-deploy_webservice
+install_api
+install_webservice
 
-kubectl get pods,svc,deployment
+kubectl get pods,svc,deployment -o wide
 
-kubectl port-forward svc/api-service 3000:3000
-
-kubectl rollout restart deployment api
-
-curl http://localhost:3000/health/db
-curl http://localhost:3000/products
 
 }
 
