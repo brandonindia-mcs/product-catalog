@@ -89,12 +89,6 @@ kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
 # kubectl rollout restart deployment web
 }
 
-function install_webservice {
-set -u
-build_frontend $1\
-  && deploy_webservice $1
-}
-
 export MIDDLEWARE_APPNAME=product-catalog-middleware
 function middleware {
 pushd ./middleware
@@ -106,12 +100,14 @@ if [ ! -d $NVM_DIR ];then
     installnode;
     nodever 18;
 fi
+npm install fastify pg
+npm install @fastify/cors
+npm install
 mkdir $MIDDLEWARE_APPNAME && cd $_
 cp ../package.json .
-npm install fastify pg
 npm install
 popd
-build_middleware
+build_middleware latest
 
 }
 
@@ -165,13 +161,6 @@ validate_api
 # kubectl rollout restart deployment api
 }
 
-
-function install_api {
-set -u
-build_middleware $1\
-  && deploy_api $1
-}
-
 function validate_api {
 echo -e "
 curl http://localhost:3000/health/db\\\\\n\
@@ -193,6 +182,20 @@ done
 #   kubectl exec -it $pod -- curl http://api-service:3000/products|jq
 #   kubectl exec -it $pod -- curl http://api-service:3000/products/1|jq
 # done
+}
+
+
+
+function install_webservice {
+set -u
+build_frontend $1\
+  && deploy_webservice $1
+}
+
+function install_api {
+set -u
+build_middleware $1\
+  && deploy_api $1
 }
 
 function go {
