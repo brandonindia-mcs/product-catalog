@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: localhost:5001/product-catalog-middleware:1.17
+        image: localhost:5001/product-catalog-middleware:132
         env:
         - name: PGHOST
           value: pg-service
