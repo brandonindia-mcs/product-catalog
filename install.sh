@@ -8,6 +8,55 @@ set +a
 }
 setenv
 
+function new_product_catalog {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=<namespace> new_product_catalog
+###################################
+frontend\
+  && middleware\
+  && backend\
+  && k8s
+}
+
+function product_catalog {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=<namespace> product_catalog
+###################################
+set -u
+install_webservice $1\
+  && install_api $1\
+  && install_postgres $1\
+  && k8s
+}
+
+function install_webservice {
+set -u
+build_frontend $1\
+  && deploy_webservice $1
+}
+
+function install_api {
+set -u
+build_middleware $1\
+  && deploy_api $1
+}
+
+function install_postgres {
+set -u
+build_backend $1\
+  && deploy_postgres $1
+}
+
+function k8s {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=<namespace> k8s
+###################################
+k8s_postgres\
+  && k8s_api\
+  && k8s_webservice
+}
+
+
 function set_keyvalue {
 set -u
 (
@@ -231,7 +280,7 @@ set -u
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
 
 echo -e "
-kubectl apply -f backend/k8s/postgres.yaml\
+kubectl apply -f backend/k8s/postgres.yaml\\\\\n\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
 "
 # kubectl rollout restart deployment postgres
@@ -260,51 +309,6 @@ done
 #   kubectl exec -it $pod -- curl http://api-service:3000/products/1|jq
 # done
 }
-
-function new_product_catalog {
-frontend\
-  && middleware\
-  && backend\
-  && k8s
-}
-
-function product_catalog {
-set -u
-install_webservice $1\
-  && install_api $1\
-  && install_postgres $1\
-  && k8s
-}
-
-function install_webservice {
-set -u
-build_frontend $1\
-  && deploy_webservice $1
-}
-
-function install_api {
-set -u
-build_middleware $1\
-  && deploy_api $1
-}
-
-function install_postgres {
-set -u
-build_backend $1\
-  && deploy_postgres $1
-}
-
-
-
-function k8s {
-k8s_postgres\
-  && k8s_api\
-  && k8s_webservice
-
-kubectl get pods,svc,deployment -o wide
-
-}
-
 
 function install_nvm() {
   echo && blue "------------------ INSTALL NVM ------------------" && echo
