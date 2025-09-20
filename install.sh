@@ -19,6 +19,14 @@ sed -i "s/^$key=.*/$key=$value/" $path
 )
 }
 
+function watch_productcatelog {
+(namespace=default; while true; do echo && blue $(date) && kubectl get all --namespace $namespace -o wide && sleep 5;done)
+}
+
+function local_registry {
+docker run -d -p 5001:5000 --name registry registry:2
+}
+
 export FRONTEND_APPNAME=product-catalog-frontend
 function frontend {
 pushd ./frontend
@@ -75,19 +83,6 @@ set +a
 envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
 k8s_webservice
 )
-}
-
-function k8s_webservice {
-# kubectl apply -f ./frontend/k8s/web.yaml\
-#   && kubectl wait  --namespace default --for=condition=Ready pod -l app=web --timeout=60s\
-#   && kubectl port-forward svc/web-service 8081:80
-
-echo -e "
-kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
- && kubectl wait  --namespace default --for=condition=Ready pod -l app=web --timeout=60s\\\\\n\
- && kubectl port-forward svc/web-service 8081:80
-"
-# kubectl rollout restart deployment web
 }
 
 export MIDDLEWARE_APPNAME=product-catalog-middleware
@@ -193,6 +188,19 @@ k8s_backend
 }
 
 
+function k8s_webservice {
+# kubectl apply -f ./frontend/k8s/web.yaml\
+#   && kubectl wait  --namespace default --for=condition=Ready pod -l app=web --timeout=60s\
+#   && kubectl port-forward svc/web-service 8081:80
+
+echo -e "
+kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
+ && kubectl wait  --namespace default --for=condition=Ready pod -l app=web --timeout=60s\\\\\n\
+ && kubectl port-forward svc/web-service 8081:80
+"
+# kubectl rollout restart deployment web
+}
+
 
 function k8s_api {
 # kubectl apply -f ./middleware/k8s/api.yaml\
@@ -243,9 +251,6 @@ done
 }
 
 
-function watch_productcatelog {
-while true; do echo && blue $(date) && kubectl get all -o wide && sleep 5;done
-}
 function install_webservice {
 set -ue
 build_frontend $1\
@@ -273,12 +278,6 @@ install_webservice
 
 kubectl get pods,svc,deployment -o wide
 
-
-}
-
-
-function local_registry {
-docker run -d -p 5001:5000 --name registry registry:2
 }
 
 
