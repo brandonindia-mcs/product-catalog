@@ -1,5 +1,6 @@
 #!/bin/bash
 
+GLOBAL_VERSION=$(date +%Y%m%d)
 
 function setenv {
 set -a
@@ -34,11 +35,11 @@ cp ../package.json .
 npm install react@18.2.0 react-dom@18.2.0 react-router-dom@6 axios --legacy-peer-deps
 npm install
 popd
-build_frontend
+install_webservice $GLOBAL_VERSION
 }
 
 function build_frontend {
-set -u
+set -ue
 (
 image_version=$1
 if [ -z "$image_version" ];then image_version=latest;fi
@@ -63,7 +64,7 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 }
 
 function deploy_webservice {
-set -u
+set -ue
 (
 image_version=$1
 set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
@@ -107,7 +108,7 @@ mkdir $MIDDLEWARE_APPNAME && cd $_
 cp ../package.json .
 npm install
 popd
-build_middleware latest
+install_api $GLOBAL_VERSION
 
 }
 
@@ -134,7 +135,7 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 }
 
 function deploy_api {
-set -u
+set -ue
 (
 image_version=$1
 set_keyvalue TAG $image_version ./middleware/k8s/$sdenv.env
@@ -149,14 +150,15 @@ k8s_api
 }
 
 function k8s_api {
+# kubectl apply -f ./middleware/k8s/api.yaml\
+#   && kubectl wait  --namespace default --for=condition=Ready pod -l app=api --timeout=60s\
+#   && kubectl port-forward svc/api-service 3000:3000
+
 echo -e "
 kubectl apply -f ./middleware/k8s/api.yaml\\\\\n\
   && kubectl wait  --namespace default --for=condition=Ready pod -l app=api --timeout=60s\\\\\n\
   && kubectl port-forward svc/api-service 3000:3000
 "
-# kubectl apply -f ./middleware/k8s/api.yaml\
-#   && kubectl wait  --namespace default --for=condition=Ready pod -l app=api --timeout=60s\
-#   && kubectl port-forward svc/api-service 3000:3000
 validate_api
 # kubectl rollout restart deployment api
 }
@@ -189,13 +191,13 @@ function watch_productcatelog {
 while true; do echo && blue $(date) && kubectl get all -o wide && sleep 5;done
 }
 function install_webservice {
-set -u
+set -ue
 build_frontend $1\
   && deploy_webservice $1
 }
 
 function install_api {
-set -u
+set -ue
 build_middleware $1\
   && deploy_api $1
 }
