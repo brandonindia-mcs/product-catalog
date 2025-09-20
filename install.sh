@@ -185,7 +185,9 @@ done
 }
 
 
-
+function watch_productcatelog {
+while true; do echo && blue $(date) && kubectl get all -o wide && sleep 5;done
+}
 function install_webservice {
 set -u
 build_frontend $1\
