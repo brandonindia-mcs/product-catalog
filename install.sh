@@ -149,6 +149,51 @@ k8s_api
 )
 }
 
+
+export BACKEND_APPNAME=product-catalog-backend
+function backend {
+install_postgres $GLOBAL_VERSION
+}
+
+function build_backend {
+(
+image_version=$1
+if [ -z "$image_version" ];then image_version=latest;fi
+if [ ! -d ./backend ];then echo must be at project root && return 1;fi
+NOCACHE=
+if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
+appname=$BACKEND_APPNAME
+echo -e \\nBuilding $appname:$image_version
+
+docker build -t $appname:$image_version $NOCACHE backend\
+  || return 1
+
+docker tag $appname $DOCKERHUB/$appname
+docker tag $appname:$image_version $DOCKERHUB/$appname:$image_version
+docker push $DOCKERHUB/$appname
+docker push $DOCKERHUB/$appname:$image_version
+
+echo Pushed $DOCKERHUB/$appname:$image_version
+)
+}
+
+function deploy_postgres {
+set -ue
+(
+image_version=$1
+set_keyvalue TAG $image_version ./backend/k8s/$sdenv.env
+set -a
+source ./backend/k8s/$sdenv.env
+set +a
+# envsubst < ./backend/k8s/postgres.template.yaml | kubectl apply -f -
+envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
+# kubectl rollout restart deployment api
+k8s_backend
+)
+}
+
+
+
 function k8s_api {
 # kubectl apply -f ./middleware/k8s/api.yaml\
 #   && kubectl wait  --namespace default --for=condition=Ready pod -l app=api --timeout=60s\
@@ -162,6 +207,17 @@ kubectl apply -f ./middleware/k8s/api.yaml\\\\\n\
 validate_api
 # kubectl rollout restart deployment api
 }
+
+
+function k8s_backend {
+# kubectl apply -f backend/k8s/postgres.yaml
+
+echo -e "
+kubectl apply -f backend/k8s/postgres.yaml
+"
+# kubectl rollout restart deployment postgres
+}
+
 
 function validate_api {
 echo -e "
@@ -202,35 +258,16 @@ build_middleware $1\
   && deploy_api $1
 }
 
-function go {
-set -u
-install_webservice $1\
-  && install_api $1
+function install_postgres {
+set -ue
+build_backend $1\
+  && deploy_postgres $1
 }
-
-
-function build_backend {
-image_version=$1
-if [ -z "$image_version" ];then image_version=latest;fi
-if [ ! -d ./backend ];then echo must be at project root && return 1;fi
-NOCACHE=--no-cache 
-docker build -t product-catalog-backend:$image_version $NOCACHE backend\
-  || return 1
-
-docker tag product-catalog-backend $DOCKERHUB/product-catalog-backend
-docker tag product-catalog-backend:$image_version $DOCKERHUB/product-catalog-backend:$image_version
-docker push $DOCKERHUB/product-catalog-backend
-docker push $DOCKERHUB/product-catalog-backend:$image_version
-
-echo Pushed $DOCKERHUB/product-catalog-backend:$image_version
-}
-
 
 
 
 function k8s {
-# Load local image into Docker Desktop's Kubernetes
-kubectl apply -f backend/k8s/postgres.yaml 
+install_postgres
 install_api
 install_webservice
 

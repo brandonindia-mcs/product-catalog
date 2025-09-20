@@ -1,41 +1,39 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: api-service
+  name: pg-service
 spec:
   ports:
-  - port: 3000
+  - port: 5432
   selector:
-    app: api
+    app: postgres
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api
+  name: postgres
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: api
+      app: postgres
   template:
     metadata:
       labels:
-        app: api
+        app: postgres
     spec:
       containers:
-      - name: api
-        image: localhost:5001/product-catalog-middleware:132
+      - name: postgres
+        image: $HUB/$REPOSITORY:$TAG
         env:
-        - name: PGHOST
-          value: pg-service
-        - name: PGDATABASE
+        - name: POSTGRES_DB
           value: catalog
-        - name: PGUSER
+        - name: POSTGRES_USER
           value: catalog
-        - name: PGPASSWORD
+        - name: POSTGRES_PASSWORD
           value: catalog
         ports:
-        - containerPort: 3000
+        - containerPort: 5432
         resources:
           requests:
             cpu: "100m"
