@@ -247,12 +247,12 @@ function k8s_webservice {
 set -u
 # kubectl apply -f ./frontend/k8s/web.yaml\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\
-#   && kubectl port-forward svc/web-service 8081:80
+#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
 
 echo -e "
 kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\\\\\n\
- && kubectl port-forward svc/web-service 8081:80
+ && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
 "
 # kubectl rollout restart deployment web
 }
@@ -262,12 +262,12 @@ function k8s_api {
 set -u
 # kubectl apply -f ./middleware/k8s/api.yaml\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
-#   && kubectl port-forward svc/api-service 3000:3000
+#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service 3000:3000
 
 echo -e "
 kubectl apply -f ./middleware/k8s/api.yaml\\\\\n\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\\\\\n\
-  && kubectl port-forward svc/api-service 3000:3000
+  && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service 3000:3000
 "
 validate_api
 # kubectl rollout restart deployment api
