@@ -34,6 +34,8 @@ export NVM_DIR=$(pwd)/.nvm
 echo NVM_HOME is $NVM_HOME
 if [ ! -d $NVM_DIR ];then
     install_nvm;
+fi
+if [ -d $NVM_DIR ];then
     installnode;
     nodever 18;
 fi
@@ -54,7 +56,7 @@ if [ ! -d ./frontend ];then echo must be at project root && return 1;fi
 NOCACHE=
 if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 appname=$FRONTEND_APPNAME
-echo -e \\n Building $appname:$image_version
+echo -e \\nBuilding $appname:$image_version
 
 cp -rf ./frontend/src ./frontend/$appname/
 cp -rf ./frontend/$sdenv.env ./frontend/$appname/.env
@@ -75,10 +77,11 @@ set -u
 (
 image_version=$1
 set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
+set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
 set -a
 source ./frontend/k8s/$sdenv.env
 set +a
-# envsubst < ./frontend/k8s/web.template.yaml | kubectl apply --namespace $GLOBAL_NAMESPACE -f -
+# envsubst < ./frontend/k8s/web.template.yaml | kubectl apply -f -
 envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
 # k8s_webservice
 )
@@ -92,6 +95,8 @@ export NVM_DIR=$(pwd)/.nvm
 echo NVM_HOME is $NVM_HOME
 if [ ! -d $NVM_DIR ];then
     install_nvm;
+fi
+if [ -d $NVM_DIR ];then
     installnode;
     nodever 18;
 fi
@@ -133,10 +138,11 @@ set -u
 (
 image_version=$1
 set_keyvalue TAG $image_version ./middleware/k8s/$sdenv.env
+set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/$sdenv.env
 set -a
 source ./middleware/k8s/$sdenv.env
 set +a
-# envsubst < ./middleware/k8s/api.template.yaml | kubectl apply --namespace $GLOBAL_NAMESPACE -f -
+# envsubst < ./middleware/k8s/api.template.yaml | kubectl apply -f -
 envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
 # kubectl rollout restart deployment api
 # k8s_api
@@ -176,10 +182,11 @@ set -u
 (
 image_version=$1
 set_keyvalue TAG $image_version ./backend/k8s/$sdenv.env
+set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./backend/k8s/$sdenv.env
 set -a
 source ./backend/k8s/$sdenv.env
 set +a
-# envsubst < ./backend/k8s/postgres.template.yaml | kubectl apply --namespace $GLOBAL_NAMESPACE -f -
+# envsubst < ./backend/k8s/postgres.template.yaml | kubectl apply -f -
 envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 # kubectl rollout restart deployment api
 # k8s_postgres
@@ -188,13 +195,14 @@ envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 
 
 function k8s_webservice {
-# kubectl apply --namespace $GLOBAL_NAMESPACE -f ./frontend/k8s/web.yaml\
-#   && kubectl wait  --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\
+set -u
+# kubectl apply -f ./frontend/k8s/web.yaml\
+#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\
 #   && kubectl port-forward svc/web-service 8081:80
 
 echo -e "
-kubectl apply --namespace $GLOBAL_NAMESPACE -f ./frontend/k8s/web.yaml\\\\\n\
- && kubectl wait  --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\\\\\n\
+kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
+ && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\\\\\n\
  && kubectl port-forward svc/web-service 8081:80
 "
 # kubectl rollout restart deployment web
@@ -202,13 +210,14 @@ kubectl apply --namespace $GLOBAL_NAMESPACE -f ./frontend/k8s/web.yaml\\\\\n\
 
 
 function k8s_api {
-# kubectl apply --namespace $GLOBAL_NAMESPACE -f ./middleware/k8s/api.yaml\
-#   && kubectl wait  --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
+set -u
+# kubectl apply -f ./middleware/k8s/api.yaml\
+#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
 #   && kubectl port-forward svc/api-service 3000:3000
 
 echo -e "
-kubectl apply --namespace $GLOBAL_NAMESPACE -f ./middleware/k8s/api.yaml\\\\\n\
-  && kubectl wait  --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\\\\\n\
+kubectl apply -f ./middleware/k8s/api.yaml\\\\\n\
+  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\\\\\n\
   && kubectl port-forward svc/api-service 3000:3000
 "
 validate_api
@@ -217,10 +226,13 @@ validate_api
 
 
 function k8s_postgres {
-# kubectl apply --namespace $GLOBAL_NAMESPACE -f backend/k8s/postgres.yaml
+set -u
+# kubectl apply -f backend/k8s/postgres.yaml\
+#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
 
 echo -e "
-kubectl apply --namespace $GLOBAL_NAMESPACE --namespace $GLOBAL_NAMESPACE -f backend/k8s/postgres.yaml
+kubectl apply -f backend/k8s/postgres.yaml\
+  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
 "
 # kubectl rollout restart deployment postgres
 }
@@ -249,13 +261,19 @@ done
 # done
 }
 
-function product_catalog_install {
+function new_product_catalog {
+frontend\
+  && middleware\
+  && backend\
+  && k8s
+}
+
+function product_catalog {
 set -u
-if [ -z "$GLOBAL_NAMESPACE" ];then GLOBAL_NAMESPACE=default;fi
-echo $GLOBAL_NAMESPACE
 install_webservice $1\
   && install_api $1\
-  && install_postgres $1
+  && install_postgres $1\
+  && k8s
 }
 
 function install_webservice {
@@ -279,9 +297,9 @@ build_backend $1\
 
 
 function k8s {
-k8s_postgres
-k8s_api
-k8s_webservice
+k8s_postgres\
+  && k8s_api\
+  && k8s_webservice
 
 kubectl get pods,svc,deployment -o wide
 
