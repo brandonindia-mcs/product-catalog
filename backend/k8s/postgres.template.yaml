@@ -1,32 +1,39 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: web-service
+  name: pg-service
 spec:
   ports:
-  - port: 80
+  - port: 5432
   selector:
-    app: web
+    app: postgres
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web
+  name: postgres
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: web
+      app: postgres
   template:
     metadata:
       labels:
-        app: web
+        app: postgres
     spec:
       containers:
-      - name: web
-        image: localhost:5001/product-catalog-frontend:132
+      - name: postgres
+        image: $HUB/$REPOSITORY:$TAG
+        env:
+        - name: POSTGRES_DB
+          value: catalog
+        - name: POSTGRES_USER
+          value: catalog
+        - name: POSTGRES_PASSWORD
+          value: catalog
         ports:
-        - containerPort: 80
+        - containerPort: 5432
         resources:
           requests:
             cpu: "100m"
