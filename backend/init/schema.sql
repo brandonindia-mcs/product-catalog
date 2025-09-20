@@ -6,4 +6,6 @@ CREATE TABLE products (
 );
 INSERT INTO products (name, description, price) VALUES
   ('Widget A', 'Basic widget', 9.99),
+  ('Widget C', 'Sub widget', 9.99),
+  ('Widget D', 'Another', 9.99),
   ('Widget B', 'Advanced widget', 19.99);
