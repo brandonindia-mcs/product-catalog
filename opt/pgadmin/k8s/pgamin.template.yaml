@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: $NAMESPACE
+  name: $CONTAINER
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: $LABEL
+  template:
+    metadata:
+      labels:
+        app: $LABEL
+    spec:
+      containers:
+      - name: $CONTAINER
+        image: $IMAGE
+        ports:
+        - containerPort: 80
+        env:
+        - name: PGADMIN_DEFAULT_EMAIL
+          value: $ADMINEMAIL
+        - name: PGADMIN_DEFAULT_PASSWORD
+          value: $ADMINPSWD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: $NAMESPACE
+  name: $CONTAINER
+spec:
+  selector:
+    app: $LABEL
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: ClusterIP

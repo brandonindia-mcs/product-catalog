@@ -1,5 +1,5 @@
 #!/bin/bash
-GLOBAL_VERSION=$(date +%Y%m%dT%H%M)
+GLOBAL_VERSION=$(date +%Y%m%d%H%M)00
 
 function setenv {
 set -a
@@ -8,9 +8,18 @@ set +a
 }
 setenv
 
+##########  CHEATSHEET  ###########
+# GLOBAL_NAMESPACE=default install_postgres `stamp` && GLOBAL_NAMESPACE=default k8s_postgres
+# 
+# 
+# 
+# 
+# GLOBAL_NAMESPACE=default pgadmin `stamp`
+###################################
+
 function new_product_catalog {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=<namespace> new_product_catalog
+# GLOBAL_NAMESPACE=default new_product_catalog
 ###################################
 frontend\
   && middleware\
@@ -20,7 +29,7 @@ frontend\
 
 function product_catalog {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=<namespace> product_catalog
+# GLOBAL_NAMESPACE=default product_catalog
 ###################################
 set -u
 install_webservice $1\
@@ -276,11 +285,11 @@ validate_api
 
 function k8s_postgres {
 set -u
-# kubectl apply -f backend/k8s/postgres.yaml\
+# kubectl apply -f ./backend/k8s/postgres.yaml\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
 
 echo -e "
-kubectl apply -f backend/k8s/postgres.yaml\\\\\n\
+kubectl apply -f ./backend/k8s/postgres.yaml\\\\\n\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
 "
 # kubectl rollout restart deployment postgres
@@ -308,6 +317,28 @@ done
 #   kubectl exec -it $pod -- curl http://api-service:3000/products|jq
 #   kubectl exec -it $pod -- curl http://api-service:3000/products/1|jq
 # done
+}
+
+function pgadmin() {
+set -u
+(
+image_version=$1
+set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./opt/pgadmin/k8s/$sdenv.env
+set_keyvalue TAG $image_version ./opt/pgadmin/k8s/$sdenv.env
+set -a
+source ./opt/pgadmin/k8s/$sdenv.env
+set +a
+# envsubst < ./backend/k8s/postgres.template.yaml | kubectl apply -f -
+envsubst >./opt/pgadmin/k8s/pgadmin.yaml <./opt/pgadmin/k8s/pgadmin.template.yaml
+# kubectl rollout restart deployment api
+)
+# kubectl apply -f ./opt/pgadmin/k8s/pgamin.yaml -n $GLOBAL_NAMESPACE\
+#   && kubectl port-forward svc/pgadmin 5050:80 -n $GLOBAL_NAMESPACE
+
+echo -e "
+kubectl apply -f ./opt/pgadmin/k8s/pgamin.yaml -n $GLOBAL_NAMESPACE\\\\\n\
+  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=pgadmin --timeout=30s\\\\\n\
+  && kubectl port-forward svc/pgadmin 8080:80 -n $GLOBAL_NAMESPACE"
 }
 
 function install_nvm() {
