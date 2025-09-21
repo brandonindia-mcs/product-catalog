@@ -72,7 +72,11 @@ set -u
 key=$1
 value=$2
 path=$3
-sed -i "s/^$key=.*/$key=$value/" $path
+if grep -q "^$key=" $path; then 
+  sed -i "s/^$key=.*/$key=$value/" $path
+else
+  echo "$key=$value" >>$path
+fi
 )
 }
 
