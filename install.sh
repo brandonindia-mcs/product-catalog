@@ -71,7 +71,7 @@ function k8s_update {
 ###################################
 k8s_postgres\
   && k8s_api\
-  && k8s_webservice
+  && k8s_webservice_update
 }
 
 function set_keyvalue {
@@ -161,6 +161,37 @@ envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
 # k8s_webservice
 )
 }
+
+
+function k8s_webservice {
+set -u
+# kubectl apply -f ./frontend/k8s/web.yaml\
+#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\
+#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
+
+echo -e "
+kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
+ && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\\\\\n\
+ && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
+"
+}
+
+
+function k8s_webservice_update {
+(
+ export $(grep -v '^#' ./frontend/k8s/$sdenv.env | xargs)
+set -u
+deploy_webservice $TAG
+# kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
+#   && kubectl rollout status deployment/web
+
+echo -e "
+kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\\\\\n\
+ && kubectl rollout status deployment/web
+"
+)
+}
+
 
 export MIDDLEWARE_APPNAME=product-catalog-middleware
 function middleware {
@@ -268,22 +299,6 @@ envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 # k8s_postgres
 )
 }
-
-
-function k8s_webservice {
-set -u
-# kubectl apply -f ./frontend/k8s/web.yaml\
-#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\
-#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
-
-echo -e "
-kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
- && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\\\\\n\
- && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
-"
-# kubectl rollout restart deployment web
-}
-
 
 function k8s_api {
 set -u
