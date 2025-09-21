@@ -21,9 +21,9 @@ function new_product_catalog {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default new_product_catalog
 ###################################
-frontend\
+backend\
   && middleware\
-  && backend\
+  && frontend\
   && k8s
 }
 
@@ -32,28 +32,28 @@ function product_catalog {
 # GLOBAL_NAMESPACE=default product_catalog
 ###################################
 set -u
-install_webservice $1\
+install_postgres $1\
   && install_api $1\
-  && install_postgres $1\
+  && install_webservice $1\
   && k8s_update
 }
 
 function install_webservice {
 set -u
 build_frontend $1\
-  && deploy_webservice $1
+  && configure_webservice $1
 }
 
 function install_api {
 set -u
 build_middleware $1\
-  && deploy_api $1
+  && configure_api $1
 }
 
 function install_postgres {
 set -u
 build_backend $1\
-  && deploy_postgres $1
+  && configure_postgres $1
 }
 
 function k8s {
@@ -146,7 +146,7 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 )
 }
 
-function deploy_webservice {
+function configure_webservice {
 set -u
 (
 image_version=$1
@@ -181,7 +181,7 @@ function k8s_webservice_update {
 (
  export $(grep -v '^#' ./frontend/k8s/$sdenv.env | xargs)
 set -u
-deploy_webservice $TAG
+configure_webservice $TAG
 # kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
 #   && kubectl rollout status deployment/web
 
@@ -239,7 +239,7 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 )
 }
 
-function deploy_api {
+function configure_api {
 set -u
 (
 image_version=$1
@@ -284,7 +284,7 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 )
 }
 
-function deploy_postgres {
+function configure_postgres {
 set -u
 (
 image_version=$1
