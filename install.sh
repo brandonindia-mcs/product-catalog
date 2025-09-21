@@ -1,5 +1,5 @@
 #!/bin/bash
-GLOBAL_VERSION=$(date +%Y%m%d)
+GLOBAL_VERSION=$(date +%Y%m%dT%H%M)
 
 function setenv {
 set -a
@@ -68,7 +68,7 @@ sed -i "s/^$key=.*/$key=$value/" $path
 }
 
 function watch_productcatelog {
-(namespace=default; while true; do echo && blue $(date) && kubectl get all --namespace $namespace -o wide && sleep 5;done)
+(namespace=${1:-default}; while true; do echo && blue $namespace $(date) && kubectl get all --namespace $namespace -o wide && sleep 5;done)
 }
 
 function local_registry {
