@@ -10,7 +10,7 @@ setenv
 
 ##########  CHEATSHEET  ###########
 # GLOBAL_NAMESPACE=default install_postgres `stamp` && GLOBAL_NAMESPACE=default k8s_postgres
-# 
+# GLOBAL_NAMESPACE=default k8s_webservice_update
 # 
 # 
 # 
@@ -35,7 +35,7 @@ set -u
 install_webservice $1\
   && install_api $1\
   && install_postgres $1\
-  && k8s
+  && k8s_update
 }
 
 function install_webservice {
@@ -65,17 +65,29 @@ k8s_postgres\
   && k8s_webservice
 }
 
+function k8s_update {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=<namespace> k8s_update
+###################################
+k8s_postgres\
+  && k8s_api\
+  && k8s_webservice
+}
 
 function set_keyvalue {
 set -u
 (
-key=$1
-value=$2
-path=$3
-if grep -q "^$key=" $path; then 
-  sed -i "s/^$key=.*/$key=$value/" $path
+key=$1; value=$2; path=$3
+if [ ! -f "$path" ]; then
+  touch "$path"
+fi
+if [ -f "$path" ] && [ "$(tail -c1 "$path" | wc -l)" -eq 0 ]; then
+  echo >>"$path"
+fi
+if grep -q "^$key=" "$path"; then 
+  sed -i "s/^$key=.*/$key=$value/" "$path"
 else
-  echo "$key=$value" >>$path
+  echo "$key=$value" >>"$path"
 fi
 )
 }
@@ -140,6 +152,7 @@ set -u
 image_version=$1
 set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
+set_keyvalue REPLICAS 2 ./frontend/k8s/$sdenv.env
 set -a
 source ./frontend/k8s/$sdenv.env
 set +a
@@ -201,6 +214,7 @@ set -u
 image_version=$1
 set_keyvalue TAG $image_version ./middleware/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/$sdenv.env
+set_keyvalue REPLICAS 2 ./frontend/k8s/$sdenv.env
 set -a
 source ./middleware/k8s/$sdenv.env
 set +a
