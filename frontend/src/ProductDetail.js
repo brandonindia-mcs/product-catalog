@@ -1,16 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import axios from 'axios';
 
 export default function ProductDetail() {
-  const { id } = useParams(); // 👈 this replaces the prop
-  const [prod, set] = useState(null);
+  const { id } = useParams();
+  const [prod, setProd] = useState(null);
+  const [error, setError] = useState(null);
+  const API_BASE = process.env.REACT_APP_API_URL || '';
 
   useEffect(() => {
-    axios.get(`/api/products/${id}`).then(resp => set(resp.data));
-  }, [id]);
+    axios.get(`${API_BASE}/products/${id}`)
+      .then(resp => setProd(resp.data))
+      .catch(err => {
+        console.error('Failed to fetch product:', err);
+        setError('Unable to load product details.');
+      });
+  }, [id, API_BASE]);
 
+  if (error) return <p className="error">{error}</p>;
   if (!prod) return <div>Loading…</div>;
+
   return (
     <div>
       <h1>{prod.name}</h1>
@@ -18,4 +27,5 @@ export default function ProductDetail() {
       <p>Price: ${prod.price}</p>
     </div>
   );
+  
 }
