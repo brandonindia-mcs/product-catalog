@@ -164,7 +164,7 @@ envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
 
 
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default new_product_catalog
+# GLOBAL_NAMESPACE=default k8s_webservice
 ###################################
 function k8s_webservice {
 set -u
@@ -181,7 +181,7 @@ kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
 
 
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default new_product_catalog
+# GLOBAL_NAMESPACE=default k8s_webservice_update
 ###################################
 function k8s_webservice_update {
 (
@@ -264,7 +264,7 @@ envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
 
 
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default new_product_catalog
+# GLOBAL_NAMESPACE=default k8s_api
 ###################################
 function k8s_api {
 set -u
@@ -283,26 +283,33 @@ validate_api
 
 
 function validate_api {
-echo -e "
-curl http://localhost:3000/health/db\\\\\n\
-&& curl http://localhost:3000/products\\\\\n\
-&& curl http://localhost:3000/products/1\\\\\n\
-&& weblist=\$(kubectl get pods --no-headers -o custom-columns=":metadata.name"|$(which grep) -E ^web) &&\\\\\n\
-for pod in \${weblist[@]};do
-  echo -e \"\\\\n\$pod http://api-service:3000/products\"
-  kubectl exec -it \$pod -- curl http://api-service:3000/products|jq
-  kubectl exec -it \$pod -- curl http://api-service:3000/products/1|jq
-done
-"
 # curl http://localhost:3000/health/db\
-# && curl http://localhost:3000/products\
-# && curl http://localhost:3000/products/1\
-# && weblist=$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
+#   && curl http://localhost:3000/products\
+#   && curl http://localhost:3000/products/1\
+#   && weblist=$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
 # for pod in ${weblist[@]};do
 #   echo -e "\n$pod http://api-service:3000/products"
 #   kubectl exec -it $pod -- curl http://api-service:3000/products|jq
 #   kubectl exec -it $pod -- curl http://api-service:3000/products/1|jq
 # done
+
+echo -e "
+info http://localhost:3000/health/db\\\\\n\
+  && curl -s http://localhost:3000/health/db|jq\\\\\n\
+  && info http://localhost:3000/products\\\\\n\
+  && curl -s http://localhost:3000/products|jq\\\\\n\
+  && info http://localhost:3000/products/1\\\\\n\
+  && curl -s http://localhost:3000/products/1|jq\\\\\n\
+  && weblist=\$(kubectl get pods --no-headers -o custom-columns=":metadata.name"|$(which grep) -E ^web) &&\\\\\n\
+for pod in \${weblist[@]};do
+  info \"\$pod http://api-service:3000/health/db\"\\\\\n\
+  && kubectl exec -it \$pod -- curl -s http://api-service:3000/health/db|jq\\\\\n\
+  && info \"\$pod http://api-service:3000/products\"\\\\\n\
+  && kubectl exec -it \$pod -- curl -s http://api-service:3000/products|jq\\\\\n\
+  && info \"\$pod http://api-service:3000/products/1\"\\\\\n\
+  && kubectl exec -it \$pod -- curl -s http://api-service:3000/products/1|jq
+done
+"
 }
 
 
@@ -352,7 +359,7 @@ envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 
 
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default new_product_catalog
+# GLOBAL_NAMESPACE=default k8s_postgres
 ###################################
 function k8s_postgres {
 set -u
@@ -419,3 +426,10 @@ function getyarn() {
   if ! command -v yarn >/dev/null 2>&1; then grey "Getting yarn: " && npm install --global yarn >/dev/null; fi
 }
 
+function green { println '\e[32m%s\e[m' "$*"; }
+function yellow { println '\e[33m%s\e[m' "$*"; }
+function blue { println '\e[34m%s\e[m' "$*"; }                                                                                    
+function red { println '\e[31m%s\e[m' "$*"; }
+function info { echo; echo "$(tput setaf 0;tput setab 3)$(date "+%Y-%m-%d %H:%M:%S") INFO: ${*}$(tput sgr 0)"; }
+function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS: ${*}$(tput sgr 0)"; }
+function fail { echo; echo "$(tput setaf 0;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL: ${*}$(tput sgr 0)"; }
