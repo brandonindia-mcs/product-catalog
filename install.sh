@@ -17,6 +17,15 @@ setenv
 # GLOBAL_NAMESPACE=default pgadmin `stamp`
 ###################################
 
+##########  RUN COMMAND  ##########
+# configure_default
+###################################
+function configure_default {
+  GLOBAL_NAMESPACE=default configure_webservice $GLOBAL_VERSION
+  GLOBAL_NAMESPACE=default configure_api $GLOBAL_VERSION
+  GLOBAL_NAMESPACE=default configure_postgres $GLOBAL_VERSION
+}
+
 function new_product_catalog {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default new_product_catalog
@@ -158,7 +167,6 @@ source ./frontend/k8s/$sdenv.env
 set +a
 # envsubst < ./frontend/k8s/web.template.yaml | kubectl apply -f -
 envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
-# k8s_webservice
 )
 }
 
@@ -168,15 +176,18 @@ envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
 ###################################
 function k8s_webservice {
 set -u
-# kubectl apply -f ./frontend/k8s/web.yaml\
-#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\
-#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
+formatrun <<'EOF'
+kubectl apply -f ./frontend/k8s/web.yaml\
+  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\
+  && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
+EOF
 
-echo -e "
-kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
- && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\\\\\n\
- && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
-"
+# echo -e "
+# kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
+#  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\\\\\n\
+#  && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
+# "
+
 }
 
 
@@ -185,16 +196,19 @@ kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
 ###################################
 function k8s_webservice_update {
 (
- export $(grep -v '^#' ./frontend/k8s/$sdenv.env | xargs)
+export $(grep -v '^#' ./frontend/k8s/$sdenv.env | xargs)
 set -u
 configure_webservice $TAG
-# kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
-#   && kubectl rollout status deployment/web
+formatrun <<'EOF'
+kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
+  && kubectl rollout status deployment/web
+EOF
 
-echo -e "
-kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\\\\\n\
- && kubectl rollout status deployment/web
-"
+# echo -e "
+# kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\\\\\n\
+#  && kubectl rollout status deployment/web
+# "
+
 )
 }
 
@@ -257,8 +271,6 @@ source ./middleware/k8s/$sdenv.env
 set +a
 # envsubst < ./middleware/k8s/api.template.yaml | kubectl apply -f -
 envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
-# kubectl rollout restart deployment api
-# k8s_api
 )
 }
 
@@ -268,48 +280,59 @@ envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
 ###################################
 function k8s_api {
 set -u
-# kubectl apply -f ./middleware/k8s/api.yaml\
-#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
-#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service 3000:3000
-
-echo -e "
-kubectl apply -f ./middleware/k8s/api.yaml\\\\\n\
-  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\\\\\n\
+formatrun <<'EOF'
+kubectl apply -f ./middleware/k8s/api.yaml\
+  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service 3000:3000
-"
+EOF
+
+# echo -e "
+# kubectl apply -f ./middleware/k8s/api.yaml\\\\\n\
+#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\\\\\n\
+#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service 3000:3000
+# "
+
 validate_api
 # kubectl rollout restart deployment api
 }
 
 
 function validate_api {
-# curl http://localhost:3000/health/db\
-#   && curl http://localhost:3000/products\
-#   && curl http://localhost:3000/products/1\
-#   && weblist=$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
-# for pod in ${weblist[@]};do
-#   echo -e "\n$pod http://api-service:3000/products"
-#   kubectl exec -it $pod -- curl http://api-service:3000/products|jq
-#   kubectl exec -it $pod -- curl http://api-service:3000/products/1|jq
-# done
-
-echo -e "
-info http://localhost:3000/health/db\\\\\n\
-  && curl -s http://localhost:3000/health/db|jq\\\\\n\
-  && info http://localhost:3000/products\\\\\n\
-  && curl -s http://localhost:3000/products|jq\\\\\n\
-  && info http://localhost:3000/products/1\\\\\n\
-  && curl -s http://localhost:3000/products/1|jq\\\\\n\
-  && weblist=\$(kubectl get pods --no-headers -o custom-columns=":metadata.name"|$(which grep) -E ^web) &&\\\\\n\
-for pod in \${weblist[@]};do
-  info \"\$pod http://api-service:3000/health/db\"\\\\\n\
-  && kubectl exec -it \$pod -- curl -s http://api-service:3000/health/db|jq\\\\\n\
-  && info \"\$pod http://api-service:3000/products\"\\\\\n\
-  && kubectl exec -it \$pod -- curl -s http://api-service:3000/products|jq\\\\\n\
-  && info \"\$pod http://api-service:3000/products/1\"\\\\\n\
-  && kubectl exec -it \$pod -- curl -s http://api-service:3000/products/1|jq
+formatrun <<'EOF'
+info http://localhost:3000/health/db\
+  && curl -s http://localhost:3000/health/db|jq\
+  && info http://localhost:3000/products\
+  && curl -s http://localhost:3000/products|jq\
+  && info http://localhost:3000/products/1\
+  && curl -s http://localhost:3000/products/1|jq\
+  && weblist=$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
+for pod in ${weblist[@]};do
+  info "$pod http://api-service:3000/health/db"\
+  && kubectl exec -it $pod -- curl -s http://api-service:3000/health/db|jq\
+  && info "$pod http://api-service:3000/products"\
+  && kubectl exec -it $pod -- curl -s http://api-service:3000/products|jq\
+  && info "$pod http://api-service:3000/products/1"\
+  && kubectl exec -it $pod -- curl -s http://api-service:3000/products/1|jq
 done
-"
+EOF
+
+# echo -e "
+# info http://localhost:3000/health/db\\\\\n\
+#   && curl -s http://localhost:3000/health/db|jq\\\\\n\
+#   && info http://localhost:3000/products\\\\\n\
+#   && curl -s http://localhost:3000/products|jq\\\\\n\
+#   && info http://localhost:3000/products/1\\\\\n\
+#   && curl -s http://localhost:3000/products/1|jq\\\\\n\
+#   && weblist=\$(kubectl get pods --no-headers -o custom-columns=":metadata.name"|$(which grep) -E ^web) &&\\\\\n\
+# for pod in \${weblist[@]};do
+#   info \"\$pod http://api-service:3000/health/db\"\\\\\n\
+#   && kubectl exec -it \$pod -- curl -s http://api-service:3000/health/db|jq\\\\\n\
+#   && info \"\$pod http://api-service:3000/products\"\\\\\n\
+#   && kubectl exec -it \$pod -- curl -s http://api-service:3000/products|jq\\\\\n\
+#   && info \"\$pod http://api-service:3000/products/1\"\\\\\n\
+#   && kubectl exec -it \$pod -- curl -s http://api-service:3000/products/1|jq
+# done
+# "
 }
 
 
@@ -352,8 +375,6 @@ source ./backend/k8s/$sdenv.env
 set +a
 # envsubst < ./backend/k8s/postgres.template.yaml | kubectl apply -f -
 envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
-# kubectl rollout restart deployment api
-# k8s_postgres
 )
 }
 
@@ -363,13 +384,16 @@ envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 ###################################
 function k8s_postgres {
 set -u
-# kubectl apply -f ./backend/k8s/postgres.yaml\
-#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
 
-echo -e "
-kubectl apply -f ./backend/k8s/postgres.yaml\\\\\n\
+formatrun <<'EOF'
+kubectl apply -f ./backend/k8s/postgres.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
-"
+EOF
+
+# echo -e "
+# kubectl apply -f ./backend/k8s/postgres.yaml\\\\\n\
+#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
+# "
 # kubectl rollout restart deployment postgres
 }
 
@@ -434,22 +458,23 @@ function info { echo; echo "$(tput setaf 0;tput setab 3)$(date "+%Y-%m-%d %H:%M:
 function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS: ${*}$(tput sgr 0)"; }
 function fail { echo; echo "$(tput setaf 0;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL: ${*}$(tput sgr 0)"; }
 
-function format {
-CMD="\\n
-DOCKER_BUILDKIT=1 docker build --rm $NOCACHE\\n
-  --build-arg BUILD_DATE=$(date +%Y%m%d)
-  --build-arg THISUSER=$CUSER\\n
-  --build-arg HOMEDIR=$HOMEDIR\\n
-  --build-arg LOCALHOMESAFE=$LOCALHOMESAFE\\n
-  --build-arg gitlogin=$CLOGIN\\n
-  --build-arg gituser=$CUSER\\n
-  --build-arg SK=$KEYNAME\\n$BUILDARGS
-  $ETC\\n
-  -t $APP\\n
-  $TAGS\\n
-  -f $DOCKERFILE ."
+function formatrun {
+(
+# local raw_cmd
+raw_cmd=$(cat)
+# CMD=$(echo "$raw_cmd" | sed -E ':a;N;$!ba;s/\\\s*\n/ /g')
+# eval "$CMD"
 
-log $LINENO "$CMD"|sed "s/\\\\n//g"
+### UNCOMMENT WHEN READY
+# runit "$(echo "$raw_cmd" | sed -E ':a;N;$!ba;s/\\\s*\n/ /g')"
+logit "$raw_cmd"
+)
+}
 
-eval $(echo "$CMD"|sed "s/\\\\n//g")
+function runit {
+eval "$*"
+}
+
+function logit {
+echo -e "$*"
 }
