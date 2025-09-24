@@ -433,3 +433,23 @@ function red { println '\e[31m%s\e[m' "$*"; }
 function info { echo; echo "$(tput setaf 0;tput setab 3)$(date "+%Y-%m-%d %H:%M:%S") INFO: ${*}$(tput sgr 0)"; }
 function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS: ${*}$(tput sgr 0)"; }
 function fail { echo; echo "$(tput setaf 0;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL: ${*}$(tput sgr 0)"; }
+
+function format {
+CMD="\\n
+DOCKER_BUILDKIT=1 docker build --rm $NOCACHE\\n
+  --build-arg BUILD_DATE=$(date +%Y%m%d)
+  --build-arg THISUSER=$CUSER\\n
+  --build-arg HOMEDIR=$HOMEDIR\\n
+  --build-arg LOCALHOMESAFE=$LOCALHOMESAFE\\n
+  --build-arg gitlogin=$CLOGIN\\n
+  --build-arg gituser=$CUSER\\n
+  --build-arg SK=$KEYNAME\\n$BUILDARGS
+  $ETC\\n
+  -t $APP\\n
+  $TAGS\\n
+  -f $DOCKERFILE ."
+
+log $LINENO "$CMD"|sed "s/\\\\n//g"
+
+eval $(echo "$CMD"|sed "s/\\\\n//g")
+}
