@@ -3,7 +3,7 @@ GLOBAL_VERSION=$(date +%Y%m%d%H%M)00
 
 function setenv {
 set -a
-source ./$sdenv.env
+source ./$sdenv.env || set +a && abort $LINENO ${FUNCNAME[0]} file ./$sdenv.env not found
 set +a
 }
 setenv
@@ -459,6 +459,7 @@ function red { println '\e[31m%s\e[m' "$*"; }
 function info { echo; echo "$(tput setaf 0;tput setab 3)$(date "+%Y-%m-%d %H:%M:%S") INFO: ${*}$(tput sgr 0)"; }
 function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS: ${*}$(tput sgr 0)"; }
 function fail { echo; echo "$(tput setaf 0;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL: ${*}$(tput sgr 0)"; }
+function abort       { red   "$(date "+%Y-%m-%d %H:%M:%S") ABORT($1):" && echo -e "\t${@:2}" && echo; }
 
 function formatrun {
 (
