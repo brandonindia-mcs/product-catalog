@@ -238,6 +238,7 @@ install_api $GLOBAL_VERSION
 }
 
 function build_middleware {
+set -u
 (
 image_version=$1
 if [ -z "$image_version" ];then image_version=latest;fi
@@ -342,6 +343,7 @@ install_postgres $GLOBAL_VERSION
 }
 
 function build_backend {
+set -u
 (
 image_version=$1
 if [ -z "$image_version" ];then image_version=latest;fi
