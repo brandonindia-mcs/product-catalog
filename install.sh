@@ -1,5 +1,5 @@
 #!/bin/bash
-GLOBAL_VERSION=$(date +%Y%m%d%H%M)00
+GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 
 function setenv {
 if [ -r $sdenv.env ];then
