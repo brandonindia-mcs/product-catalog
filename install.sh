@@ -34,9 +34,13 @@ function new_product_catalog {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default new_product_catalog
 ###################################
-backend\
+info ${FUNCNAME[0]}: callling backend $GLOBAL_VERSION\
+  && backend\
+  && info ${FUNCNAME[0]}: callling middleware $GLOBAL_VERSION\
   && middleware\
+  && info ${FUNCNAME[0]}: callling frontend $GLOBAL_VERSION\
   && frontend\
+  && info ${FUNCNAME[0]}: callling k8s $GLOBAL_VERSION\
   && k8s
 }
 
@@ -53,19 +57,25 @@ install_postgres $1\
 
 function install_webservice {
 set -u
-build_frontend $1\
+info ${FUNCNAME[0]}: callling build_frontend $GLOBAL_VERSION\
+  && build_frontend $1\
+  && info ${FUNCNAME[0]}: callling configure_webservice $GLOBAL_VERSION\
   && configure_webservice $1
 }
 
 function install_api {
 set -u
-build_middleware $1\
+info ${FUNCNAME[0]}: callling build_middleware $GLOBAL_VERSION\
+  && build_middleware $1\
+  && info ${FUNCNAME[0]}: callling configure_api $GLOBAL_VERSION\
   && configure_api $1
 }
 
 function install_postgres {
 set -u
-build_backend $1\
+info ${FUNCNAME[0]}: callling build_backend $GLOBAL_VERSION\
+  && build_backend $1\
+  && info ${FUNCNAME[0]}: callling configure_postgres $GLOBAL_VERSION\
   && configure_postgres $1
 }
 
@@ -131,6 +141,7 @@ cp ../package.json .
 npm install react@18.2.0 react-dom@18.2.0 react-router-dom@6 axios --legacy-peer-deps
 npm install
 popd
+info ${FUNCNAME[0]}: callling install_webservice $GLOBAL_VERSION
 install_webservice $GLOBAL_VERSION
 }
 
@@ -237,6 +248,7 @@ mkdir $MIDDLEWARE_APPNAME && cd $_
 cp ../package.json .
 npm install
 popd
+info ${FUNCNAME[0]}: callling install_api $GLOBAL_VERSION
 install_api $GLOBAL_VERSION
 
 }
@@ -460,7 +472,7 @@ function green { println '\e[32m%s\e[m' "$*"; }
 function yellow { println '\e[33m%s\e[m' "$*"; }
 function blue { println '\e[34m%s\e[m' "$*"; }                                                                                    
 function red { println '\e[31m%s\e[m' "$*"; }
-function info { echo; echo "$(tput setaf 0;tput setab 3)$(date "+%Y-%m-%d %H:%M:%S") INFO: ${*}$(tput sgr 0)"; }
+function info { echo; echo "$(tput setaf 0;tput setab 7)$(date "+%Y-%m-%d %H:%M:%S") INFO: ${*}$(tput sgr 0)"; }
 function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS: ${*}$(tput sgr 0)"; }
 function fail { echo; echo "$(tput setaf 0;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL: ${*}$(tput sgr 0)"; }
 function abort       { red   "$(date "+%Y-%m-%d %H:%M:%S") ABORT($1):" && echo -e "\t${@:2}" && echo; }
