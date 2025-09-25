@@ -3,7 +3,7 @@ GLOBAL_VERSION=$(date +%Y%m%d%H%M)00
 
 function setenv {
 set -a
-source ./$sdenv.env || set +a && abort $LINENO ${FUNCNAME[0]} file ./$sdenv.env not found
+source ./$sdenv.env || set +a && abort "install.sh:$LINENO" ${FUNCNAME[0]} file ./$sdenv.env not found
 set +a
 }
 setenv
