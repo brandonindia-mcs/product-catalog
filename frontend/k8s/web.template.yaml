@@ -15,7 +15,16 @@ metadata:
   namespace: $NAMESPACE
   name: web
 spec:
-  replicas: 1
+##### replicas: i → Keeps service available during updates
+  replicas: $REPLICAS
+##### strategy block → Explicitly sets rolling update behavior.
+#   strategy:
+#     type: RollingUpdate
+#     rollingUpdate:
+# ##### maxUnavailable: 0 → Ensures no downtime
+#       maxUnavailable: 0   # Never take a pod down until a new one is ready
+# ##### maxSurge: i → Allows one extra pod during rollout for faster updates
+#       maxSurge: 1         # Add at most one extra pod during update
   selector:
     matchLabels:
       app: web
@@ -25,14 +34,24 @@ spec:
         app: web
     spec:
       containers:
-      - name: web
-        image: $HUB/$REPOSITORY:$TAG
-        ports:
-        - containerPort: 80
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "250m"
-            memory: "256Mi"
+        - name: web
+          image: $HUB/$REPOSITORY:$TAG
+          ports:
+            - containerPort: 80
+##### readinessProbe → Ensures traffic only goes to healthy pods
+          # readinessProbe:
+          #   httpGet:
+          #     path: /health    # Adjust to your app's health endpoint
+          #     port: 80
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 5
+          #   failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+
+# Comment on /health → Replace with your actual health check path.

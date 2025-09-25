@@ -5,7 +5,7 @@ metadata:
   name: pg-service
 spec:
   ports:
-  - port: 5432
+    - port: 5432
   selector:
     app: postgres
 ---
@@ -16,6 +16,11 @@ metadata:
   name: postgres
 spec:
   replicas: 1
+  # strategy:
+  #   type: RollingUpdate
+  #   rollingUpdate:
+  #     maxUnavailable: 0   # Never take a pod down until a new one is ready
+  #     maxSurge: 1         # Add at most one extra pod during update
   selector:
     matchLabels:
       app: postgres
@@ -25,21 +30,30 @@ spec:
         app: postgres
     spec:
       containers:
-      - name: postgres
-        image: $HUB/$REPOSITORY:$TAG
-        env:
-        - name: POSTGRES_DB
-          value: catalog
-        - name: POSTGRES_USER
-          value: catalog
-        - name: POSTGRES_PASSWORD
-          value: catalog
-        ports:
-        - containerPort: 5432
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "250m"
-            memory: "256Mi"
+        - name: postgres
+          image: $HUB/$REPOSITORY:$TAG
+          env:
+            - name: POSTGRES_DB
+              value: catalog
+            - name: POSTGRES_USER
+              value: catalog
+            - name: POSTGRES_PASSWORD
+              value: catalog
+          ports:
+            - containerPort: 5432
+          # readinessProbe:
+          #   exec:
+          #     command:
+          #       - pg_isready
+          #       - -U
+          #       - catalog
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 10
+          #   failureThreshold: 6
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"

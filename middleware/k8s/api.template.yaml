@@ -5,7 +5,7 @@ metadata:
   name: api-service
 spec:
   ports:
-  - port: 3000
+    - port: 3000
   selector:
     app: api
 ---
@@ -15,7 +15,12 @@ metadata:
   namespace: $NAMESPACE
   name: api
 spec:
-  replicas: 1
+  replicas: $REPLICAS
+  # strategy:
+  #   type: RollingUpdate
+  #   rollingUpdate:
+  #     maxUnavailable: 0   # Never take a pod down until a new one is ready
+  #     maxSurge: 1         # Add at most one extra pod during update
   selector:
     matchLabels:
       app: api
@@ -25,23 +30,30 @@ spec:
         app: api
     spec:
       containers:
-      - name: api
-        image: $HUB/$REPOSITORY:$TAG
-        env:
-        - name: PGHOST
-          value: pg-service
-        - name: PGDATABASE
-          value: catalog
-        - name: PGUSER
-          value: catalog
-        - name: PGPASSWORD
-          value: catalog
-        ports:
-        - containerPort: 3000
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "250m"
-            memory: "256Mi"
+        - name: api
+          image: $HUB/$REPOSITORY:$TAG
+          env:
+            - name: PGHOST
+              value: pg-service
+            - name: PGDATABASE
+              value: catalog
+            - name: PGUSER
+              value: catalog
+            - name: PGPASSWORD
+              value: catalog
+          ports:
+            - containerPort: 3000
+          # readinessProbe:
+          #   httpGet:
+          #     path: /health    # Adjust to your API's health endpoint
+          #     port: 3000
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 5
+          #   failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
