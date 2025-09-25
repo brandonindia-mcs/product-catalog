@@ -20,6 +20,7 @@ function fail { echo; echo "$(tput setaf 0;tput setab 1)$(date "+%Y-%m-%d %H:%M:
 function abort       { red   "$(date "+%Y-%m-%d %H:%M:%S") ABORT($1):" && echo -e "\t${@:2}" && echo; }
 function abort_hard  { red   "$(date "+%Y-%m-%d %H:%M:%S") ABORT($1):" && echo -e "\t${@:2}" && read -p "press CTRL+C or die" x && exit 1; } # read -p "press CTRL+C" && exit 1; }
 
+local_registry
 setenv
 
 ##########  CHEATSHEET  ###########
@@ -130,7 +131,8 @@ function watch_productcatelog {
 }
 
 function local_registry {
-docker run -d -p 5001:5000 --name registry registry:2
+# docker run -d -p 5001:5000 --name registry registry:2
+docker run -d -p 5001:5000 --name registry registry:2 2>/dev/null || docker start registry
 }
 
 export FRONTEND_APPNAME=product-catalog-frontend
