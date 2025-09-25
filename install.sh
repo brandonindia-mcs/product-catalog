@@ -156,15 +156,19 @@ if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 appname=$FRONTEND_APPNAME
 echo -e \\nBuilding $appname:$image_version
 
+formatrun <<'EOF'
 cp -rf ./frontend/src ./frontend/$appname/
 cp -rf ./frontend/$sdenv.env ./frontend/$appname/.env
 docker build -t $appname:$image_version $NOCACHE frontend\
   || return 1
+EOF
 
+formatrun <<'EOF'
 docker tag $appname $DOCKERHUB/$appname
 docker tag $appname:$image_version $DOCKERHUB/$appname:$image_version
 docker push $DOCKERHUB/$appname
 docker push $DOCKERHUB/$appname:$image_version 
+EOF
 
 echo Pushed $DOCKERHUB/$appname:$image_version
 )
@@ -264,13 +268,17 @@ if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 appname=$MIDDLEWARE_APPNAME
 echo -e \\nBuilding $appname:$image_version
 
+formatrun <<'EOF'
 docker build -t $appname:$image_version $NOCACHE middleware\
   || return 1
+EOF
 
+formatrun <<'EOF'
 docker tag $appname $DOCKERHUB/$appname
 docker tag $appname:$image_version $DOCKERHUB/$appname:$image_version
 docker push $DOCKERHUB/$appname
 docker push $DOCKERHUB/$appname:$image_version
+EOF
 
 echo Pushed $DOCKERHUB/$appname:$image_version
 )
@@ -369,13 +377,17 @@ if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 appname=$BACKEND_APPNAME
 echo -e \\nBuilding $appname:$image_version
 
+formatrun <<'EOF'
 docker build -t $appname:$image_version $NOCACHE backend\
   || return 1
+EOF
 
+formatrun <<'EOF'
 docker tag $appname $DOCKERHUB/$appname
 docker tag $appname:$image_version $DOCKERHUB/$appname:$image_version
 docker push $DOCKERHUB/$appname
 docker push $DOCKERHUB/$appname:$image_version
+EOF
 
 echo Pushed $DOCKERHUB/$appname:$image_version
 )
