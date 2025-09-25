@@ -7,9 +7,19 @@ set -a
 source $sdenv.env
 set +a
 else
-abort "install.sh:$LINENO" ${FUNCNAME[0]} file $sdenv.env not found
+abort_hard "install.sh:$LINENO" ${FUNCNAME[0]}: file $sdenv.env not found in $PWD
 fi
 }
+function green { println '\e[32m%s\e[m' "$*"; }
+function yellow { println '\e[33m%s\e[m' "$*"; }
+function blue { println '\e[34m%s\e[m' "$*"; }                                                                                    
+function red { println '\e[31m%s\e[m' "$*"; }
+function info { echo; echo "$(tput setaf 0;tput setab 7)$(date "+%Y-%m-%d %H:%M:%S") INFO: ${*}$(tput sgr 0)"; }
+function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS: ${*}$(tput sgr 0)"; }
+function fail { echo; echo "$(tput setaf 0;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL: ${*}$(tput sgr 0)"; }
+function abort       { red   "$(date "+%Y-%m-%d %H:%M:%S") ABORT($1):" && echo -e "\t${@:2}" && echo; }
+function abort_hard  { red   "$(date "+%Y-%m-%d %H:%M:%S") ABORT($1):" && echo -e "\t${@:2}" && read -p "press CTRL+C or die" x && exit 1; } # read -p "press CTRL+C" && exit 1; }
+
 setenv
 
 ##########  CHEATSHEET  ###########
@@ -479,15 +489,6 @@ function getyarn() {
   echo && blue "------------------ YARN - NEEDS NVM ------------------" && echo
   if ! command -v yarn >/dev/null 2>&1; then grey "Getting yarn: " && npm install --global yarn >/dev/null; fi
 }
-
-function green { println '\e[32m%s\e[m' "$*"; }
-function yellow { println '\e[33m%s\e[m' "$*"; }
-function blue { println '\e[34m%s\e[m' "$*"; }                                                                                    
-function red { println '\e[31m%s\e[m' "$*"; }
-function info { echo; echo "$(tput setaf 0;tput setab 7)$(date "+%Y-%m-%d %H:%M:%S") INFO: ${*}$(tput sgr 0)"; }
-function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS: ${*}$(tput sgr 0)"; }
-function fail { echo; echo "$(tput setaf 0;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL: ${*}$(tput sgr 0)"; }
-function abort       { red   "$(date "+%Y-%m-%d %H:%M:%S") ABORT($1):" && echo -e "\t${@:2}" && echo; }
 
 function formatrun {
 (
