@@ -1,27 +1,6 @@
 #!/bin/bash
 GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 
-function setenv {
-if [ -r $sdenv.env ];then
-set -a
-source $sdenv.env
-set +a
-else
-abort_hard "install.sh:$LINENO" ${FUNCNAME[0]}: file $sdenv.env not found in $PWD
-fi
-}
-function green { println '\e[32m%s\e[m' "$*"; }
-function yellow { println '\e[33m%s\e[m' "$*"; }
-function blue { println '\e[34m%s\e[m' "$*"; }                                                                                    
-function red { println '\e[31m%s\e[m' "$*"; }
-function info { echo; echo "$(tput setaf 0;tput setab 7)$(date "+%Y-%m-%d %H:%M:%S") INFO: ${*}$(tput sgr 0)"; }
-function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS: ${*}$(tput sgr 0)"; }
-function fail { echo; echo "$(tput setaf 0;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL: ${*}$(tput sgr 0)"; }
-function abort       { red   "$(date "+%Y-%m-%d %H:%M:%S") ABORT($1):" && echo -e "\t${@:2}" && echo; }
-function abort_hard  { red   "$(date "+%Y-%m-%d %H:%M:%S") ABORT($1):" && echo -e "\t${@:2}" && read -p "press CTRL+C or die" x && exit 1; } # read -p "press CTRL+C" && exit 1; }
-
-setenv
-
 ##########  CHEATSHEET  ###########
 # GLOBAL_NAMESPACE=default install_postgres `stamp` && GLOBAL_NAMESPACE=default k8s_postgres
 # GLOBAL_NAMESPACE=default k8s_webservice_update
@@ -30,6 +9,28 @@ setenv
 # 
 # GLOBAL_NAMESPACE=default pgadmin `stamp`
 ###################################
+
+#############  HELPER FUNCTIONS AT TOP  #############
+function green { println '\e[32m%s\e[0m' "$*"; }
+function yellow { println '\e[33m%s\e[0m' "$*"; }
+function blue { println '\e[34m%s\e[0m' "$*"; }                                                                                    
+function red { println '\e[31m%s\e[0m' "$*"; }
+function info { echo; echo "$(tput setaf 0;tput setab 7)$(date "+%Y-%m-%d %H:%M:%S") INFO: ${*}$(tput sgr 0)"; }
+function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS: ${*}$(tput sgr 0)"; }
+function fail { echo; echo "$(tput setaf 0;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL: ${*}$(tput sgr 0)"; }
+function abort  { red "ABORT($1): $(date "+%Y-%m-%d %H:%M:%S")" && echo -e "\t${@:2}" && read -p "press CTRL+C or die" x && exit 1; }
+
+##################  SETUP ENV  ##################
+function setenv {
+if [ -r ./$sdenv.env ];then
+set -a
+source ./$sdenv.env
+set +a
+else
+abort "install.sh:$LINENO" ${FUNCNAME[0]}: file $sdenv.env not found in $PWD
+fi
+}
+setenv
 
 function configure {
 set -u
@@ -51,10 +52,6 @@ GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $image_version
 ###################################
 function configure_default {
 GLOBAL_NAMESPACE=default configure $GLOBAL_VERSION
-# set_registry
-# GLOBAL_NAMESPACE=default configure_webservice $GLOBAL_VERSION
-# GLOBAL_NAMESPACE=default configure_api $GLOBAL_VERSION
-# GLOBAL_NAMESPACE=default configure_postgres $GLOBAL_VERSION
 }
 
 function new_product_catalog {
@@ -537,6 +534,7 @@ function getyarn() {
   echo && blue "------------------ YARN - NEEDS NVM ------------------" && echo
   if ! command -v yarn >/dev/null 2>&1; then grey "Getting yarn: " && npm install --global yarn >/dev/null; fi
 }
+
 
 function formatrun {
 (
