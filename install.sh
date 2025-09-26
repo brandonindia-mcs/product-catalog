@@ -20,7 +20,6 @@ function fail { echo; echo "$(tput setaf 0;tput setab 1)$(date "+%Y-%m-%d %H:%M:
 function abort       { red   "$(date "+%Y-%m-%d %H:%M:%S") ABORT($1):" && echo -e "\t${@:2}" && echo; }
 function abort_hard  { red   "$(date "+%Y-%m-%d %H:%M:%S") ABORT($1):" && echo -e "\t${@:2}" && read -p "press CTRL+C or die" x && exit 1; } # read -p "press CTRL+C" && exit 1; }
 
-local_registry
 setenv
 
 ##########  CHEATSHEET  ###########
@@ -36,15 +35,17 @@ setenv
 # configure_default
 ###################################
 function configure_default {
-  GLOBAL_NAMESPACE=default configure_webservice $GLOBAL_VERSION
-  GLOBAL_NAMESPACE=default configure_api $GLOBAL_VERSION
-  GLOBAL_NAMESPACE=default configure_postgres $GLOBAL_VERSION
+set_registry
+GLOBAL_NAMESPACE=default configure_webservice $GLOBAL_VERSION
+GLOBAL_NAMESPACE=default configure_api $GLOBAL_VERSION
+GLOBAL_NAMESPACE=default configure_postgres $GLOBAL_VERSION
 }
 
 function new_product_catalog {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default new_product_catalog
 ###################################
+set_registry
 info ${FUNCNAME[0]}: callling backend $GLOBAL_VERSION\
   && backend\
   && info ${FUNCNAME[0]}: callling middleware $GLOBAL_VERSION\
@@ -55,11 +56,24 @@ info ${FUNCNAME[0]}: callling backend $GLOBAL_VERSION\
   && k8s
 }
 
-function product_catalog {
+function install_product_catalog {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default product_catalog
+# GLOBAL_NAMESPACE=default install_product_catalog
 ###################################
 set -u
+set_registry
+install_postgres $1\
+  && install_api $1\
+  && install_webservice $1\
+  && k8s
+}
+
+function update_product_catalog {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=default update_product_catalog
+###################################
+set -u
+set_registry
 install_postgres $1\
   && install_api $1\
   && install_webservice $1\
@@ -94,6 +108,7 @@ function k8s {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=<namespace> k8s
 ###################################
+set_registry
 k8s_postgres\
   && k8s_api\
   && k8s_webservice
@@ -103,6 +118,7 @@ function k8s_update {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=<namespace> k8s_update
 ###################################
+set_registry
 k8s_postgres\
   && k8s_api\
   && k8s_webservice_update
@@ -133,6 +149,14 @@ function watch_productcatelog {
 function local_registry {
 # docker run -d -p 5001:5000 --name registry registry:2
 docker run -d -p 5001:5000 --name registry registry:2 2>/dev/null || docker start registry
+}
+
+function set_registry {
+set -u
+set_keyvalue HUB $DOCKERHUB ./frontend/k8s/$sdenv.env
+set_keyvalue HUB $DOCKERHUB ./middleware/k8s/$sdenv.env
+set_keyvalue HUB $DOCKERHUB ./backend/k8s/$sdenv.env
+local_registry
 }
 
 export FRONTEND_APPNAME=product-catalog-frontend
@@ -167,6 +191,7 @@ NOCACHE=
 if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 appname=$FRONTEND_APPNAME
 echo -e \\nBuilding $appname:$image_version
+set_keyvalue REPOSITORY $appname ./frontend/k8s/$sdenv.env
 
 # formatrun <<'EOF'
 cp -rf ./frontend/src ./frontend/$appname/
@@ -279,6 +304,7 @@ NOCACHE=
 if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 appname=$MIDDLEWARE_APPNAME
 echo -e \\nBuilding $appname:$image_version
+set_keyvalue REPOSITORY $appname ./middleware/k8s/$sdenv.env
 
 # formatrun <<'EOF'
 docker build -t $appname:$image_version $NOCACHE middleware\
@@ -388,6 +414,7 @@ NOCACHE=
 if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 appname=$BACKEND_APPNAME
 echo -e \\nBuilding $appname:$image_version
+set_keyvalue REPOSITORY $appname ./backend/k8s/$sdenv.env
 
 # formatrun <<'EOF'
 docker build -t $appname:$image_version $NOCACHE backend\
