@@ -31,14 +31,28 @@ setenv
 # GLOBAL_NAMESPACE=default pgadmin `stamp`
 ###################################
 
+function configure {
+(
+set_registry
+set_keyvalue REPOSITORY $FRONTEND_APPNAME ./frontend/k8s/$sdenv.env
+set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME ./middleware/k8s/$sdenv.env
+set_keyvalue REPOSITORY $BACKEND_PPNAME ./backend/k8s/$sdenv.env
+
+GLOBAL_NAMESPACE=$namespace configure_webservice $GLOBAL_VERSION
+GLOBAL_NAMESPACE=$namespace configure_api $GLOBAL_VERSION
+GLOBAL_NAMESPACE=$namespace configure_postgres $GLOBAL_VERSION
+)
+}
+
 ##########  RUN COMMAND  ##########
 # configure_default
 ###################################
 function configure_default {
-set_registry
-GLOBAL_NAMESPACE=default configure_webservice $GLOBAL_VERSION
-GLOBAL_NAMESPACE=default configure_api $GLOBAL_VERSION
-GLOBAL_NAMESPACE=default configure_postgres $GLOBAL_VERSION
+configure default
+# set_registry
+# GLOBAL_NAMESPACE=default configure_webservice $GLOBAL_VERSION
+# GLOBAL_NAMESPACE=default configure_api $GLOBAL_VERSION
+# GLOBAL_NAMESPACE=default configure_postgres $GLOBAL_VERSION
 }
 
 function new_product_catalog {
