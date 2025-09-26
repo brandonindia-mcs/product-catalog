@@ -34,15 +34,15 @@ setenv
 function configure {
 set -u
 (
-namespace=$1
+image_version=$1
 set_registry
 set_keyvalue REPOSITORY $FRONTEND_APPNAME ./frontend/k8s/$sdenv.env
 set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME ./middleware/k8s/$sdenv.env
 set_keyvalue REPOSITORY $BACKEND_APPNAME ./backend/k8s/$sdenv.env
 
-GLOBAL_NAMESPACE=$namespace configure_webservice $GLOBAL_VERSION
-GLOBAL_NAMESPACE=$namespace configure_api $GLOBAL_VERSION
-GLOBAL_NAMESPACE=$namespace configure_postgres $GLOBAL_VERSION
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $image_version
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $image_version
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $image_version
 )
 }
 
@@ -50,7 +50,7 @@ GLOBAL_NAMESPACE=$namespace configure_postgres $GLOBAL_VERSION
 # configure_default
 ###################################
 function configure_default {
-configure default
+GLOBAL_NAMESPACE=default configure $GLOBAL_VERSION
 # set_registry
 # GLOBAL_NAMESPACE=default configure_webservice $GLOBAL_VERSION
 # GLOBAL_NAMESPACE=default configure_api $GLOBAL_VERSION
@@ -74,7 +74,7 @@ info ${FUNCNAME[0]}: callling backend $GLOBAL_VERSION\
 
 function install_product_catalog {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default install_product_catalog
+# GLOBAL_NAMESPACE=default install_product_catalog [IMAGE_VERSION]
 ###################################
 set -u
 set_registry
@@ -86,7 +86,7 @@ install_postgres $1\
 
 function update_product_catalog {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default update_product_catalog
+# GLOBAL_NAMESPACE=default update_product_catalog [IMAGE_VERSION]
 ###################################
 set -u
 set_registry
@@ -98,25 +98,25 @@ install_postgres $1\
 
 function install_webservice {
 set -u
-info ${FUNCNAME[0]}: callling build_frontend $GLOBAL_VERSION\
+info ${FUNCNAME[0]}: callling build_frontend $1\
   && build_frontend $1\
-  && info ${FUNCNAME[0]}: callling configure_webservice $GLOBAL_VERSION\
+  && info ${FUNCNAME[0]}: callling configure_webservice $1\
   && configure_webservice $1
 }
 
 function install_api {
 set -u
-info ${FUNCNAME[0]}: callling build_middleware $GLOBAL_VERSION\
+info ${FUNCNAME[0]}: callling build_middleware $1\
   && build_middleware $1\
-  && info ${FUNCNAME[0]}: callling configure_api $GLOBAL_VERSION\
+  && info ${FUNCNAME[0]}: callling configure_api $1\
   && configure_api $1
 }
 
 function install_postgres {
 set -u
-info ${FUNCNAME[0]}: callling build_backend $GLOBAL_VERSION\
+info ${FUNCNAME[0]}: callling build_backend $1\
   && build_backend $1\
-  && info ${FUNCNAME[0]}: callling configure_postgres $GLOBAL_VERSION\
+  && info ${FUNCNAME[0]}: callling configure_postgres $1\
   && configure_postgres $1
 }
 
