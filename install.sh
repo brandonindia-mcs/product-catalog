@@ -161,6 +161,9 @@ fi
 function watch_productcatelog {
 (namespace=${1:-default}; while true; do echo && blue $namespace $(date) && kubectl get all --namespace $namespace -o wide && sleep 5;done)
 }
+function print_k8s_env {
+for dir in frontend backend middleware;do cat $dir/k8s/$sdenv.env;done
+}
 
 function local_registry {
 # docker run -d -p 5001:5000 --name registry registry:2
