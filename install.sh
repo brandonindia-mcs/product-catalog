@@ -32,11 +32,12 @@ setenv
 ###################################
 
 function configure {
+set -u
 (
 set_registry
 set_keyvalue REPOSITORY $FRONTEND_APPNAME ./frontend/k8s/$sdenv.env
 set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME ./middleware/k8s/$sdenv.env
-set_keyvalue REPOSITORY $BACKEND_PPNAME ./backend/k8s/$sdenv.env
+set_keyvalue REPOSITORY $BACKEND_APPNAME ./backend/k8s/$sdenv.env
 
 GLOBAL_NAMESPACE=$namespace configure_webservice $GLOBAL_VERSION
 GLOBAL_NAMESPACE=$namespace configure_api $GLOBAL_VERSION
