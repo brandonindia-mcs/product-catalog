@@ -34,6 +34,7 @@ setenv
 function configure {
 set -u
 (
+namespace=$1
 set_registry
 set_keyvalue REPOSITORY $FRONTEND_APPNAME ./frontend/k8s/$sdenv.env
 set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME ./middleware/k8s/$sdenv.env
