@@ -303,6 +303,7 @@ logit "kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
 
 export MIDDLEWARE_APPNAME=product-catalog-middleware
 export MIDDLEWARE_API_PORT=3000
+export MIDDLEWARE_API_SERVICE=api-service
 function middleware {
 set -u
 (
@@ -372,6 +373,7 @@ set_keyvalue REPLICAS 2 ./middleware/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB ./middleware/k8s/$sdenv.env
 set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME ./middleware/k8s/$sdenv.env
 set_keyvalue PORT $MIDDLEWARE_API_PORT ./middleware/k8s/$sdenv.env
+set_keyvalue SERVICENAME $MIDDLEWARE_API_SERVICE ./middleware/k8s/$sdenv.env
 set -a
 source ./middleware/k8s/$sdenv.env
 set +a
@@ -389,18 +391,18 @@ set -u
 # formatrun <<'EOF'
 # kubectl apply -f ./middleware/k8s/api.yaml\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
-#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service $MIDDLEWARE_API_PORT:$MIDDLEWARE_API_PORT
+#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE $MIDDLEWARE_API_PORT:$MIDDLEWARE_API_PORT
 
 # EOF
 logit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
-  && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service $MIDDLEWARE_API_PORT:$MIDDLEWARE_API_PORT
+  && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE $MIDDLEWARE_API_PORT:$MIDDLEWARE_API_PORT
 "
 
 # echo -e "
 # kubectl apply -f ./middleware/k8s/api.yaml\\\\\n\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\\\\\n\
-#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service $MIDDLEWARE_API_PORT:$MIDDLEWARE_API_PORT
+#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE $MIDDLEWARE_API_PORT:$MIDDLEWARE_API_PORT
 # "
 
 validate_api
@@ -418,12 +420,12 @@ function validate_api {
 #   && curl -s http://localhost:$MIDDLEWARE_API_PORT/products/1|jq\
 #   && weblist=$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
 #   for pod in ${weblist[@]};do
-#    info "$pod http://api-service:$MIDDLEWARE_API_PORT/health/db"\
-#     && kubectl exec -it $pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/health/db|jq\
-#     && info "$pod http://api-service:$MIDDLEWARE_API_PORT/products"\
-#     && kubectl exec -it $pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products|jq\
-#    && info "$pod http://api-service:$MIDDLEWARE_API_PORT/products/1"\
-#    && kubectl exec -it $pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products/1|jq
+#    info "$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/health/db"\
+#     && kubectl exec -it $pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/health/db|jq\
+#     && info "$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products"\
+#     && kubectl exec -it $pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products|jq\
+#    && info "$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products/1"\
+#    && kubectl exec -it $pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products/1|jq
 #   done
 
 # EOF
@@ -435,12 +437,12 @@ logit "info http://localhost:$MIDDLEWARE_API_PORT/health/db\
   && curl -s http://localhost:$MIDDLEWARE_API_PORT/products/1|jq\
   && weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
   for pod in \${weblist[@]};do
-    info "\$pod http://api-service:$MIDDLEWARE_API_PORT/health/db"\
-    && kubectl exec -it \$pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/health/db|jq\
-    && info "\$pod http://api-service:$MIDDLEWARE_API_PORT/products"\
-    && kubectl exec -it \$pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products|jq\
-    && info "\$pod http://api-service:$MIDDLEWARE_API_PORT/products/1"\
-    && kubectl exec -it \$pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products/1|jq
+    info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/health/db"\
+    && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/health/db|jq\
+    && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products"\
+    && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products|jq\
+    && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products/1"\
+    && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products/1|jq
 done
 "
 
@@ -453,12 +455,12 @@ done
 #   && curl -s http://localhost:$MIDDLEWARE_API_PORT/products/1|jq\\\\\n\
 #   && weblist=\$(kubectl get pods --no-headers -o custom-columns=":metadata.name"|$(which grep) -E ^web) &&\\\\\n\
 # for pod in \${weblist[@]};do
-#   info \"\$pod http://api-service:$MIDDLEWARE_API_PORT/health/db\"\\\\\n\
-#   && kubectl exec -it \$pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/health/db|jq\\\\\n\
-#   && info \"\$pod http://api-service:$MIDDLEWARE_API_PORT/products\"\\\\\n\
-#   && kubectl exec -it \$pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products|jq\\\\\n\
-#   && info \"\$pod http://api-service:$MIDDLEWARE_API_PORT/products/1\"\\\\\n\
-#   && kubectl exec -it \$pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products/1|jq
+#   info \"\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/health/db\"\\\\\n\
+#   && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/health/db|jq\\\\\n\
+#   && info \"\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products\"\\\\\n\
+#   && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products|jq\\\\\n\
+#   && info \"\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products/1\"\\\\\n\
+#   && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products/1|jq
 # done
 # "
 }
@@ -616,7 +618,10 @@ echo -e "$*"
 }
 
 function generate_selfsignedcert {
-openssl req -x509 -newkey rsa:4096 -nodes -keyout key.pem -out cert.pem -days 365 \
-  -subj "/CN=api-service"
-
+set -u
+(
+canonical_name=$1
+openssl req -x509 -newkey rsa:4096 -nodes -keyout $canonical_name-x509-key.pem -out $canonical_name-x509-cert.pem -days 365 \
+  -subj "/CN=$canonical_name"
+)
 }

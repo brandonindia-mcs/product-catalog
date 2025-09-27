@@ -2,10 +2,10 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: $NAMESPACE
-  name: api-service
+  name: $SERVICENAME
 spec:
   ports:
-    - port: 3000
+    - port: $PORT
   selector:
     app: api
 ---
