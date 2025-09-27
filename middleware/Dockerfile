@@ -4,5 +4,6 @@ COPY product-catalog-middleware/package*.json ./
 RUN npm ci
 COPY src/* ./
 # COPY product-catalog-middleware/ ./
-EXPOSE 3000
+ARG EXPOSE_PORT
+EXPOSE $EXPOSE_PORT
 CMD ["node", "index.js"]

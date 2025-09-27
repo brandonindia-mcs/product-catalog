@@ -295,6 +295,7 @@ EOF
 
 
 export MIDDLEWARE_APPNAME=product-catalog-middleware
+export MIDDLEWARE_API_PORT=3000
 function middleware {
 set -u
 (
@@ -335,7 +336,11 @@ echo -e \\nBuilding $appname:$image_version
 set_keyvalue REPOSITORY $appname ./middleware/k8s/$sdenv.env
 
 # formatrun <<'EOF'
-docker build -t $appname:$image_version $NOCACHE middleware\
+docker build $NOCACHE\
+  -t $appname:latest\
+  -t $appname:$image_version\
+  --build-arg EXPOSE_PORT=$MIDDLEWARE_API_PORT\
+  middleware\
   || return 1
 # EOF
 
@@ -356,7 +361,10 @@ set -u
 image_version=$1
 set_keyvalue TAG $image_version ./middleware/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/$sdenv.env
-set_keyvalue REPLICAS 2 ./frontend/k8s/$sdenv.env
+set_keyvalue REPLICAS 2 ./middleware/k8s/$sdenv.env
+set_keyvalue HUB $DOCKERHUB ./middleware/k8s/$sdenv.env
+set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME ./middleware/k8s/$sdenv.env
+set_keyvalue PORT $MIDDLEWARE_API_PORT ./middleware/k8s/$sdenv.env
 set -a
 source ./middleware/k8s/$sdenv.env
 set +a
@@ -374,14 +382,14 @@ set -u
 formatrun <<'EOF'
 kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
-  && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service 3000:3000
+  && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service $MIDDLEWARE_API_PORT:$MIDDLEWARE_API_PORT
 
 EOF
 
 # echo -e "
 # kubectl apply -f ./middleware/k8s/api.yaml\\\\\n\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\\\\\n\
-#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service 3000:3000
+#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service $MIDDLEWARE_API_PORT:$MIDDLEWARE_API_PORT
 # "
 
 validate_api
@@ -391,39 +399,39 @@ validate_api
 
 function validate_api {
 formatrun <<'EOF'
-info http://localhost:3000/health/db\
-  && curl -s http://localhost:3000/health/db|jq\
-  && info http://localhost:3000/products\
-  && curl -s http://localhost:3000/products|jq\
-  && info http://localhost:3000/products/1\
-  && curl -s http://localhost:3000/products/1|jq\
+info http://localhost:$MIDDLEWARE_API_PORT/health/db\
+  && curl -s http://localhost:$MIDDLEWARE_API_PORT/health/db|jq\
+  && info http://localhost:$MIDDLEWARE_API_PORT/products\
+  && curl -s http://localhost:$MIDDLEWARE_API_PORT/products|jq\
+  && info http://localhost:$MIDDLEWARE_API_PORT/products/1\
+  && curl -s http://localhost:$MIDDLEWARE_API_PORT/products/1|jq\
   && weblist=$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
 for pod in ${weblist[@]};do
-  info "$pod http://api-service:3000/health/db"\
-  && kubectl exec -it $pod -- curl -s http://api-service:3000/health/db|jq\
-  && info "$pod http://api-service:3000/products"\
-  && kubectl exec -it $pod -- curl -s http://api-service:3000/products|jq\
-  && info "$pod http://api-service:3000/products/1"\
-  && kubectl exec -it $pod -- curl -s http://api-service:3000/products/1|jq
+  info "$pod http://api-service:$MIDDLEWARE_API_PORT/health/db"\
+  && kubectl exec -it $pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/health/db|jq\
+  && info "$pod http://api-service:$MIDDLEWARE_API_PORT/products"\
+  && kubectl exec -it $pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products|jq\
+  && info "$pod http://api-service:$MIDDLEWARE_API_PORT/products/1"\
+  && kubectl exec -it $pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products/1|jq
 done
 
 EOF
 
 # echo -e "
-# info http://localhost:3000/health/db\\\\\n\
-#   && curl -s http://localhost:3000/health/db|jq\\\\\n\
-#   && info http://localhost:3000/products\\\\\n\
-#   && curl -s http://localhost:3000/products|jq\\\\\n\
-#   && info http://localhost:3000/products/1\\\\\n\
-#   && curl -s http://localhost:3000/products/1|jq\\\\\n\
+# info http://localhost:$MIDDLEWARE_API_PORT/health/db\\\\\n\
+#   && curl -s http://localhost:$MIDDLEWARE_API_PORT/health/db|jq\\\\\n\
+#   && info http://localhost:$MIDDLEWARE_API_PORT/products\\\\\n\
+#   && curl -s http://localhost:$MIDDLEWARE_API_PORT/products|jq\\\\\n\
+#   && info http://localhost:$MIDDLEWARE_API_PORT/products/1\\\\\n\
+#   && curl -s http://localhost:$MIDDLEWARE_API_PORT/products/1|jq\\\\\n\
 #   && weblist=\$(kubectl get pods --no-headers -o custom-columns=":metadata.name"|$(which grep) -E ^web) &&\\\\\n\
 # for pod in \${weblist[@]};do
-#   info \"\$pod http://api-service:3000/health/db\"\\\\\n\
-#   && kubectl exec -it \$pod -- curl -s http://api-service:3000/health/db|jq\\\\\n\
-#   && info \"\$pod http://api-service:3000/products\"\\\\\n\
-#   && kubectl exec -it \$pod -- curl -s http://api-service:3000/products|jq\\\\\n\
-#   && info \"\$pod http://api-service:3000/products/1\"\\\\\n\
-#   && kubectl exec -it \$pod -- curl -s http://api-service:3000/products/1|jq
+#   info \"\$pod http://api-service:$MIDDLEWARE_API_PORT/health/db\"\\\\\n\
+#   && kubectl exec -it \$pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/health/db|jq\\\\\n\
+#   && info \"\$pod http://api-service:$MIDDLEWARE_API_PORT/products\"\\\\\n\
+#   && kubectl exec -it \$pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products|jq\\\\\n\
+#   && info \"\$pod http://api-service:$MIDDLEWARE_API_PORT/products/1\"\\\\\n\
+#   && kubectl exec -it \$pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products/1|jq
 # done
 # "
 }

@@ -42,7 +42,7 @@ spec:
             - name: PGPASSWORD
               value: catalog
           ports:
-            - containerPort: 3000
+            - containerPort: $PORT
           # readinessProbe:
           #   httpGet:
           #     path: /health    # Adjust to your API's health endpoint
