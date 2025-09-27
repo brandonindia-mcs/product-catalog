@@ -255,12 +255,16 @@ envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
 ###################################
 function k8s_webservice {
 set -u
-formatrun <<'EOF'
-kubectl apply -f ./frontend/k8s/web.yaml\
+# formatrun <<'EOF'
+# kubectl apply -f ./frontend/k8s/web.yaml\
+#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\
+#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
+
+# EOF
+logit "kubectl apply -f ./frontend/k8s/web.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\
   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
-
-EOF
+"
 
 # echo -e "
 # kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
@@ -279,11 +283,14 @@ function k8s_webservice_update {
 export $(grep -v '^#' ./frontend/k8s/$sdenv.env | xargs)
 set -u
 configure_webservice $TAG
-formatrun <<'EOF'
-kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
-  && kubectl rollout status deployment/web
+# formatrun <<'EOF'
+# kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
+#   && kubectl rollout status deployment/web
 
-EOF
+# EOF
+logit "kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
+  && kubectl rollout status deployment/web
+"
 
 # echo -e "
 # kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\\\\\n\
@@ -379,12 +386,16 @@ envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
 ###################################
 function k8s_api {
 set -u
-formatrun <<'EOF'
-kubectl apply -f ./middleware/k8s/api.yaml\
+# formatrun <<'EOF'
+# kubectl apply -f ./middleware/k8s/api.yaml\
+#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
+#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service $MIDDLEWARE_API_PORT:$MIDDLEWARE_API_PORT
+
+# EOF
+logit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service $MIDDLEWARE_API_PORT:$MIDDLEWARE_API_PORT
-
-EOF
+"
 
 # echo -e "
 # kubectl apply -f ./middleware/k8s/api.yaml\\\\\n\
@@ -398,24 +409,40 @@ validate_api
 
 
 function validate_api {
-formatrun <<'EOF'
-info http://localhost:$MIDDLEWARE_API_PORT/health/db\
+# formatrun <<'EOF'
+# info http://localhost:$MIDDLEWARE_API_PORT/health/db\
+#   && curl -s http://localhost:$MIDDLEWARE_API_PORT/health/db|jq\
+#   && info http://localhost:$MIDDLEWARE_API_PORT/products\
+#   && curl -s http://localhost:$MIDDLEWARE_API_PORT/products|jq\
+#   && info http://localhost:$MIDDLEWARE_API_PORT/products/1\
+#   && curl -s http://localhost:$MIDDLEWARE_API_PORT/products/1|jq\
+#   && weblist=$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
+#   for pod in ${weblist[@]};do
+#    info "$pod http://api-service:$MIDDLEWARE_API_PORT/health/db"\
+#     && kubectl exec -it $pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/health/db|jq\
+#     && info "$pod http://api-service:$MIDDLEWARE_API_PORT/products"\
+#     && kubectl exec -it $pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products|jq\
+#    && info "$pod http://api-service:$MIDDLEWARE_API_PORT/products/1"\
+#    && kubectl exec -it $pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products/1|jq
+#   done
+
+# EOF
+logit "info http://localhost:$MIDDLEWARE_API_PORT/health/db\
   && curl -s http://localhost:$MIDDLEWARE_API_PORT/health/db|jq\
   && info http://localhost:$MIDDLEWARE_API_PORT/products\
   && curl -s http://localhost:$MIDDLEWARE_API_PORT/products|jq\
   && info http://localhost:$MIDDLEWARE_API_PORT/products/1\
   && curl -s http://localhost:$MIDDLEWARE_API_PORT/products/1|jq\
-  && weblist=$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
-for pod in ${weblist[@]};do
-  info "$pod http://api-service:$MIDDLEWARE_API_PORT/health/db"\
-  && kubectl exec -it $pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/health/db|jq\
-  && info "$pod http://api-service:$MIDDLEWARE_API_PORT/products"\
-  && kubectl exec -it $pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products|jq\
-  && info "$pod http://api-service:$MIDDLEWARE_API_PORT/products/1"\
-  && kubectl exec -it $pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products/1|jq
+  && weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
+  for pod in \${weblist[@]};do
+    info "\$pod http://api-service:$MIDDLEWARE_API_PORT/health/db"\
+    && kubectl exec -it \$pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/health/db|jq\
+    && info "\$pod http://api-service:$MIDDLEWARE_API_PORT/products"\
+    && kubectl exec -it \$pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products|jq\
+    && info "\$pod http://api-service:$MIDDLEWARE_API_PORT/products/1"\
+    && kubectl exec -it \$pod -- curl -s http://api-service:$MIDDLEWARE_API_PORT/products/1|jq
 done
-
-EOF
+"
 
 # echo -e "
 # info http://localhost:$MIDDLEWARE_API_PORT/health/db\\\\\n\
@@ -496,11 +523,15 @@ envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 function k8s_postgres {
 set -u
 
-formatrun <<'EOF'
-kubectl apply -f ./backend/k8s/postgres.yaml\
-  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
+# formatrun <<'EOF'
+# kubectl apply -f ./backend/k8s/postgres.yaml\
+#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
 
-EOF
+# EOF
+logit "kubectl apply -f ./backend/k8s/postgres.yaml\
+  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
+"
+
 
 # echo -e "
 # kubectl apply -f ./backend/k8s/postgres.yaml\\\\\n\
