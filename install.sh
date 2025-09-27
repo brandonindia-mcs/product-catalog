@@ -95,25 +95,25 @@ install_postgres $1\
 
 function install_webservice {
 set -u
-info ${FUNCNAME[0]}: callling build_frontend $1\
+info ${FUNCNAME[0]}: calling build_frontend $1\
   && build_frontend $1\
-  && info ${FUNCNAME[0]}: callling configure_webservice $1\
+  && info ${FUNCNAME[0]}: calling configure_webservice $1\
   && configure_webservice $1
 }
 
 function install_api {
 set -u
-info ${FUNCNAME[0]}: callling build_middleware $1\
+info ${FUNCNAME[0]}: calling build_middleware $1\
   && build_middleware $1\
-  && info ${FUNCNAME[0]}: callling configure_api $1\
+  && info ${FUNCNAME[0]}: calling configure_api $1\
   && configure_api $1
 }
 
 function install_postgres {
 set -u
-info ${FUNCNAME[0]}: callling build_backend $1\
+info ${FUNCNAME[0]}: calling build_backend $1\
   && build_backend $1\
-  && info ${FUNCNAME[0]}: callling configure_postgres $1\
+  && info ${FUNCNAME[0]}: calling configure_postgres $1\
   && configure_postgres $1
 }
 
@@ -161,6 +161,9 @@ function watch_productcatelog {
 function print_k8s_env {
 for dir in frontend backend middleware;do cat $dir/k8s/$sdenv.env;done
 }
+function clean_productcatalog {
+for dir in frontend/.nvm middleware/.nvm frontend/product-catalog-frontend middleware/product-catalog-middleware;do echo cleaning $dir && rm -rf $dir;done
+}
 
 function local_registry {
 # docker run -d -p 5001:5000 --name registry registry:2
@@ -177,6 +180,9 @@ local_registry
 
 export FRONTEND_APPNAME=product-catalog-frontend
 function frontend {
+set -u
+(
+namespace=$GLOBAL_NAMESPACE
 pushd ./frontend
 export NVM_HOME=$(pwd)/.nvm
 export NVM_DIR=$(pwd)/.nvm
@@ -194,7 +200,8 @@ npm install react@18.2.0 react-dom@18.2.0 react-router-dom@6 axios --legacy-peer
 npm install
 popd
 info ${FUNCNAME[0]}: callling install_webservice $GLOBAL_VERSION
-install_webservice $GLOBAL_VERSION
+GLOBAL_NAMESPACE=$namespace install_webservice $GLOBAL_VERSION
+)
 }
 
 function build_frontend {
@@ -252,6 +259,7 @@ formatrun <<'EOF'
 kubectl apply -f ./frontend/k8s/web.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\
   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
+
 EOF
 
 # echo -e "
@@ -274,6 +282,7 @@ configure_webservice $TAG
 formatrun <<'EOF'
 kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
   && kubectl rollout status deployment/web
+
 EOF
 
 # echo -e "
@@ -287,6 +296,9 @@ EOF
 
 export MIDDLEWARE_APPNAME=product-catalog-middleware
 function middleware {
+set -u
+(
+namespace=$GLOBAL_NAMESPACE
 pushd ./middleware
 export NVM_HOME=$(pwd)/.nvm
 export NVM_DIR=$(pwd)/.nvm
@@ -306,8 +318,8 @@ cp ../package.json .
 npm install
 popd
 info ${FUNCNAME[0]}: callling install_api $GLOBAL_VERSION
-install_api $GLOBAL_VERSION
-
+GLOBAL_NAMESPACE=$namespace install_api $GLOBAL_VERSION
+)
 }
 
 function build_middleware {
@@ -363,6 +375,7 @@ formatrun <<'EOF'
 kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/api-service 3000:3000
+
 EOF
 
 # echo -e "
@@ -393,6 +406,7 @@ for pod in ${weblist[@]};do
   && info "$pod http://api-service:3000/products/1"\
   && kubectl exec -it $pod -- curl -s http://api-service:3000/products/1|jq
 done
+
 EOF
 
 # echo -e "
@@ -417,7 +431,11 @@ EOF
 
 export BACKEND_APPNAME=product-catalog-backend
 function backend {
-install_postgres $GLOBAL_VERSION
+set -u
+(
+namespace=$GLOBAL_NAMESPACE
+GLOBAL_NAMESPACE=$namespace install_postgres $GLOBAL_VERSION
+)
 }
 
 function build_backend {
@@ -473,6 +491,7 @@ set -u
 formatrun <<'EOF'
 kubectl apply -f ./backend/k8s/postgres.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
+
 EOF
 
 # echo -e "
