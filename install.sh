@@ -102,7 +102,8 @@ set -u
 info ${FUNCNAME[0]}: calling build_image_frontend $1\
   && build_image_frontend $1\
   && info ${FUNCNAME[0]}: calling configure_webservice $1\
-  && configure_webservice $1
+  && configure_webservice $1\
+  && k8s_webservice
 }
 
 function install_api {
@@ -110,7 +111,8 @@ set -u
 info ${FUNCNAME[0]}: calling build_image_middleware $1\
   && build_image_middleware $1\
   && info ${FUNCNAME[0]}: calling configure_api $1\
-  && configure_api $1
+  && configure_api $1\
+  && k8s_api
 }
 
 function install_postgres {
@@ -118,7 +120,8 @@ set -u
 info ${FUNCNAME[0]}: calling build_image_backend $1\
   && build_image_backend $1\
   && info ${FUNCNAME[0]}: calling configure_postgres $1\
-  && configure_postgres $1
+  && configure_postgres $1\
+  && k8s_postgres
 }
 
 function k8s {
