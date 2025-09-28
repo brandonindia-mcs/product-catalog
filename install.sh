@@ -3,6 +3,7 @@ GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 alias stamp="echo \$(date +%Y%m%dT%H%M%S)"
 
 ##########  CHEATSHEET  ###########
+# GLOBAL_NAMESPACE=default (middleware SAMETAG && build_image_middleware SAMETAG && GLOBAL_NAMESPACE=default k8s_api)
 # GLOBAL_NAMESPACE=default install_postgres `stamp` && GLOBAL_NAMESPACE=default k8s_postgres
 # GLOBAL_NAMESPACE=default k8s_webservice_update
 # 
@@ -215,9 +216,9 @@ GLOBAL_NAMESPACE=$namespace install_webservice $GLOBAL_VERSION
 }
 
 function build_image_frontend {
-set -u
 (
 image_version=$1
+set -u
 if [ -z "$image_version" ];then image_version=latest;fi
 if [ ! -d ./frontend ];then echo must be at project root: $(pwd) && return 1;fi
 NOCACHE=
@@ -230,7 +231,6 @@ set_keyvalue REPOSITORY $appname ./frontend/k8s/$sdenv.env
 cp -rf ./frontend/src ./frontend/$appname/
 cp -rf ./frontend/$sdenv.env ./frontend/$appname/.env
 docker build $NOCACHE\
-  -t $appname:latest\
   -t $appname:$image_version\
   frontend\
   || return 1
@@ -238,10 +238,11 @@ docker build $NOCACHE\
 
 # formatrun <<'EOF'
 set_registry
-docker tag $appname $DOCKERHUB/$appname
 docker tag $appname:$image_version $DOCKERHUB/$appname:$image_version
-docker push $DOCKERHUB/$appname
-docker push $DOCKERHUB/$appname:$image_version 
+docker push $DOCKERHUB/$appname:$image_version
+
+# docker tag $appname $DOCKERHUB/$appname
+# docker push $DOCKERHUB/$appname
 # EOF
 
 echo Pushed $DOCKERHUB/$appname:$image_version
@@ -346,9 +347,9 @@ GLOBAL_NAMESPACE=$namespace install_api $GLOBAL_VERSION
 }
 
 function build_image_middleware {
-set -u
 (
 image_version=$1
+set -u
 if [ -z "$image_version" ];then image_version=latest;fi
 if [ ! -d ./middleware ];then echo must be at project root && return 1;fi
 NOCACHE=
@@ -359,7 +360,6 @@ set_keyvalue REPOSITORY $appname ./middleware/k8s/$sdenv.env
 
 # formatrun <<'EOF'
 docker build $NOCACHE\
-  -t $appname:latest\
   -t $appname:$image_version\
   --build-arg EXPOSE_PORT=$MIDDLEWARE_API_PORT\
   middleware\
@@ -367,10 +367,12 @@ docker build $NOCACHE\
 # EOF
 
 # formatrun <<'EOF'
-docker tag $appname $DOCKERHUB/$appname
+set_registry
 docker tag $appname:$image_version $DOCKERHUB/$appname:$image_version
-docker push $DOCKERHUB/$appname
 docker push $DOCKERHUB/$appname:$image_version
+
+# docker tag $appname $DOCKERHUB/$appname
+# docker push $DOCKERHUB/$appname
 # EOF
 
 echo Pushed $DOCKERHUB/$appname:$image_version
@@ -457,7 +459,7 @@ logit "info http://localhost:$MIDDLEWARE_API_PORT/health/db\
     && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products|jq\
     && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products/1"\
     && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_PORT/products/1|jq
-done
+  done
 "
 
 # echo -e "
