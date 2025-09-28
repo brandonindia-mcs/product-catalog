@@ -490,9 +490,9 @@ GLOBAL_NAMESPACE=$namespace install_postgres $GLOBAL_VERSION
 }
 
 function build_image_backend {
-set -u
 (
 image_version=$1
+set -u
 if [ -z "$image_version" ];then image_version=latest;fi
 if [ ! -d ./backend ];then echo must be at project root && return 1;fi
 NOCACHE=
@@ -502,15 +502,19 @@ echo -e \\nBuilding $appname:$image_version
 set_keyvalue REPOSITORY $appname ./backend/k8s/$sdenv.env
 
 # formatrun <<'EOF'
-docker build -t $appname:$image_version $NOCACHE backend\
+docker build $NOCACHE\
+  -t $appname:$image_version\
+  backend\
   || return 1
 # EOF
 
 # formatrun <<'EOF'
-docker tag $appname $DOCKERHUB/$appname
+set_registry
 docker tag $appname:$image_version $DOCKERHUB/$appname:$image_version
-docker push $DOCKERHUB/$appname
 docker push $DOCKERHUB/$appname:$image_version
+
+# docker tag $appname $DOCKERHUB/$appname
+# docker push $DOCKERHUB/$appname
 # EOF
 
 echo Pushed $DOCKERHUB/$appname:$image_version
