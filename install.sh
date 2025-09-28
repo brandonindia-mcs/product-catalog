@@ -37,8 +37,8 @@ fi
 setenv
 
 function configure {
-set -u
 (
+set -u
 image_version=$1
 set_registry
 set_keyvalue REPOSITORY $FRONTEND_APPNAME ./frontend/k8s/$sdenv.env
@@ -55,13 +55,29 @@ GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $image_version
 # configure_default
 ###################################
 function configure_default {
+(
 GLOBAL_NAMESPACE=default configure $GLOBAL_VERSION
+)
+}
+
+function new_product_catalog_default {
+##########  RUN COMMAND  ##########
+# new_product_catalog_default
+###################################
+(
+set_registry
+GLOBAL_NAMESPACE=default backend\
+  && GLOBAL_NAMESPACE=default middleware\
+  && GLOBAL_NAMESPACE=default frontend\
+  && GLOBAL_NAMESPACE=default k8s
+)
 }
 
 function new_product_catalog {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default new_product_catalog
 ###################################
+(
 set_registry
 info ${FUNCNAME[0]}: callling backend $GLOBAL_VERSION\
   && backend\
@@ -71,82 +87,97 @@ info ${FUNCNAME[0]}: callling backend $GLOBAL_VERSION\
   && frontend\
   && info ${FUNCNAME[0]}: callling k8s $GLOBAL_VERSION\
   && k8s
+)
 }
 
 function install_product_catalog {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default install_product_catalog [IMAGE_VERSION]
 ###################################
+(
 set -u
 set_registry
 install_postgres $1\
   && install_api $1\
   && install_webservice $1\
   && k8s
+)
 }
 
 function update_product_catalog {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default update_product_catalog [IMAGE_VERSION]
 ###################################
+(
 set -u
 set_registry
 install_postgres $1\
   && install_api $1\
   && install_webservice $1\
   && k8s_update
+)
 }
 
 function install_webservice {
+(
 set -u
 info ${FUNCNAME[0]}: calling build_image_frontend $1\
   && build_image_frontend $1\
   && info ${FUNCNAME[0]}: calling configure_webservice $1\
   && configure_webservice $1\
   && k8s_webservice
+)
 }
 
 function install_api {
+(
 set -u
 info ${FUNCNAME[0]}: calling build_image_middleware $1\
   && build_image_middleware $1\
   && info ${FUNCNAME[0]}: calling configure_api $1\
   && configure_api $1\
   && k8s_api
+)
 }
 
 function install_postgres {
+(
 set -u
 info ${FUNCNAME[0]}: calling build_image_backend $1\
   && build_image_backend $1\
   && info ${FUNCNAME[0]}: calling configure_postgres $1\
   && configure_postgres $1\
   && k8s_postgres
+)
 }
 
 function k8s {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=<namespace> k8s
 ###################################
+(
 set_registry
 k8s_postgres\
   && k8s_api\
   && k8s_webservice
+)
 }
 
 function k8s_update {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=<namespace> k8s_update
 ###################################
+(
 set_registry
 k8s_postgres\
   && k8s_api\
   && k8s_webservice_update
+)
 }
 
 function set_keyvalue {
-set -u
 (
+set -u
 key=$1; value=$2; path=$3
 if [ ! -f "$path" ]; then
   touch "$path"
@@ -174,21 +205,23 @@ for dir in frontend/.nvm middleware/.nvm frontend/product-catalog-frontend middl
 
 function local_registry {
 # docker run -d -p 5001:5000 --name registry registry:2
-docker run -d -p 5001:5000 --name registry registry:2 2>/dev/null || docker start registry
+echo REGISTRY START: $(docker run -d -p 5001:5000 --name registry registry:2 2>/dev/null || docker start registry >/dev/null && echo -n registry@$DOCKERHUB)
 }
 
 function set_registry {
+(
 set -u
 set_keyvalue HUB $DOCKERHUB ./frontend/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB ./middleware/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB ./backend/k8s/$sdenv.env
 local_registry
+)
 }
 
 export FRONTEND_APPNAME=product-catalog-frontend
 function frontend {
-set -u
 (
+set -u
 namespace=$GLOBAL_NAMESPACE
 pushd ./frontend
 export NVM_HOME=$(pwd)/.nvm
@@ -253,8 +286,8 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 }
 
 function configure_webservice {
-set -u
 (
+set -u
 image_version=$1
 set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
@@ -272,6 +305,7 @@ envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
 # GLOBAL_NAMESPACE=default k8s_webservice
 ###################################
 function k8s_webservice {
+(
 set -u
 # formatrun <<'EOF'
 # kubectl apply -f ./frontend/k8s/web.yaml\
@@ -289,7 +323,7 @@ logit "kubectl apply -f ./frontend/k8s/web.yaml\
 #  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\\\\\n\
 #  && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
 # "
-
+)
 }
 
 
@@ -323,8 +357,8 @@ export MIDDLEWARE_APPNAME=product-catalog-middleware
 export MIDDLEWARE_API_PORT=3000
 export MIDDLEWARE_API_SERVICE=api-service
 function middleware {
-set -u
 (
+set -u
 namespace=$GLOBAL_NAMESPACE
 pushd ./middleware
 export NVM_HOME=$(pwd)/.nvm
@@ -383,8 +417,8 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 }
 
 function configure_api {
-set -u
 (
+set -u
 image_version=$1
 set_keyvalue TAG $image_version ./middleware/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/$sdenv.env
@@ -406,6 +440,7 @@ envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
 # GLOBAL_NAMESPACE=default k8s_api
 ###################################
 function k8s_api {
+(
 set -u
 # formatrun <<'EOF'
 # kubectl apply -f ./middleware/k8s/api.yaml\
@@ -426,6 +461,7 @@ logit "kubectl apply -f ./middleware/k8s/api.yaml\
 
 validate_api
 # kubectl rollout restart deployment api
+)
 }
 
 
@@ -487,8 +523,8 @@ logit "info http://localhost:$MIDDLEWARE_API_PORT/health/db\
 
 export BACKEND_APPNAME=product-catalog-backend
 function backend {
-set -u
 (
+set -u
 namespace=$GLOBAL_NAMESPACE
 GLOBAL_NAMESPACE=$namespace install_postgres $GLOBAL_VERSION
 )
@@ -528,8 +564,8 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 
 
 function configure_postgres {
-set -u
 (
+set -u
 image_version=$1
 set_keyvalue TAG $image_version ./backend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./backend/k8s/$sdenv.env
@@ -546,6 +582,7 @@ envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 # GLOBAL_NAMESPACE=default k8s_postgres
 ###################################
 function k8s_postgres {
+(
 set -u
 
 # formatrun <<'EOF'
@@ -563,12 +600,13 @@ logit "kubectl apply -f ./backend/k8s/postgres.yaml\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
 # "
 # kubectl rollout restart deployment postgres
+)
 }
 
 
 function pgadmin() {
-set -u
 (
+set -u
 image_version=$1
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./opt/pgadmin/k8s/$sdenv.env
 set_keyvalue TAG $image_version ./opt/pgadmin/k8s/$sdenv.env
@@ -578,7 +616,7 @@ set +a
 # envsubst < ./backend/k8s/postgres.template.yaml | kubectl apply -f -
 envsubst >./opt/pgadmin/k8s/pgadmin.yaml <./opt/pgadmin/k8s/pgadmin.template.yaml
 # kubectl rollout restart deployment api
-)
+
 # kubectl apply -f ./opt/pgadmin/k8s/pgamin.yaml -n $GLOBAL_NAMESPACE\
 #   && kubectl port-forward svc/pgadmin 5050:80 -n $GLOBAL_NAMESPACE
 
@@ -586,6 +624,7 @@ echo -e "
 kubectl apply -f ./opt/pgadmin/k8s/pgamin.yaml -n $GLOBAL_NAMESPACE\\\\\n\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=pgadmin --timeout=30s\\\\\n\
   && kubectl port-forward svc/pgadmin 8080:80 -n $GLOBAL_NAMESPACE"
+)
 }
 
 function install_nvm() {
@@ -649,8 +688,8 @@ echo -e "$*"
 }
 
 function generate_selfsignedcert {
-set -u
 (
+set -u
 canonical_name=$1
 openssl req -x509 -newkey rsa:4096 -nodes -keyout $canonical_name-x509-key.pem -out $canonical_name-x509-cert.pem -days 365 \
   -subj "/CN=$canonical_name"
