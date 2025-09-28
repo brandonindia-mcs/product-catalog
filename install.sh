@@ -1,5 +1,6 @@
 #!/bin/bash
 GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
+alias stamp="echo \$(date +%Y%m%dT%H%M%S)"
 
 ##########  CHEATSHEET  ###########
 # GLOBAL_NAMESPACE=default install_postgres `stamp` && GLOBAL_NAMESPACE=default k8s_postgres
@@ -97,24 +98,24 @@ install_postgres $1\
 
 function install_webservice {
 set -u
-info ${FUNCNAME[0]}: calling build_frontend $1\
-  && build_frontend $1\
+info ${FUNCNAME[0]}: calling build_image_frontend $1\
+  && build_image_frontend $1\
   && info ${FUNCNAME[0]}: calling configure_webservice $1\
   && configure_webservice $1
 }
 
 function install_api {
 set -u
-info ${FUNCNAME[0]}: calling build_middleware $1\
-  && build_middleware $1\
+info ${FUNCNAME[0]}: calling build_image_middleware $1\
+  && build_image_middleware $1\
   && info ${FUNCNAME[0]}: calling configure_api $1\
   && configure_api $1
 }
 
 function install_postgres {
 set -u
-info ${FUNCNAME[0]}: calling build_backend $1\
-  && build_backend $1\
+info ${FUNCNAME[0]}: calling build_image_backend $1\
+  && build_image_backend $1\
   && info ${FUNCNAME[0]}: calling configure_postgres $1\
   && configure_postgres $1
 }
@@ -213,7 +214,7 @@ GLOBAL_NAMESPACE=$namespace install_webservice $GLOBAL_VERSION
 )
 }
 
-function build_frontend {
+function build_image_frontend {
 set -u
 (
 image_version=$1
@@ -344,7 +345,7 @@ GLOBAL_NAMESPACE=$namespace install_api $GLOBAL_VERSION
 )
 }
 
-function build_middleware {
+function build_image_middleware {
 set -u
 (
 image_version=$1
@@ -488,7 +489,7 @@ GLOBAL_NAMESPACE=$namespace install_postgres $GLOBAL_VERSION
 )
 }
 
-function build_backend {
+function build_image_backend {
 set -u
 (
 image_version=$1
