@@ -15,10 +15,12 @@ function green { println '\e[32m%s\e[0m' "$*"; }
 function yellow { println '\e[33m%s\e[0m' "$*"; }
 function blue { println '\e[34m%s\e[0m' "$*"; }                                                                                    
 function red { println '\e[31m%s\e[0m' "$*"; }
-function info { echo; echo "$(tput setaf 0;tput setab 7)$(date "+%Y-%m-%d %H:%M:%S") INFO: ${*}$(tput sgr 0)"; }
-function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS: ${*}$(tput sgr 0)"; }
-function fail { echo; echo "$(tput setaf 0;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL: ${*}$(tput sgr 0)"; }
-function abort  { red "ABORT($1): $(date "+%Y-%m-%d %H:%M:%S")" && echo -e "\t${@:2}" && read -p "press CTRL+C or die" x && exit 1; }
+function info { echo; echo "$(tput setaf 0;tput setab 7)$(date "+%Y-%m-%d %H:%M:%S") INFO:$(tput sgr 0) ${*}"; }
+function warn { echo; echo "$(tput setaf 1;tput setab 3)$(date "+%Y-%m-%d %H:%M:%S") WARN:$(tput sgr 0) ${*}"; }
+function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS:$(tput sgr 0) ${*}"; }
+function fail { echo; echo "$(tput setaf 8;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL:$(tput sgr 0) ${*}"; }
+function abort_hard  { red "ABORT($1): $(date "+%Y-%m-%d %H:%M:%S")" && echo -e "\t${@:2}\n" && read -p "press CTRL+C or die!" ; exit 1; }
+function abort       { red "ABORT($1): $(date "+%Y-%m-%d %H:%M:%S")" && echo -e "\t${@:2}\n"; }
 
 ##################  SETUP ENV  ##################
 function setenv {
@@ -27,7 +29,7 @@ set -a
 source ./$sdenv.env
 set +a
 else
-abort "install.sh:$LINENO" ${FUNCNAME[0]}: file $sdenv.env not found in $PWD
+abort_hard "install.sh:$LINENO" ${FUNCNAME[0]}: file $sdenv.env not found in $PWD
 fi
 }
 setenv
@@ -194,8 +196,15 @@ if [ -d $NVM_DIR ];then
     installnode;
     nodever 18;
 fi
-npx -y create-react-app $FRONTEND_APPNAME && cd $_
-cp ../package.json .
+(
+if [ -d $FRONTEND_APPNAME ];then
+warn $(yellow ${FUNCNAME[0]}: $FRONTEND_APPNAME found, not craeting a new react app)
+return 1
+fi
+echo && blue "------------------ NEW REACT APP ------------------" && echo
+npx -y create-react-app $FRONTEND_APPNAME
+)
+cd $FRONTEND_APPNAME && cp ../package.json .
 npm install react@18.2.0 react-dom@18.2.0 react-router-dom@6 axios --legacy-peer-deps
 npm install
 popd
@@ -209,7 +218,7 @@ set -u
 (
 image_version=$1
 if [ -z "$image_version" ];then image_version=latest;fi
-if [ ! -d ./frontend ];then echo must be at project root && return 1;fi
+if [ ! -d ./frontend ];then echo must be at project root: $(pwd) && return 1;fi
 NOCACHE=
 if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 appname=$FRONTEND_APPNAME
@@ -219,11 +228,15 @@ set_keyvalue REPOSITORY $appname ./frontend/k8s/$sdenv.env
 # formatrun <<'EOF'
 cp -rf ./frontend/src ./frontend/$appname/
 cp -rf ./frontend/$sdenv.env ./frontend/$appname/.env
-docker build -t $appname:$image_version $NOCACHE frontend\
+docker build $NOCACHE\
+  -t $appname:latest\
+  -t $appname:$image_version\
+  frontend\
   || return 1
 # EOF
 
 # formatrun <<'EOF'
+set_registry
 docker tag $appname $DOCKERHUB/$appname
 docker tag $appname:$image_version $DOCKERHUB/$appname:$image_version
 docker push $DOCKERHUB/$appname
@@ -566,30 +579,38 @@ kubectl apply -f ./opt/pgadmin/k8s/pgamin.yaml -n $GLOBAL_NAMESPACE\\\\\n\
 }
 
 function install_nvm() {
+  set +u
+  NVM_DIR="${NVM_DIR:-$(pwd)/.nvm}"
   echo && blue "------------------ INSTALL NVM ------------------" && echo
+  echo installing mvn @ $NVM_DIR
   git clone https://github.com/nvm-sh/nvm.git $NVM_DIR
   echo $([ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && [ -s $NVM_DIR/bash_completion ] && . $NVM_DIR/bash_completion && nvm install --lts)
 }
 
 function installnode() {
+  set -u
+  if [ ! -d $NVM_DIR ];then echo no NVM_DIR: $NVM_DIR && return 1;fi
   echo && blue "------------------ NODE VIA NVM ------------------" && echo
   cyan "Updating nvm:" && echo $(pushd $NVM_DIR && git pull && popd || popd)
   if  ! command -v nvm >/dev/null; then
   [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
   [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
   fi
+  nodever
 }
 
 function nodever() {
+  set +u
   if [ ! -z $1 ]; then
     nvm install ${1} >/dev/null 2>&1 && nvm use ${_} > /dev/null 2>&1\
-      && nvm alias default ${_} > /dev/null 2>&1; blue "Node:"; node -v; else
+      && nvm alias default ${_} > /dev/null 2>&1; nodever; else
     yellow "INFORMATIONAL: Use nodever to install or switch node versions:" && echo -e "\tusage: nodever [ver]"
-    blue "Node:" && node -v
-    blue "npm:" && npm -v
-    blue "nvm:" && nvm -v
+    blue "Node: $(node -v)"
+    blue "npm: $(npm -v)"
+    blue "nvm: $(nvm -v)"
   fi
 }
+
 function getyarn() {
   echo && blue "------------------ YARN - NEEDS NVM ------------------" && echo
   if ! command -v yarn >/dev/null 2>&1; then grey "Getting yarn: " && npm install --global yarn >/dev/null; fi
