@@ -196,16 +196,24 @@ function set_keyvalue {
 (
 set -u
 key=$1; value=$2; path=$3
+### IF PATH DOES NOT EXIST
+### THEN CREATE PATH
 if [ ! -f "$path" ]; then
   touch "$path"
-fi
-if [ -f "$path" ] && [ "$(tail -c1 "$path" | wc -l)" -eq 0 ]; then
+### ELSE IF PATH EXISTS, FILE HAS SIZE, AND DOES NOT END IN A NEW LINE
+### APPEND NEWLINE
+elif [[ -e "$path" && -s "$path" && "$(tail -c1 "$path" | wc -l)" -eq 0 ]]; then
   echo >>"$path"
 fi
+### IF PATH IS WRITABLE
+### THEN IF KEY EXISTS, THEN OVERWRITE VALUE
+### OTHERWISE INSERT KEY=VALUE
+if [ -w "$path" ];then
 if grep -q "^$key=" "$path"; then 
   sed -i "s/^$key=.*/$key=$value/" "$path"
 else
   echo "$key=$value" >>"$path"
+  fi
 fi
 )
 }
