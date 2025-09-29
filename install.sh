@@ -12,7 +12,9 @@ export POSTGRE_SQL_RUN_PORT=5432
 
 ##########  CHEATSHEET  ###########
 # GLOBAL_NAMESPACE=default (middleware SAMETAG && build_image_middleware SAMETAG && GLOBAL_NAMESPACE=default k8s_api)
-# GLOBAL_NAMESPACE=default install_postgres `stamp` && GLOBAL_NAMESPACE=default k8s_postgres
+# GLOBAL_NAMESPACE=default install_postgres `stamp`
+# GLOBAL_NAMESPACE=default install_api `stamp`
+# GLOBAL_NAMESPACE=default install_frontenc `stamp`
 # GLOBAL_NAMESPACE=default k8s_webservice_update
 # GLOBAL_NAMESPACE=default install_api `stamp`
 # configure_default && GLOBAL_NAMESPACE=default k8s_api
@@ -126,8 +128,10 @@ function install_webservice {
 # GLOBAL_NAMESPACE=$namespace install_webservice $image_tag
 ###################################
 (
-set -u
-info ${FUNCNAME[0]}: calling build_image_frontend $1\
+set -u\
+  && info ${FUNCNAME[0]}: calling frontend\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE frontend\
+  && info ${FUNCNAME[0]}: calling build_image_frontend $1\
   && build_image_frontend $1\
   && info ${FUNCNAME[0]}: calling configure_webservice $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $1\
@@ -140,8 +144,10 @@ function install_api {
 # GLOBAL_NAMESPACE=$namespace install_api $image_tag
 ###################################
 (
-set -u
-info ${FUNCNAME[0]}: calling build_image_middleware $1\
+set -u\
+  && info ${FUNCNAME[0]}: calling middleware\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE middleware\
+  && info ${FUNCNAME[0]}: calling build_image_middleware $1\
   && build_image_middleware $1\
   && info ${FUNCNAME[0]}: calling configure_api $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $1\
@@ -154,8 +160,10 @@ function install_postgres {
 # GLOBAL_NAMESPACE=$namespace install_postgres $image_tag
 ###################################
 (
-set -u
-info ${FUNCNAME[0]}: calling build_image_backend $1\
+set -u\
+  && info ${FUNCNAME[0]}: calling backend\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE backend\
+  && info ${FUNCNAME[0]}: calling build_image_backend $1\
   && build_image_backend $1\
   && info ${FUNCNAME[0]}: calling configure_postgres $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $1\
@@ -319,8 +327,6 @@ cd $FRONTEND_APPNAME && cp ../package.json .
 npm install react@18.2.0 react-dom@18.2.0 react-router-dom@6 axios --legacy-peer-deps
 npm install
 popd
-info ${FUNCNAME[0]}: callling install_webservice $GLOBAL_VERSION
-GLOBAL_NAMESPACE=$namespace install_webservice $GLOBAL_VERSION
 )
 }
 
@@ -438,8 +444,6 @@ cp -r ../src .
 cp -r ../certs .
 npm install
 popd
-info ${FUNCNAME[0]}: callling install_api $GLOBAL_VERSION
-GLOBAL_NAMESPACE=$namespace install_api $GLOBAL_VERSION
 )
 }
 
@@ -579,8 +583,6 @@ logit "info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\
 function backend {
 (
 set -u
-namespace=$GLOBAL_NAMESPACE
-GLOBAL_NAMESPACE=$namespace install_postgres $GLOBAL_VERSION
 )
 }
 
