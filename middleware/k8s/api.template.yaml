@@ -5,7 +5,7 @@ metadata:
   name: $SERVICENAME
 spec:
   ports:
-    - port: $PORT
+    - port: $RUNPORT
   selector:
     app: api
 ---
@@ -54,7 +54,7 @@ spec:
             - name: PGPASSWORD
               value: catalog
           ports:
-            - containerPort: $PORT
+            - containerPort: $RUNPORT
           # readinessProbe:
           #   httpGet:
           #     path: /health    # Adjust to your API's health endpoint

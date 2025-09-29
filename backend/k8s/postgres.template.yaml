@@ -5,7 +5,7 @@ metadata:
   name: pg-service
 spec:
   ports:
-    - port: 5432
+    - port: $RUNPORT
   selector:
     app: postgres
 ---
@@ -40,7 +40,7 @@ spec:
             - name: POSTGRES_PASSWORD
               value: catalog
           ports:
-            - containerPort: 5432
+            - containerPort: $RUNPORT
           # readinessProbe:
           #   exec:
           #     command:
