@@ -213,7 +213,7 @@ fi
 ### OTHERWISE INSERT KEY=VALUE
 if [ -w "$path" ];then
   if grep -q "^$key=" "$path"; then 
-    sed -i "s/^$key=.*/$key=$value/" "$path"
+    sed -i "s|^$key=.*|$key=$value|" "$path"
   else
     echo "$key=$value" >>"$path"
   fi
