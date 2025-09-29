@@ -489,14 +489,16 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 ###################################
 function k8s_api {
 (
-set -u
+# set -u
 # formatrun <<'EOF'
 # kubectl apply -f ./middleware/k8s/api.yaml\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
 #   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE $MIDDLEWARE_API_RUN_PORT:$MIDDLEWARE_API_RUN_PORT
 
 # EOF
-export $(grep -v '^#' ./middleware/k8s/$sdenv.env | xargs)
+set -a
+source ./middleware/k8s/$sdenv.env
+set +a
 logit "kubectl create secret generic middleware-tls\
     --from-file=$CERT_NAME\
     --from-file=$KEY_NAME\
