@@ -1,4 +1,14 @@
-const fastify = require('fastify')({ logger: true });
+const fs = require('fs');
+const path = require('path');
+const KEY_NAME = process.env.APP_KEY_NAME || '';
+const CERT_NAME = process.env.APP_CERT_NAME || '';
+const fastify = require('fastify')({
+  logger: true,
+  https: {
+    key: fs.readFileSync(KEY_NAME),
+    cert: fs.readFileSync(CERT_NAME)
+  }
+});
 const cors = require('@fastify/cors');
 const { Pool } = require('pg');
 

@@ -6,6 +6,7 @@ alias stamp="echo \$(date +%Y%m%dT%H%M%S)"
 # GLOBAL_NAMESPACE=default (middleware SAMETAG && build_image_middleware SAMETAG && GLOBAL_NAMESPACE=default k8s_api)
 # GLOBAL_NAMESPACE=default install_postgres `stamp` && GLOBAL_NAMESPACE=default k8s_postgres
 # GLOBAL_NAMESPACE=default k8s_webservice_update
+# GLOBAL_NAMESPACE=default install_api `stamp`
 # 
 # 
 # 
@@ -371,11 +372,17 @@ if [ -d $NVM_DIR ];then
     installnode;
     nodever 18;
 fi
+echo && blue "------------------ GENERATING SEF-SIGNED CERT ------------------" && echo
+generate_selfsignedcert $MIDDLEWARE_API_SERVICE
+set_keyvalue KEY_NAME key.pem ./middleware/k8s/$sdenv.env
+set_keyvalue CERT_NAME cert.pem ./middleware/k8s/$sdenv.env
 npm install fastify pg
 npm install @fastify/cors
 npm install
-mkdir $MIDDLEWARE_APPNAME && cd $_
+mkdir -p $MIDDLEWARE_APPNAME && cd $_
 cp ../package.json .
+cp -r ../src .
+cp -r ../certs .
 npm install
 popd
 info ${FUNCNAME[0]}: callling install_api $GLOBAL_VERSION
@@ -448,9 +455,14 @@ set -u
 #   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE $MIDDLEWARE_API_PORT:$MIDDLEWARE_API_PORT
 
 # EOF
-logit "kubectl apply -f ./middleware/k8s/api.yaml\
-  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
-  && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE $MIDDLEWARE_API_PORT:$MIDDLEWARE_API_PORT
+logit "kubectl create secret generic middleware-tls\
+    --from-file=cert.pem\
+    --from-file=key.pem\
+  && kubectl apply -f ./middleware/k8s/api.yaml\
+  && kubectl wait --namespace $GLOBAL_NAMESPACE\
+    --for=condition=Ready pod -l app=api --timeout=60s\
+  && kubectl port-forward --namespace $GLOBAL_NAMESPACE\
+    svc/$MIDDLEWARE_API_SERVICE $MIDDLEWARE_API_PORT:$MIDDLEWARE_API_PORT
 "
 
 # echo -e "
@@ -663,6 +675,7 @@ function nodever() {
     blue "npm: $(npm -v)"
     blue "nvm: $(nvm -v)"
   fi
+  )
 }
 
 function getyarn() {
@@ -696,7 +709,14 @@ function generate_selfsignedcert {
 (
 set -u
 canonical_name=$1
-openssl req -x509 -newkey rsa:4096 -nodes -keyout $canonical_name-x509-key.pem -out $canonical_name-x509-cert.pem -days 365 \
-  -subj "/CN=$canonical_name"
+mkdir -p ./certs &&\
+  openssl req -x509 -newkey rsa:4096 -nodes -keyout ./certs/key.pem \
+    -out ./certs/cert.pem -days 365 \
+    -subj "/CN=$canonical_name"
+
+  # openssl req -x509 -newkey rsa:4096 -nodes -keyout ./certs/$canonical_name-x509-key.pem \
+  #   -out ./certs/$canonical_name-x509-cert.pem -days 365 \
+  #   -subj "/CN=$canonical_name"
+
 )
 }
