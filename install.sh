@@ -96,8 +96,8 @@ function install_product_catalog {
 ###################################
 (
 set -u
-set_registry
-install_postgres $1\
+set_registry\
+  \# && install_postgres $1\
   && install_api $1\
   && install_webservice $1\
   && k8s
@@ -110,8 +110,8 @@ function update_product_catalog {
 ###################################
 (
 set -u
-set_registry
-install_postgres $1\
+set_registry\
+  \# && install_postgres $1\
   && install_api $1\
   && install_webservice $1\
   && k8s_update
@@ -156,8 +156,8 @@ function k8s {
 # GLOBAL_NAMESPACE=<namespace> k8s
 ###################################
 (
-set_registry
-k8s_postgres\
+set_registry\
+  && k8s_postgres\
   && k8s_api\
   && k8s_webservice
 )
@@ -168,8 +168,8 @@ function k8s_update {
 # GLOBAL_NAMESPACE=<namespace> k8s_update
 ###################################
 (
-set_registry
-k8s_postgres\
+set_registry\
+  /# && k8s_postgres\
   && k8s_api\
   && k8s_webservice_update
 )
