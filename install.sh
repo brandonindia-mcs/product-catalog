@@ -489,7 +489,7 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 ###################################
 function k8s_api {
 (
-set -u
+# set -u
 # formatrun <<'EOF'
 # kubectl apply -f ./middleware/k8s/api.yaml\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
