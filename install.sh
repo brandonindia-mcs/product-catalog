@@ -672,18 +672,15 @@ kubectl apply -f ./opt/pgadmin/k8s/pgamin.yaml -n $GLOBAL_NAMESPACE\\\\\n\
 }
 
 function install_nvm() {
-  (
   set +u
   NVM_DIR="${NVM_DIR:-$(pwd)/.nvm}"
   echo && blue "------------------ INSTALL NVM ------------------" && echo
   echo installing mvn @ $NVM_DIR
   git clone https://github.com/nvm-sh/nvm.git $NVM_DIR
   echo $([ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && [ -s $NVM_DIR/bash_completion ] && . $NVM_DIR/bash_completion && nvm install --lts)
-  )
 }
 
 function installnode() {
-  (
   set -u
   if [ ! -d $NVM_DIR ];then echo no NVM_DIR: $NVM_DIR && return 1;fi
   echo && blue "------------------ NODE VIA NVM ------------------" && echo
@@ -693,11 +690,9 @@ function installnode() {
   [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
   fi
   nodever
-  )
 }
 
 function nodever() {
-  (
   set +u
   if [ ! -z $1 ]; then
     nvm install ${1} >/dev/null 2>&1 && nvm use ${_} > /dev/null 2>&1\
@@ -707,7 +702,6 @@ function nodever() {
     blue "npm: $(npm -v)"
     blue "nvm: $(nvm -v)"
   fi
-  )
 }
 
 function getyarn() {
