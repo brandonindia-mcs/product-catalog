@@ -52,10 +52,10 @@ GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $image_version
 )
 }
 
+function configure_default {
 ##########  RUN COMMAND  ##########
 # configure_default
 ###################################
-function configure_default {
 (
 GLOBAL_NAMESPACE=default configure $GLOBAL_VERSION
 )
@@ -93,7 +93,7 @@ info ${FUNCNAME[0]}: callling backend $GLOBAL_VERSION\
 
 function install_product_catalog {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default install_product_catalog [IMAGE_VERSION]
+# GLOBAL_NAMESPACE=default install_product_catalog $image_tag
 ###################################
 (
 set -u
@@ -107,7 +107,7 @@ set_registry\
 
 function update_product_catalog {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default update_product_catalog [IMAGE_VERSION]
+# GLOBAL_NAMESPACE=$namespace update_product_catalog $image_tag
 ###################################
 (
 set -u
@@ -120,41 +120,50 @@ set_registry\
 }
 
 function install_webservice {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace install_webservice $image_tag
+###################################
 (
 set -u
 info ${FUNCNAME[0]}: calling build_image_frontend $1\
   && build_image_frontend $1\
   && info ${FUNCNAME[0]}: calling configure_webservice $1\
-  && configure_webservice $1\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $1\
   && k8s_webservice
 )
 }
 
 function install_api {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace install_api $image_tag
+###################################
 (
 set -u
 info ${FUNCNAME[0]}: calling build_image_middleware $1\
   && build_image_middleware $1\
   && info ${FUNCNAME[0]}: calling configure_api $1\
-  && configure_api $1\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $1\
   && k8s_api
 )
 }
 
 function install_postgres {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace install_postgres $image_tag
+###################################
 (
 set -u
 info ${FUNCNAME[0]}: calling build_image_backend $1\
   && build_image_backend $1\
   && info ${FUNCNAME[0]}: calling configure_postgres $1\
-  && configure_postgres $1\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $1\
   && k8s_postgres
 )
 }
 
 function k8s {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=<namespace> k8s
+# GLOBAL_NAMESPACE=$namespace k8s
 ###################################
 (
 set_registry\
@@ -166,7 +175,7 @@ set_registry\
 
 function k8s_update {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=<namespace> k8s_update
+# GLOBAL_NAMESPACE=$namespace k8s_update
 ###################################
 (
 set_registry\
