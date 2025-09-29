@@ -1,6 +1,13 @@
 #!/bin/bash
+
+##################  GLOBAL VARS  ##################
 GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 alias stamp="echo \$(date +%Y%m%dT%H%M%S)"
+export FRONTEND_APPNAME=product-catalog-frontend
+export MIDDLEWARE_APPNAME=product-catalog-middleware
+export MIDDLEWARE_API_PORT=3000
+export MIDDLEWARE_API_SERVICE=api-service
+export BACKEND_APPNAME=product-catalog-backend
 
 ##########  CHEATSHEET  ###########
 # GLOBAL_NAMESPACE=default (middleware SAMETAG && build_image_middleware SAMETAG && GLOBAL_NAMESPACE=default k8s_api)
@@ -228,7 +235,55 @@ local_registry
 )
 }
 
-export FRONTEND_APPNAME=product-catalog-frontend
+function configure_webservice {
+(
+set -u
+image_version=$1
+set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
+set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
+set_keyvalue REPLICAS 2 ./frontend/k8s/$sdenv.env
+set -a
+source ./frontend/k8s/$sdenv.env
+set +a
+# envsubst < ./frontend/k8s/web.template.yaml | kubectl apply -f -
+envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
+)
+}
+
+function configure_api {
+(
+set -u
+image_version=$1
+set_keyvalue TAG $image_version ./middleware/k8s/$sdenv.env
+set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/$sdenv.env
+set_keyvalue REPLICAS 2 ./middleware/k8s/$sdenv.env
+set_keyvalue HUB $DOCKERHUB ./middleware/k8s/$sdenv.env
+set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME ./middleware/k8s/$sdenv.env
+set_keyvalue PORT $MIDDLEWARE_API_PORT ./middleware/k8s/$sdenv.env
+set_keyvalue SERVICENAME $MIDDLEWARE_API_SERVICE ./middleware/k8s/$sdenv.env
+set -a
+source ./middleware/k8s/$sdenv.env
+set +a
+# envsubst < ./middleware/k8s/api.template.yaml | kubectl apply -f -
+envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
+)
+}
+
+
+function configure_postgres {
+(
+set -u
+image_version=$1
+set_keyvalue TAG $image_version ./backend/k8s/$sdenv.env
+set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./backend/k8s/$sdenv.env
+set -a
+source ./backend/k8s/$sdenv.env
+set +a
+# envsubst < ./backend/k8s/postgres.template.yaml | kubectl apply -f -
+envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
+)
+}
+
 function frontend {
 (
 set -u
@@ -295,21 +350,6 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 )
 }
 
-function configure_webservice {
-(
-set -u
-image_version=$1
-set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
-set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
-set_keyvalue REPLICAS 2 ./frontend/k8s/$sdenv.env
-set -a
-source ./frontend/k8s/$sdenv.env
-set +a
-# envsubst < ./frontend/k8s/web.template.yaml | kubectl apply -f -
-envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
-)
-}
-
 
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default k8s_webservice
@@ -363,9 +403,6 @@ logit "kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
 }
 
 
-export MIDDLEWARE_APPNAME=product-catalog-middleware
-export MIDDLEWARE_API_PORT=3000
-export MIDDLEWARE_API_SERVICE=api-service
 function middleware {
 (
 set -u
@@ -429,25 +466,6 @@ docker push $DOCKERHUB/$appname:$image_version
 # EOF
 
 echo Pushed $DOCKERHUB/$appname:$image_version
-)
-}
-
-function configure_api {
-(
-set -u
-image_version=$1
-set_keyvalue TAG $image_version ./middleware/k8s/$sdenv.env
-set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/$sdenv.env
-set_keyvalue REPLICAS 2 ./middleware/k8s/$sdenv.env
-set_keyvalue HUB $DOCKERHUB ./middleware/k8s/$sdenv.env
-set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME ./middleware/k8s/$sdenv.env
-set_keyvalue PORT $MIDDLEWARE_API_PORT ./middleware/k8s/$sdenv.env
-set_keyvalue SERVICENAME $MIDDLEWARE_API_SERVICE ./middleware/k8s/$sdenv.env
-set -a
-source ./middleware/k8s/$sdenv.env
-set +a
-# envsubst < ./middleware/k8s/api.template.yaml | kubectl apply -f -
-envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
 )
 }
 
@@ -542,7 +560,6 @@ logit "info http://localhost:$MIDDLEWARE_API_PORT/health/db\
 }
 
 
-export BACKEND_APPNAME=product-catalog-backend
 function backend {
 (
 set -u
@@ -580,21 +597,6 @@ docker push $DOCKERHUB/$appname:$image_version
 # EOF
 
 echo Pushed $DOCKERHUB/$appname:$image_version
-)
-}
-
-
-function configure_postgres {
-(
-set -u
-image_version=$1
-set_keyvalue TAG $image_version ./backend/k8s/$sdenv.env
-set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./backend/k8s/$sdenv.env
-set -a
-source ./backend/k8s/$sdenv.env
-set +a
-# envsubst < ./backend/k8s/postgres.template.yaml | kubectl apply -f -
-envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 )
 }
 
