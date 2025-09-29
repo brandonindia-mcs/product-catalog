@@ -381,6 +381,10 @@ logit "kubectl apply -f ./frontend/k8s/web.yaml\
   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
 "
 
+runit "kubectl apply -f ./frontend/k8s/web.yaml\
+  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s
+"
+
 # echo -e "
 # kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
 #  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\\\\\n\
@@ -419,6 +423,10 @@ logit "kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
 function middleware {
 (
 set -u
+echo && blue "------------------ GENERATING SEF-SIGNED CERT ------------------" && echo
+generate_selfsignedcert $MIDDLEWARE_API_SERVICE
+set_keyvalue KEY_NAME certs/key.pem ./middleware/k8s/$sdenv.env
+set_keyvalue CERT_NAME certs/cert.pem ./middleware/k8s/$sdenv.env
 namespace=$GLOBAL_NAMESPACE
 pushd ./middleware
 export NVM_HOME=$(pwd)/.nvm
@@ -431,10 +439,6 @@ if [ -d $NVM_DIR ];then
     installnode;
     nodever 18;
 fi
-echo && blue "------------------ GENERATING SEF-SIGNED CERT ------------------" && echo
-generate_selfsignedcert $MIDDLEWARE_API_SERVICE
-set_keyvalue KEY_NAME key.pem ./middleware/k8s/$sdenv.env
-set_keyvalue CERT_NAME cert.pem ./middleware/k8s/$sdenv.env
 npm install fastify pg
 npm install @fastify/cors
 npm install
@@ -507,9 +511,7 @@ runit "kubectl create secret generic middleware-tls\
     --from-file=key.pem\
   && kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
-    --for=condition=Ready pod -l app=api --timeout=60s\
-  && kubectl port-forward --namespace $GLOBAL_NAMESPACE\
-    svc/$MIDDLEWARE_API_SERVICE $MIDDLEWARE_API_RUN_PORT:$MIDDLEWARE_API_RUN_PORT
+    --for=condition=Ready pod -l app=api --timeout=60s
 "
 
 # echo -e "
