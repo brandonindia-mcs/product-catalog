@@ -32,14 +32,14 @@ spec:
       containers:
         - name: api
           image: $HUB/$REPOSITORY:$TAG
-          volumeMounts:
-            - name: tls-certs
-              mountPath: /certs
-              readOnly: true
-          volumes:
-            - name: tls-certs
-              secret:
-                secretName: middleware-tls
+          # volumeMounts:
+          #   - name: tls-certs
+          #     mountPath: /certs
+          #     readOnly: true
+          # volumes:
+          #   - name: tls-certs
+          #     secret:
+          #       secretName: middleware-tls
           env:
               #####***  ALLOW SKETCHY CERTS, NOT FOR PRODUCTION  ***####
               #####***  AS-IN SELF-SIGNED OR OTHERWISE  ************####

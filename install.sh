@@ -423,10 +423,10 @@ logit "kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
 function middleware {
 (
 set -u
-echo && blue "------------------ GENERATING SEF-SIGNED CERT ------------------" && echo
+echo && blue "------------------ GENERATING SELF-SIGNED CERT ------------------" && echo
 generate_selfsignedcert $MIDDLEWARE_API_SERVICE
-set_keyvalue KEY_NAME certs/key.pem ./middleware/k8s/$sdenv.env
-set_keyvalue CERT_NAME certs/cert.pem ./middleware/k8s/$sdenv.env
+set_keyvalue KEY_NAME key.pem ./middleware/k8s/$sdenv.env
+set_keyvalue CERT_NAME cert.pem ./middleware/k8s/$sdenv.env
 namespace=$GLOBAL_NAMESPACE
 pushd ./middleware
 export NVM_HOME=$(pwd)/.nvm
@@ -444,8 +444,6 @@ npm install @fastify/cors
 npm install
 mkdir -p $MIDDLEWARE_APPNAME && cd $_
 cp ../package.json .
-cp -r ../src .
-cp -r ../certs .
 npm install
 popd
 )
@@ -499,20 +497,14 @@ function k8s_api {
 set -a
 source ./middleware/k8s/$sdenv.env
 set +a
-logit "kubectl create secret generic middleware-tls\
-    --from-file=$CERT_NAME\
-    --from-file=$KEY_NAME\
-  && kubectl apply -f ./middleware/k8s/api.yaml\
+logit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
     --for=condition=Ready pod -l app=api --timeout=60s\
   && kubectl port-forward --namespace $GLOBAL_NAMESPACE\
     svc/$MIDDLEWARE_API_SERVICE $MIDDLEWARE_API_RUN_PORT:$MIDDLEWARE_API_RUN_PORT
 "
 
-runit "kubectl create secret generic middleware-tls\
-    --from-file=$CERT_NAME\
-    --from-file=$KEY_NAME\
-  && kubectl apply -f ./middleware/k8s/api.yaml\
+runit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
     --for=condition=Ready pod -l app=api --timeout=60s
 "
@@ -760,9 +752,9 @@ function generate_selfsignedcert {
 (
 set -u
 canonical_name=$1
-mkdir -p ./certs &&\
-  openssl req -x509 -newkey rsa:4096 -nodes -keyout ./certs/key.pem \
-    -out ./certs/cert.pem -days 365 \
+# mkdir -p ./certs &&\
+  openssl req -x509 -newkey rsa:4096 -nodes -keyout ./key.pem \
+    -out ./cert.pem -days 365 \
     -subj "/CN=$canonical_name"
 
   # openssl req -x509 -newkey rsa:4096 -nodes -keyout ./certs/$canonical_name-x509-key.pem \
