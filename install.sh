@@ -362,10 +362,10 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 }
 
 
+function k8s_webservice {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default k8s_webservice
 ###################################
-function k8s_webservice {
 (
 set -u
 # formatrun <<'EOF'
@@ -392,10 +392,10 @@ runit "kubectl apply -f ./frontend/k8s/web.yaml\
 }
 
 
+function k8s_webservice_update {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default k8s_webservice_update
 ###################################
-function k8s_webservice_update {
 (
 export $(grep -v '^#' ./frontend/k8s/$sdenv.env | xargs)
 set -u
@@ -478,10 +478,10 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 }
 
 
+function k8s_api {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default k8s_api
 ###################################
-function k8s_api {
 (
 # set -u
 # formatrun <<'EOF'
@@ -631,10 +631,10 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 }
 
 
+function k8s_postgres {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default k8s_postgres
 ###################################
-function k8s_postgres {
 (
 set -u
 
