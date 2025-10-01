@@ -302,8 +302,6 @@ envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 
 function frontend {
 (
-set -u
-namespace=$GLOBAL_NAMESPACE
 pushd ./frontend
 export NVM_HOME=$(pwd)/.nvm
 export NVM_DIR=$(pwd)/.nvm
@@ -422,12 +420,10 @@ logit "kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
 
 function middleware {
 (
-set -u
 echo && blue "------------------ GENERATING SELF-SIGNED CERT ------------------" && echo
 generate_selfsignedcert $MIDDLEWARE_API_SERVICE
 set_keyvalue KEY_NAME key.pem ./middleware/k8s/$sdenv.env
 set_keyvalue CERT_NAME cert.pem ./middleware/k8s/$sdenv.env
-namespace=$GLOBAL_NAMESPACE
 pushd ./middleware
 export NVM_HOME=$(pwd)/.nvm
 export NVM_DIR=$(pwd)/.nvm
@@ -689,7 +685,6 @@ kubectl apply -f ./opt/pgadmin/k8s/pgamin.yaml -n $GLOBAL_NAMESPACE\\\\\n\
 }
 
 function install_nvm() {
-  set +u
   NVM_DIR="${NVM_DIR:-$(pwd)/.nvm}"
   echo && blue "------------------ INSTALL NVM ------------------" && echo
   echo installing mvn @ $NVM_DIR
@@ -698,7 +693,6 @@ function install_nvm() {
 }
 
 function installnode() {
-  set -u
   if [ ! -d $NVM_DIR ];then echo no NVM_DIR: $NVM_DIR && return 1;fi
   echo && blue "------------------ NODE VIA NVM ------------------" && echo
   cyan "Updating nvm:" && echo $(pushd $NVM_DIR && git pull && popd || popd)
@@ -710,8 +704,7 @@ function installnode() {
 }
 
 function nodever() {
-  set +u
-  if [ ! -z $1 ]; then
+  if [ ! -z "$1" ]; then
     nvm install ${1} >/dev/null 2>&1 && nvm use ${_} > /dev/null 2>&1\
       && nvm alias default ${_} > /dev/null 2>&1; nodever; else
     yellow "INFORMATIONAL: Use nodever to install or switch node versions:" && echo -e "\tusage: nodever [ver]"
