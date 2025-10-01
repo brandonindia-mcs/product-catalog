@@ -1,7 +1,7 @@
 FROM node:18-alpine AS build
 WORKDIR /app
 COPY product-catalog-frontend/package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 COPY product-catalog-frontend/ ./
 RUN npm run build
 

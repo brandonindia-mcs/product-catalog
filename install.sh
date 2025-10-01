@@ -322,8 +322,10 @@ echo && blue "------------------ NEW REACT APP ------------------" && echo
 npx -y create-react-app $FRONTEND_APPNAME
 )
 cd $FRONTEND_APPNAME && cp ../package.json .
-npm install react@18.2.0 react-dom@18.2.0 react-router-dom@6 axios --legacy-peer-deps
-npm install
+npm install --legacy-peer-deps
+cp ../src/* ./src/
+cp ../$sdenv.env ./.env
+npm run build
 popd
 )
 }
@@ -341,8 +343,6 @@ echo -e \\nBuilding $appname:$image_version
 
 set_registry
 # formatrun <<'EOF'
-cp -rf ./frontend/src ./frontend/$appname/
-cp -rf ./frontend/$sdenv.env ./frontend/$appname/.env
 docker build $NOCACHE\
   -t $appname:$image_version\
   frontend\
