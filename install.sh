@@ -110,8 +110,8 @@ set -u\
       && banner calling configure_webservice $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $1\
   \
-      && banner calling k8s_webservice\
-  && k8s_webservice
+      && banner GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE calling k8s_webservice\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_webservice
 )
 }
 
@@ -130,8 +130,8 @@ set -u\
       && banner calling GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $1\
   \
-      && banner calling k8s_api\
-  && k8s_api\
+      && banner calling GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_api\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_api\
   \
       && banner calling validate_api\
   && validate_api
@@ -154,8 +154,8 @@ set -u\
       && banner calling GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE calling configure_postgres $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $1\
   \
-      && banner calling k8s_postgres\
-  && k8s_postgres
+      && banner calling kGLOBAL_NAMESPACE=$GLOBAL_NAMESPACE 8s_postgres\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_postgres
 )
 }
 
@@ -319,20 +319,23 @@ envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 
 function frontend {
 ##########  RUN COMMAND  ##########
-# frontend
+# frontend <$node_version> - optional
 ###################################
 (
+node_version=${1:-18}
 pushd ./frontend
 export NVM_HOME=$(pwd)/.nvm
 export NVM_DIR=$(pwd)/.nvm
 echo NVM_HOME is $NVM_HOME
+
 if [ ! -d $NVM_DIR ];then
     install_nvm;
 fi
 if [ -d $NVM_DIR ];then
     installnode;
-    nodever 18;
+    nodever $node_version;
 fi
+
 (
 if [ -d $FRONTEND_APPNAME ];then
 warn $(yellow ${FUNCNAME[0]}: $FRONTEND_APPNAME found, not craeting a new react app)
@@ -347,6 +350,56 @@ cp ../src/* ./src/
 cp ../$sdenv.env ./.env
 npm run build
 popd
+)
+}
+
+function frontend_upgrade {
+##########  RUN COMMAND  ##########
+# frontend_upgrade <$node_version> - optional
+###################################
+(
+node_version=${1:-20}
+pushd ./frontend
+export NVM_HOME=$(pwd)/.nvm
+export NVM_DIR=$(pwd)/.nvm
+echo NVM_HOME is $NVM_HOME
+
+if [ ! -d $NVM_DIR ];then
+    install_nvm;
+fi
+if [ -d $NVM_DIR ];then
+    installnode;
+    nodever $node_version;
+fi
+
+(
+if [ -d $FRONTEND_APPNAME ];then
+rm -rf $FRONTEND_APPNAME/node_modules
+rm $FRONTEND_APPNAME/package-lock.json
+npm uninstall react-scripts
+npm install
+
+# find src -type f -name "*.js" -exec bash -c 'for f; do echo mv "$f" "${f%.js}.jsx"; done' _ {} +
+find src -type f -name "*.js" -exec bash -c 'for f; do echo mv "./$f" "./${f%.js}.jsx" && echo mv "./$FRONTEND_APPNAME/$f" "./$FRONTEND_APPNAME/${f%.js}.jsx"; done' _ {} +
+
+# find ./src -type f -name "*.js" -exec bash -c 'for f; do      mv "$f" "${f%.js}.jsx"; done' _ {} +
+find src -type f -name "*.js" -exec bash -c 'for f; do mv "./$f" "./${f%.js}.jsx" && mv "./$FRONTEND_APPNAME/$f" "./$FRONTEND_APPNAME/${f%.js}.jsx"; done' _ {} +
+
+cd $FRONTEND_APPNAME
+cp ../package.json .
+rm -rf ./node_modules ./package-lock.json
+cp ../index.html ./index.html
+cp ../vite.config.js ./vite.config.js
+cp ../src/* ./src/
+cp ../$sdenv.env ./.env
+npm install
+npm run build
+
+fi
+)
+build_image_frontend $image_version
+GLOBAL_NAMESPACE=$namespace configure_webservice $image_version
+GLOBAL_NAMESPACE=$namespace k8s_webservice
 )
 }
 
