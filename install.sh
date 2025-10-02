@@ -761,8 +761,6 @@ function installnode() {
 }
 
 function nodever() {
-  (
-    set +u
   if [ ! -z "$1" ]; then
     nvm install ${1} >/dev/null 2>&1 && nvm use ${_} > /dev/null 2>&1\
       && nvm alias default ${_} > /dev/null 2>&1; nodever; else
@@ -771,7 +769,6 @@ function nodever() {
     blue "npm: $(npm -v)"
     blue "nvm: $(nvm -v)"
   fi
-  )
 }
 
 function getyarn() {
