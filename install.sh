@@ -435,11 +435,9 @@ if [ -d $NVM_DIR ];then
     installnode;
     nodever 18;
 fi
-npm install fastify pg
-npm install @fastify/cors
-npm install
 mkdir -p $MIDDLEWARE_APPNAME && cd $_
 cp ../package.json .
+cp -r ../src/* ./
 npm install
 popd
 )
