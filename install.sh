@@ -28,6 +28,7 @@ function green { println '\e[32m%s\e[0m' "$*"; }
 function yellow { println '\e[33m%s\e[0m' "$*"; }
 function blue { println '\e[34m%s\e[0m' "$*"; }                                                                                    
 function red { println '\e[31m%s\e[0m' "$*"; }
+function banner { echo; echo "$(tput setaf 0;tput setab 6)$(date "+%Y-%m-%d %H:%M:%S") BANNER:${FUNCNAME[1]}: ${*}$(tput sgr 0)"; }
 function info { echo; echo "$(tput setaf 0;tput setab 7)$(date "+%Y-%m-%d %H:%M:%S") INFO:$(tput sgr 0) ${*}"; }
 function warn { echo; echo "$(tput setaf 1;tput setab 3)$(date "+%Y-%m-%d %H:%M:%S") WARN:$(tput sgr 0) ${*}"; }
 function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS:$(tput sgr 0) ${*}"; }
@@ -100,12 +101,16 @@ function install_webservice {
 ###################################
 (
 set -u\
-  && info ${FUNCNAME[0]}: calling frontend\
+      && banner calling frontend\
   && frontend\
-  && info ${FUNCNAME[0]}: calling build_image_frontend $1\
+  \
+      && banner calling build_image_frontend $1\
   && build_image_frontend $1\
-  && info ${FUNCNAME[0]}: calling configure_webservice $1\
+  \
+      && banner calling configure_webservice $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $1\
+  \
+      && banner calling k8s_webservice\
   && k8s_webservice
 )
 }
@@ -116,13 +121,21 @@ function install_api {
 ###################################
 (
 set -u\
-  && info ${FUNCNAME[0]}: calling middleware\
+      && banner calling middleware\
   && middleware\
-  && info ${FUNCNAME[0]}: calling build_image_middleware $1\
+  \
+      && banner calling build_image_middleware $1\
   && build_image_middleware $1\
-  && info ${FUNCNAME[0]}: calling configure_api $1\
+  \
+      && banner calling GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $1\
-  && k8s_api
+  \
+      && banner calling k8s_api\
+  && k8s_api\
+  \
+      && banner calling validate_api\
+  && validate_api
+
 )
 }
 
@@ -132,12 +145,16 @@ function install_postgres {
 ###################################
 (
 set -u\
-  && info ${FUNCNAME[0]}: calling backend\
+      && banner calling backend\
   && backend\
-  && info ${FUNCNAME[0]}: calling build_image_backend $1\
+  \
+      && banner calling calling build_image_backend $1\
   && build_image_backend $1\
-  && info ${FUNCNAME[0]}: calling configure_postgres $1\
+  \
+      && banner calling GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE calling configure_postgres $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $1\
+  \
+      && banner calling k8s_postgres\
   && k8s_postgres
 )
 }
@@ -544,7 +561,7 @@ runit "kubectl apply -f ./middleware/k8s/api.yaml\
 #   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE $MIDDLEWARE_API_RUN_PORT:$MIDDLEWARE_API_RUN_PORT
 # "
 
-validate_api
+# validate_api
 # kubectl rollout restart deployment api
 )
 }
@@ -580,7 +597,7 @@ logit "info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\
   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/products/1|jq\
   && weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
   for pod in \${weblist[@]};do
-    info "Connection tests $MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT for \$pod, press Enter"  && read x\
+    info "Connection tests $MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT for \$pod, press Enter"  && read x;\
     info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db"\
     && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
     && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products"\
@@ -590,23 +607,23 @@ logit "info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\
   done
 "
 
-runit "info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\
-  && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
-  && info http://localhost:$MIDDLEWARE_API_RUN_PORT/products\
-  && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/products|jq\
-  && info http://localhost:$MIDDLEWARE_API_RUN_PORT/products/1\
-  && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/products/1|jq\
-  && weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
-  for pod in \${weblist[@]};do
-    info "Connection tests $MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT for \$pod, press Enter"  && read x\
-    && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db"\
-    && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
-    && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products"\
-    && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products|jq\
-    && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products/1"\
-    && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products/1|jq
-  done
-"
+# runit "info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\
+#   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
+#   && info http://localhost:$MIDDLEWARE_API_RUN_PORT/products\
+#   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/products|jq\
+#   && info http://localhost:$MIDDLEWARE_API_RUN_PORT/products/1\
+#   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/products/1|jq\
+#   && weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
+#   for pod in \${weblist[@]};do
+#     info "Connection tests $MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT for \$pod, press Enter"  && read x;\
+#     && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db"\
+#     && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
+#     && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products"\
+#     && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products|jq\
+#     && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products/1"\
+#     && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products/1|jq
+#   done
+# "
 
 # echo -e "
 # info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\\\\\n\
@@ -744,6 +761,8 @@ function installnode() {
 }
 
 function nodever() {
+  (
+    set +u
   if [ ! -z "$1" ]; then
     nvm install ${1} >/dev/null 2>&1 && nvm use ${_} > /dev/null 2>&1\
       && nvm alias default ${_} > /dev/null 2>&1; nodever; else
@@ -752,6 +771,7 @@ function nodever() {
     blue "npm: $(npm -v)"
     blue "nvm: $(nvm -v)"
   fi
+  )
 }
 
 function getyarn() {
