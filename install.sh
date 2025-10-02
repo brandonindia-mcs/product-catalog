@@ -47,63 +47,35 @@ fi
 }
 setenv
 
-function configure {
+function default_product_catalog {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace configure $image_version
+# default_product_catalog
 ###################################
 (
-set -u
-image_version=$1
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $image_version
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $image_version
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $image_version
+product_catalog
 )
 }
 
-function configure_default {
+function product_catalog {
 ##########  RUN COMMAND  ##########
-# configure_default
+# product_catalog
 ###################################
 (
-GLOBAL_NAMESPACE=default configure $GLOBAL_VERSION
-)
-}
-
-function new_product_catalog_default {
-##########  RUN COMMAND  ##########
-# new_product_catalog_default
-###################################
-(
-GLOBAL_NAMESPACE=default backend\
-  && GLOBAL_NAMESPACE=default middleware\
-  && GLOBAL_NAMESPACE=default frontend\
-  && GLOBAL_NAMESPACE=default k8s
-)
-}
-
-function new_product_catalog {
-##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default new_product_catalog
-###################################
-(
-info ${FUNCNAME[0]}: callling backend $GLOBAL_VERSION\
+info ${FUNCNAME[0]}: callling backend\
   && backend\
-  && info ${FUNCNAME[0]}: callling middleware $GLOBAL_VERSION\
+  && info ${FUNCNAME[0]}: callling middleware\
   && middleware\
-  && info ${FUNCNAME[0]}: callling frontend $GLOBAL_VERSION\
-  && frontend\
-  && info ${FUNCNAME[0]}: callling k8s $GLOBAL_VERSION\
-  && k8s
+  && info ${FUNCNAME[0]}: callling frontend\
+  && frontend
 )
 }
 
 function install_product_catalog {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default install_product_catalog $image_version
+# GLOBAL_NAMESPACE=$namespace install_product_catalog $image_version
 ###################################
 (
 set -u
-  \# && install_postgres $1\
   && install_api $1\
   && install_webservice $1\
   && k8s
@@ -116,7 +88,6 @@ function update_product_catalog {
 ###################################
 (
 set -u
-  \# && install_postgres $1\
   && install_api $1\
   && install_webservice $1\
   && k8s_update
@@ -130,7 +101,7 @@ function install_webservice {
 (
 set -u\
   && info ${FUNCNAME[0]}: calling frontend\
-  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE frontend\
+  && frontend\
   && info ${FUNCNAME[0]}: calling build_image_frontend $1\
   && build_image_frontend $1\
   && info ${FUNCNAME[0]}: calling configure_webservice $1\
@@ -146,7 +117,7 @@ function install_api {
 (
 set -u\
   && info ${FUNCNAME[0]}: calling middleware\
-  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE middleware\
+  && middleware\
   && info ${FUNCNAME[0]}: calling build_image_middleware $1\
   && build_image_middleware $1\
   && info ${FUNCNAME[0]}: calling configure_api $1\
@@ -162,7 +133,7 @@ function install_postgres {
 (
 set -u\
   && info ${FUNCNAME[0]}: calling backend\
-  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE backend\
+  && backend\
   && info ${FUNCNAME[0]}: calling build_image_backend $1\
   && build_image_backend $1\
   && info ${FUNCNAME[0]}: calling configure_postgres $1\
@@ -177,7 +148,6 @@ function k8s {
 ###################################
 (
 set_registry\
-  /&& k8s_postgres\
   && k8s_api\
   && k8s_webservice
 )
@@ -189,7 +159,6 @@ function k8s_update {
 ###################################
 (
 set_registry\
-  /# && k8s_postgres\
   && k8s_api\
   && k8s_webservice_update
 )
@@ -246,6 +215,28 @@ local_registry
 )
 }
 
+function default_configure {
+##########  RUN COMMAND  ##########
+# default_configure
+###################################
+(
+GLOBAL_NAMESPACE=default configure $GLOBAL_VERSION
+)
+}
+
+function configure {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace configure $image_version
+###################################
+(
+set -u
+image_version=$1
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $image_version
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $image_version
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $image_version
+)
+}
+
 function configure_webservice {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=$namespace configure_webservice $image_version
@@ -288,7 +279,6 @@ envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
 )
 }
 
-
 function configure_postgres {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=$namespace configure_postgres $image_version
@@ -308,6 +298,7 @@ set +a
 envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 )
 }
+
 
 function frontend {
 ##########  RUN COMMAND  ##########
@@ -346,7 +337,7 @@ function default_build_image_frontend {
 ##########  RUN COMMAND  ##########
 # build_build_image_frontend
 ###################################
-build_image_frontend ""
+build_image_frontend
 }
 function build_image_frontend {
 ##########  RUN COMMAND  ##########
@@ -391,7 +382,7 @@ GLOBAL_NAMESPACE=default k8s_webservice
 }
 function k8s_webservice {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default k8s_webservice
+# GLOBAL_NAMESPACE=$namespace k8s_webservice
 ###################################
 (
 set -u
@@ -421,7 +412,7 @@ runit "kubectl apply -f ./frontend/k8s/web.yaml\
 
 function k8s_webservice_update {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default k8s_webservice_update
+# GLOBAL_NAMESPACE=$namespace k8s_webservice_update
 ###################################
 (
 export $(grep -v '^#' ./frontend/k8s/$sdenv.env | xargs)
@@ -477,7 +468,7 @@ function default_build_image_middleware {
 ##########  RUN COMMAND  ##########
 # build_image_middleware
 ###################################
-build_image_middleware ""
+build_image_middleware
 }
 function build_image_middleware {
 ##########  RUN COMMAND  ##########
@@ -522,7 +513,7 @@ GLOBAL_NAMESPACE=default k8s_api
 }
 function k8s_api {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default k8s_api
+# GLOBAL_NAMESPACE=$namespace k8s_api
 ###################################
 (
 # set -u
@@ -682,7 +673,7 @@ GLOBAL_NAMESPACE=default k8s_postgres
 }
 function k8s_postgres {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default k8s_postgres
+# GLOBAL_NAMESPACE=$namespace k8s_postgres
 ###################################
 (
 set -u
