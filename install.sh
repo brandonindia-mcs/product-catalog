@@ -75,7 +75,7 @@ function install_product_catalog {
 # GLOBAL_NAMESPACE=$namespace install_product_catalog $image_version
 ###################################
 (
-set -u
+set -u\
   && install_api $1\
   && install_webservice $1\
   && k8s
@@ -87,7 +87,7 @@ function update_product_catalog {
 # GLOBAL_NAMESPACE=$namespace update_product_catalog $image_version
 ###################################
 (
-set -u
+set -u\
   && install_api $1\
   && install_webservice $1\
   && k8s_update
