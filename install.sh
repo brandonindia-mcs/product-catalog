@@ -49,7 +49,7 @@ setenv
 
 function configure {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace configure $image_tag
+# GLOBAL_NAMESPACE=$namespace configure $image_version
 ###################################
 (
 set -u
@@ -99,7 +99,7 @@ info ${FUNCNAME[0]}: callling backend $GLOBAL_VERSION\
 
 function install_product_catalog {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=default install_product_catalog $image_tag
+# GLOBAL_NAMESPACE=default install_product_catalog $image_version
 ###################################
 (
 set -u
@@ -112,7 +112,7 @@ set -u
 
 function update_product_catalog {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace update_product_catalog $image_tag
+# GLOBAL_NAMESPACE=$namespace update_product_catalog $image_version
 ###################################
 (
 set -u
@@ -125,7 +125,7 @@ set -u
 
 function install_webservice {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace install_webservice $image_tag
+# GLOBAL_NAMESPACE=$namespace install_webservice $image_version
 ###################################
 (
 set -u\
@@ -141,7 +141,7 @@ set -u\
 
 function install_api {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace install_api $image_tag
+# GLOBAL_NAMESPACE=$namespace install_api $image_version
 ###################################
 (
 set -u\
@@ -157,7 +157,7 @@ set -u\
 
 function install_postgres {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace install_postgres $image_tag
+# GLOBAL_NAMESPACE=$namespace install_postgres $image_version
 ###################################
 (
 set -u\
@@ -247,6 +247,9 @@ local_registry
 }
 
 function configure_webservice {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace configure_webservice $image_version
+###################################
 (
 set -u
 image_version=$1
@@ -264,6 +267,9 @@ envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
 }
 
 function configure_api {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace configure_api $image_version
+###################################
 (
 set -u
 image_version=$1
@@ -284,6 +290,9 @@ envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
 
 
 function configure_postgres {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace configure_postgres $image_version
+###################################
 (
 set -u
 image_version=$1
@@ -301,6 +310,9 @@ envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 }
 
 function frontend {
+##########  RUN COMMAND  ##########
+# frontend
+###################################
 (
 pushd ./frontend
 export NVM_HOME=$(pwd)/.nvm
@@ -330,7 +342,16 @@ popd
 )
 }
 
+function default_build_image_frontend {
+##########  RUN COMMAND  ##########
+# build_build_image_frontend
+###################################
+build_image_frontend ""
+}
 function build_image_frontend {
+##########  RUN COMMAND  ##########
+# build_image_frontend $image_version
+###################################
 (
 image_version=$1
 set -u
@@ -362,6 +383,12 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 }
 
 
+function default_k8s_webservice {
+##########  RUN COMMAND  ##########
+# default_k8s_webservice
+###################################
+GLOBAL_NAMESPACE=default k8s_webservice
+}
 function k8s_webservice {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default k8s_webservice
@@ -419,6 +446,9 @@ logit "kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
 
 
 function middleware {
+##########  RUN COMMAND  ##########
+# middleware
+###################################
 (
 echo && blue "------------------ GENERATING SELF-SIGNED CERT ------------------" && echo
 generate_selfsignedcert $MIDDLEWARE_API_SERVICE
@@ -443,7 +473,16 @@ popd
 )
 }
 
+function default_build_image_middleware {
+##########  RUN COMMAND  ##########
+# build_image_middleware
+###################################
+build_image_middleware ""
+}
 function build_image_middleware {
+##########  RUN COMMAND  ##########
+# build_image_middleware $image_version
+###################################
 (
 image_version=$1
 set -u
@@ -475,7 +514,12 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 )
 }
 
-
+function default_k8s_api {
+##########  RUN COMMAND  ##########
+# default_k8s_api
+###################################
+GLOBAL_NAMESPACE=default k8s_api
+}
 function k8s_api {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default k8s_api
@@ -545,6 +589,7 @@ logit "info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\
   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/products/1|jq\
   && weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
   for pod in \${weblist[@]};do
+    info "Connection tests $MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT for \$pod, press Enter"  && read x\
     info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db"\
     && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
     && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products"\
@@ -562,7 +607,8 @@ runit "info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\
   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/products/1|jq\
   && weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
   for pod in \${weblist[@]};do
-    info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db"\
+    info "Connection tests $MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT for \$pod, press Enter"  && read x\
+    && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db"\
     && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
     && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products"\
     && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products|jq\
@@ -628,7 +674,12 @@ echo Pushed $DOCKERHUB/$appname:$image_version
 )
 }
 
-
+function default_k8s_postgres {
+##########  RUN COMMAND  ##########
+# default_k8s_postgres
+###################################
+GLOBAL_NAMESPACE=default k8s_postgres
+}
 function k8s_postgres {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=default k8s_postgres
