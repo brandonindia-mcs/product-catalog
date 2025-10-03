@@ -6,7 +6,7 @@ export default function ProductDetail() {
   const { id } = useParams();
   const [prod, setProd] = useState(null);
   const [error, setError] = useState(null);
-  const API_BASE = import.meta.env.VITE_API_URL || '';
+  const API_BASE = process.env.REACT_APP_API_URL || '';
 
   useEffect(() => {
     axios.get(`${API_BASE}/products/${id}`)

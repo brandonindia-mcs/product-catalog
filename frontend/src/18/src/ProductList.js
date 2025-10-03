@@ -7,7 +7,7 @@ export default function ProductList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_BASE = import.meta.env.VITE_API_URL || '';
+  const API_BASE = process.env.REACT_APP_API_URL || '';
 
   useEffect(() => {
     axios.get(`${API_BASE}/products`)

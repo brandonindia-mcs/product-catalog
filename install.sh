@@ -325,7 +325,7 @@ function frontend {
 # frontend <$node_version> - optional
 ###################################
 (
-node_version=${1:-18}
+node_version=18
 pushd ./frontend
 export NVM_HOME=$(pwd)/.nvm
 export NVM_DIR=$(pwd)/.nvm
@@ -347,11 +347,13 @@ fi
 echo && blue "------------------ NEW REACT APP ------------------" && echo
 npx -y create-react-app $FRONTEND_APPNAME
 )
-cd $FRONTEND_APPNAME && cp ../package.json .
-npm install --legacy-peer-deps
-cp ../src/* ./src/
-cp ../$sdenv.env ./.env
-npm run build
+cp ./src/$node_version/Dockerfile .
+cd $FRONTEND_APPNAME
+cp ../src/$node_version/etc/* .
+cp -r ../src/$node_version/src/* ./src
+cp ../src/$node_version/$sdenv.env ./.env
+npm install react@18.2.0 react-dom@18.2.0 react-router-dom@6 axios --legacy-peer-deps
+npm install
 popd
 )
 }
