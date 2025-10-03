@@ -100,10 +100,11 @@ function install_webservice {
 # GLOBAL_NAMESPACE=$namespace install_webservice $image_version
 ###################################
 (
-set -u\
+:\
       && banner calling frontend\
   && frontend\
   \
+  && set -u\
       && banner calling build_image_frontend $1\
   && build_image_frontend $1\
   \
@@ -120,10 +121,11 @@ function install_api {
 # GLOBAL_NAMESPACE=$namespace install_api $image_version
 ###################################
 (
-set -u\
+:\
       && banner calling middleware\
   && middleware\
   \
+  && set -u\
       && banner calling build_image_middleware $1\
   && build_image_middleware $1\
   \
@@ -144,10 +146,11 @@ function install_postgres {
 # GLOBAL_NAMESPACE=$namespace install_postgres $image_version
 ###################################
 (
-set -u\
+:\
       && banner calling backend\
   && backend\
   \
+  && set -u\
       && banner calling calling build_image_backend $1\
   && build_image_backend $1\
   \
