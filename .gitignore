@@ -3,3 +3,4 @@ node_modules
 # frontend/product-catalog-frontend
 # middleware/product-catalog-middleware
 *.env
+*.tar.gz
