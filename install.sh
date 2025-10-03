@@ -33,8 +33,8 @@ function info { echo; echo "$(tput setaf 0;tput setab 7)$(date "+%Y-%m-%d %H:%M:
 function warn { echo; echo "$(tput setaf 1;tput setab 3)$(date "+%Y-%m-%d %H:%M:%S") WARN:$(tput sgr 0) ${*}"; }
 function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS:$(tput sgr 0) ${*}"; }
 function fail { echo; echo "$(tput setaf 8;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL:$(tput sgr 0) ${*}"; }
-function abort_hard  { red "ABORT($1): $(date "+%Y-%m-%d %H:%M:%S")" && echo -e "\t${@:2}\n" && read -p "press CTRL+C or die!" ; exit 1; }
-function abort       { red "ABORT($1): $(date "+%Y-%m-%d %H:%M:%S")" && echo -e "\t${@:2}\n"; }
+function abort_hard  { echo; red "**** ABORT($1): $(date "+%Y-%m-%d %H:%M:%S") **** " && echo -e "\t${@:2}\n" && read -p "press CTRL+C or die!" ; exit 1; }
+function abort       { echo; red "**** ABORT($1): $(date "+%Y-%m-%d %H:%M:%S") ****" && echo -e "\t${@:2}\n"; }
 
 ##################  SETUP ENV  ##################
 function setenv {
@@ -43,7 +43,7 @@ set -a
 source ./$sdenv.env
 set +a
 else
-abort_hard "install.sh:$LINENO" ${FUNCNAME[0]}: file $sdenv.env not found in $PWD
+abort_hard "install.sh:$LINENO"  ${FUNCNAME[0]}: file $sdenv.env not found in $PWD
 fi
 }
 setenv
