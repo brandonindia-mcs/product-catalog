@@ -100,18 +100,23 @@ function install_webservice {
 # GLOBAL_NAMESPACE=$namespace install_webservice $image_version
 ###################################
 (
-:\
-      && banner calling frontend\
-  && frontend\
-  \
+frontend\
   && set -u\
-      && banner calling build_image_frontend $1\
   && build_image_frontend $1\
-  \
-      && banner calling configure_webservice $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $1\
-  \
-      && banner GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE calling k8s_webservice\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_webservice
+)
+}
+
+function upgrade_webservice {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace upgrade_webservice $image_version
+###################################
+(
+frontend_upgrade_20\
+  && set -u\
+  && build_image_frontend $1\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_webservice
 )
 }
@@ -322,7 +327,7 @@ envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 
 function frontend {
 ##########  RUN COMMAND  ##########
-# frontend <$node_version> - optional
+# frontend
 ###################################
 (
 node_version=18
@@ -358,12 +363,13 @@ popd
 )
 }
 
-function frontend_upgrade {
+function frontend_upgrade_20 {
 ##########  RUN COMMAND  ##########
-# frontend_upgrade <$node_version> - optional
+# frontend_upgrade_20
 ###################################
 (
-node_version=${1:-20}
+node_version=20
+old_version=18
 pushd ./frontend
 export NVM_HOME=$(pwd)/.nvm
 export NVM_DIR=$(pwd)/.nvm
@@ -377,6 +383,10 @@ if [ -d $NVM_DIR ];then
     nodever $node_version;
 fi
 
+### RENAME AND PRESERVE LEGACY
+for f in $(/bin/ls ./src/$old_version/src); do echo cp "./src/$old_version/src/$f" "./src/$node_version/legacy/$old_version/${f%.js}.jsx";done
+for f in $(/bin/ls ./src/$old_version/src); do cp "./src/$old_version/src/$f" "./src/$node_version/legacy/$old_version/${f%.js}.jsx";done
+
 (
 if [ -d $FRONTEND_APPNAME ];then
 rm -rf $FRONTEND_APPNAME/node_modules
@@ -384,27 +394,24 @@ rm $FRONTEND_APPNAME/package-lock.json
 npm uninstall react-scripts
 npm install
 
-# find src -type f -name "*.js" -exec bash -c 'for f; do echo mv "$f" "${f%.js}.jsx"; done' _ {} +
-find src -type f -name "*.js" -exec bash -c 'for f; do echo mv "./$f" "./${f%.js}.jsx" && echo mv "./$FRONTEND_APPNAME/$f" "./$FRONTEND_APPNAME/${f%.js}.jsx"; done' _ {} +
+find ./$FRONTEND_APPNAME/src -type f -name "*.js" -exec bash -c 'for f; do echo mv "$f" "${f%.js}.jsx"; done' _ {} +
+find ./$FRONTEND_APPNAME/src -type f -name "*.js" -exec bash -c 'for f; do mv "$f" "${f%.js}.jsx"; done' _ {} +
 
-# find ./src -type f -name "*.js" -exec bash -c 'for f; do      mv "$f" "${f%.js}.jsx"; done' _ {} +
-find src -type f -name "*.js" -exec bash -c 'for f; do mv "./$f" "./${f%.js}.jsx" && mv "./$FRONTEND_APPNAME/$f" "./$FRONTEND_APPNAME/${f%.js}.jsx"; done' _ {} +
+SEARCH='process.env.REACT_APP_API_URL'
+REPLACE='import.meta.env.VITE_API_URL'
+find src -type f \( -name "*.jsx" \) -exec sed -i "s|$SEARCH|$REPLACE|g" {} +
 
+cp ./src/$node_version/Dockerfile .
 cd $FRONTEND_APPNAME
-cp ../package.json .
 rm -rf ./node_modules ./package-lock.json
-cp ../index.html ./index.html
-cp ../vite.config.js ./vite.config.js
-cp ../src/* ./src/
-cp ../$sdenv.env ./.env
+cp ../src/$node_version/etc/* .
+cp -r ../src/$node_version/src/* ./src
+cp ../src/$node_version/$sdenv.env ./.env
 npm install
 npm run build
 
 fi
 )
-build_image_frontend $image_version
-GLOBAL_NAMESPACE=$namespace configure_webservice $image_version
-GLOBAL_NAMESPACE=$namespace k8s_webservice
 )
 }
 
