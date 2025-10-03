@@ -399,7 +399,7 @@ find ./$FRONTEND_APPNAME/src -type f -name "*.js" -exec bash -c 'for f; do mv "$
 
 SEARCH='process.env.REACT_APP_API_URL'
 REPLACE='import.meta.env.VITE_API_URL'
-find src -type f \( -name "*.jsx" \) -exec sed -i "s|$SEARCH|$REPLACE|g" {} +
+find ./$FRONTEND_APPNAME/src -type f \( -name "*.jsx" \) -exec sed -i "s|$SEARCH|$REPLACE|g" {} +
 
 cp ./src/$node_version/Dockerfile .
 cd $FRONTEND_APPNAME
