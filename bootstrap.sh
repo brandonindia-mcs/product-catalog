@@ -529,10 +529,26 @@ function middleware {
 ###################################
 (
 echo && blue "------------------ GENERATING SELF-SIGNED CERT ------------------" && echo
+node_version=18
+working_directory=middleware
+dependency_list=(
+  ./$working_directory/src/$node_version/etc\
+  ./$working_directory/src/$node_version/src\
+)
+for dep in ${dependency_list[@]}; do
+  expanded_path=$(eval echo "$dep")
+  if [ -e "$expanded_path" ]; then
+    echo "[✔] Found: $expanded_path"
+  else
+    echo "[✘] Missing: $expanded_path"
+    exit 1
+  fi
+done
 generate_selfsignedcert $MIDDLEWARE_API_SERVICE
 set_keyvalue KEY_NAME key.pem ./middleware/k8s/$sdenv.env
 set_keyvalue CERT_NAME cert.pem ./middleware/k8s/$sdenv.env
-pushd ./middleware
+
+pushd ./$working_directory
 export NVM_HOME=$(pwd)/.nvm
 export NVM_DIR=$(pwd)/.nvm
 echo NVM_HOME is $NVM_HOME
@@ -541,7 +557,7 @@ if [ ! -d $NVM_DIR ];then
 fi
 if [ -d $NVM_DIR ];then
     installnode;
-    nodever 18;
+    nodever $node_version;
 fi
 mkdir -p $MIDDLEWARE_APPNAME && cd $_
 cp ../package.json .
