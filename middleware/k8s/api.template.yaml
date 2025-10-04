@@ -4,10 +4,15 @@ metadata:
   namespace: $NAMESPACE
   name: $SERVICENAME
 spec:
-  ports:
-    - port: $RUNPORT
   selector:
     app: api
+  ports:
+    - name: http
+      port: $RUNPORT
+      targetPort: $RUNPORT
+    - name: https
+      port: 3443
+      targetPort: 3443
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -29,17 +34,17 @@ spec:
       labels:
         app: api
     spec:
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: middleware-tls
       containers:
         - name: api
           image: $HUB/$REPOSITORY:$TAG
-          # volumeMounts:
-          #   - name: tls-certs
-          #     mountPath: /certs
-          #     readOnly: true
-          # volumes:
-          #   - name: tls-certs
-          #     secret:
-          #       secretName: middleware-tls
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /certs
+              readOnly: true
           env:
               #####***  ALLOW SKETCHY CERTS, NOT FOR PRODUCTION  ***####
               #####***  AS-IN SELF-SIGNED OR OTHERWISE  ************####
@@ -62,6 +67,10 @@ spec:
             # - name: DB_PORT
             #   value: "5432"
             # - name: DB_USER
+            # - name: DB_NAME
+            #   value: product_catalog
+            # - name: DB_SSL
+            #   value: "false"
             #   valueFrom:
             #     secretKeyRef:
             #       name: postgres-secret
@@ -71,10 +80,6 @@ spec:
             #     secretKeyRef:
             #       name: postgres-secret
             #       key: password
-            # - name: DB_NAME
-            #   value: product_catalog
-            # - name: DB_SSL
-            #   value: "false"
           ports:
             - containerPort: $RUNPORT
           # readinessProbe:

@@ -337,7 +337,7 @@ if [ -d $FRONTEND_APPNAME ];then
 warn $(yellow ${FUNCNAME[0]}: $FRONTEND_APPNAME found, not craeting a new react app)
 return 1
 fi
-echo && blue "------------------ NEW REACT APP ------------------" && echo
+echo && blue "------------------ NEW REACT APP ------------------"
 npx -y create-react-app $FRONTEND_APPNAME
 )
 cp ./src/$node_version/Dockerfile .
@@ -530,10 +530,12 @@ function middleware {
 (
 node_version=20
 working_directory=middleware
-echo && blue "------------------ GENERATING SELF-SIGNED CERT ------------------" && echo
-generate_selfsignedcert $MIDDLEWARE_API_SERVICE
+STAMP=`stamp`
+echo && blue "------------------ GENERATING SELF-SIGNED CERT ------------------"
+warn not generating certs
+# generate_selfsignedcert $MIDDLEWARE_API_SERVICE $STAMP
 mkdir -p ./$working_directory/src/$node_version/etc/certs
-mv ./*.pem ./$working_directory/src/$node_version/etc/certs/ 
+cp ./certs/*.pem ./$working_directory/src/$node_version/etc/certs/ 
 set_keyvalue KEY_NAME certs/key.pem ./middleware/k8s/$sdenv.env
 set_keyvalue CERT_NAME certs/cert.pem ./middleware/k8s/$sdenv.env
 dependency_list=(
@@ -638,6 +640,9 @@ set +a
 logit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
     --for=condition=Ready pod -l app=api --timeout=60s\
+  && kubectl create secret generic middleware-tls\
+    --from-file=cert.pem=certs/cert.pem\
+    --from-file=key.pem=certs/key.pem\
   && kubectl port-forward --namespace $GLOBAL_NAMESPACE\
     svc/$MIDDLEWARE_API_SERVICE $MIDDLEWARE_API_RUN_PORT:$MIDDLEWARE_API_RUN_PORT
 "
@@ -893,10 +898,13 @@ echo -e "$*"
 function generate_selfsignedcert {
 (
 set -u
-canonical_name=$1
+# canonical_name=$1
+# stamp=$2
+canonical_name=
+stamp=
 mkdir -p ./certs &&\
-  openssl req -x509 -newkey rsa:4096 -nodes -keyout ./key.pem \
-    -out ./cert.pem -days 365 \
+  openssl req -x509 -newkey rsa:4096 -nodes -keyout ./certs/key$canonical_name$stamp.pem \
+    -out ./certs/cert$canonical_name$stamp.pem -days 365 \
     -subj "/CN=$canonical_name"
 
   # openssl req -x509 -newkey rsa:4096 -nodes -keyout ./certs/$canonical_name-x509-key.pem \

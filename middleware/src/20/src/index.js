@@ -7,8 +7,8 @@ const fastifyCors = require('@fastify/cors');
 const { Pool } = require('pg');
 
 // TLS certificate paths
-// const certPath = path.resolve('/certs/cert.pem');
-// const keyPath = path.resolve('/certs/key.pem');
+const certPath = path.resolve('/certs/cert.pem');
+const keyPath = path.resolve('/certs/key.pem');
 
 // Shared logger config
 const loggerConfig = {
@@ -21,13 +21,13 @@ const loggerConfig = {
 
 // Create HTTP and HTTPS Fastify instances
 const fastifyHttp = fastifyFactory({ logger: loggerConfig });
-// const fastifyHttps = fastifyFactory({
-//   logger: loggerConfig,
-//   https: {
-//     key: fs.existsSync(keyPath) ? fs.readFileSync(keyPath) : undefined,
-//     cert: fs.existsSync(certPath) ? fs.readFileSync(certPath) : undefined
-//   }
-// });
+const fastifyHttps = fastifyFactory({
+  logger: loggerConfig,
+  https: {
+    key: fs.existsSync(keyPath) ? fs.readFileSync(keyPath) : undefined,
+    cert: fs.existsSync(certPath) ? fs.readFileSync(certPath) : undefined
+  }
+});
 
 // PostgreSQL connection pool (Kubernetes service)
 const pool = new Pool({
@@ -90,7 +90,7 @@ const registerRoutes = (app) => {
 
 // Register routes on both servers
 registerRoutes(fastifyHttp);
-// registerRoutes(fastifyHttps);
+registerRoutes(fastifyHttps);
 
 // Start both servers
 const start = async () => {
@@ -98,8 +98,8 @@ const start = async () => {
     await fastifyHttp.listen({ port: 3000, host: '0.0.0.0' });
     fastifyHttp.log.info('HTTP middleware listening on port 3000');
 
-    // await fastifyHttps.listen({ port: 3443, host: '0.0.0.0' });
-    // fastifyHttps.log.info('HTTPS middleware listening on port 3443');
+    await fastifyHttps.listen({ port: 3443, host: '0.0.0.0' });
+    fastifyHttps.log.info('HTTPS middleware listening on port 3443');
   } catch (err) {
     console.error('Startup error:', err);
     process.exit(1);
