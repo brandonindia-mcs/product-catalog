@@ -302,7 +302,23 @@ function frontend {
 ###################################
 (
 node_version=18
-pushd ./frontend
+working_directory=frontend
+dependency_list=(
+  ./$working_directory/src/$node_version/etc\
+  ./$working_directory/src/$node_version/src\
+  ./$working_directory/src/$node_version/$sdenv.env\
+)
+for dep in ${dependency_list[@]}; do
+  expanded_path=$(eval echo "$dep")
+  if [ -e "$expanded_path" ]; then
+    echo "[✔] Found: $expanded_path"
+  else
+    echo "[✘] Missing: $expanded_path"
+    exit 1
+  fi
+done
+
+pushd ./$working_directory
 export NVM_HOME=$(pwd)/.nvm
 export NVM_DIR=$(pwd)/.nvm
 echo NVM_HOME is $NVM_HOME
