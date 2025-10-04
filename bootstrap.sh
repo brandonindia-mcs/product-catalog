@@ -307,6 +307,7 @@ dependency_list=(
   ./$working_directory/src/$node_version/etc\
   ./$working_directory/src/$node_version/src\
   ./$working_directory/src/$node_version/$sdenv.env\
+  ./$working_directory/src/$node_version/Dockerfile\
 )
 for dep in ${dependency_list[@]}; do
   expanded_path=$(eval echo "$dep")
