@@ -543,9 +543,10 @@ for dep in ${dependency_list[@]}; do
     exit 1
   fi
 done
-generate_selfsignedcert $MIDDLEWARE_API_SERVICE
-set_keyvalue KEY_NAME key.pem ./middleware/k8s/$sdenv.env
-set_keyvalue CERT_NAME cert.pem ./middleware/k8s/$sdenv.env
+# echo && blue "------------------ GENERATING SELF-SIGNED CERT ------------------" && echo
+# generate_selfsignedcert $MIDDLEWARE_API_SERVICE
+# set_keyvalue KEY_NAME key.pem ./middleware/k8s/$sdenv.env
+# set_keyvalue CERT_NAME cert.pem ./middleware/k8s/$sdenv.env
 
 pushd ./$working_directory
 export NVM_HOME=$(pwd)/.nvm
@@ -558,9 +559,11 @@ if [ -d $NVM_DIR ];then
     installnode;
     nodever $node_version;
 fi
-mkdir -p $MIDDLEWARE_APPNAME && cd $_
-cp ../package.json .
-cp -r ../src/* ./
+mkdir -p $MIDDLEWARE_APPNAME
+cp ./src/$node_version/Dockerfile .
+cd $MIDDLEWARE_APPNAME
+cp ../src/$node_version/etc/* .
+cp -r ../src/$node_version/src/* .
 npm install
 popd
 )
