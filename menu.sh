@@ -1,6 +1,5 @@
 #!/bin/bash
 
-. ./bootstrap.sh
 (  
   ##################  SETUP ENV  ##################
   function setenv {
@@ -15,7 +14,7 @@
   
   function version { echo $(date +%Y%m%d)$(echo -n `__git_ps1` | sed 's/[()\/]/-/g; s/--/-/g; s/^//')$(date +%H%M) ; }
   function run_system_check { system_check && echo -e "\n\tsdenv is $sdenv\n\tDOCKERHUB is $DOCKERHUB" ; }
-  function system_check { setenv; }
+  function system_check { . ./bootstrap.sh && setenv; }
   function run_upgrade_webservice() { GLOBAL_NAMESPACE=$1 upgrade_webservice $2; }
   function run_install_webservice() { GLOBAL_NAMESPACE=$1 install_webservice $2 ;}
   function run_frontend() { frontend ;}
