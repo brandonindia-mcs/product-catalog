@@ -126,21 +126,11 @@ function install_api {
 # GLOBAL_NAMESPACE=$namespace install_api $image_version
 ###################################
 (
-:\
-      && banner calling middleware\
-  && middleware\
-  \
+middleware\
   && set -u\
-      && banner calling build_image_middleware $1\
   && build_image_middleware $1\
-  \
-      && banner calling GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $1\
-  \
-      && banner calling GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_api\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_api\
-  \
-      && banner calling validate_api\
   && validate_api
 
 )
@@ -151,18 +141,10 @@ function install_postgres {
 # GLOBAL_NAMESPACE=$namespace install_postgres $image_version
 ###################################
 (
-:\
-      && banner calling backend\
-  && backend\
-  \
+backend\
   && set -u\
-      && banner calling calling build_image_backend $1\
   && build_image_backend $1\
-  \
-      && banner calling GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE calling configure_postgres $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $1\
-  \
-      && banner calling kGLOBAL_NAMESPACE=$GLOBAL_NAMESPACE 8s_postgres\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_postgres
 )
 }
