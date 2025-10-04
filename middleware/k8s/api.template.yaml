@@ -45,14 +45,36 @@ spec:
               #####***  AS-IN SELF-SIGNED OR OTHERWISE  ************####
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: "0"
-            - name: PGHOST
+            - name: NODE_ENV
+              value: development
+            - name: PG_HOST
               value: pg-service
-            - name: PGDATABASE
+            - name: PG_DATABASE
               value: catalog
-            - name: PGUSER
+            - name: PG_USER
               value: catalog
-            - name: PGPASSWORD
+            - name: PG_PASSWORD
               value: catalog
+            - name: PG_PORT
+              value: "5432"
+            # - name: DB_HOST
+            #   value: postgres
+            # - name: DB_PORT
+            #   value: "5432"
+            # - name: DB_USER
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: postgres-secret
+            #       key: username
+            # - name: DB_PASSWORD
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: postgres-secret
+            #       key: password
+            # - name: DB_NAME
+            #   value: product_catalog
+            # - name: DB_SSL
+            #   value: "false"
           ports:
             - containerPort: $RUNPORT
           # readinessProbe:

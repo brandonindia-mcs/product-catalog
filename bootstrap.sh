@@ -530,9 +530,17 @@ function middleware {
 (
 node_version=20
 working_directory=middleware
+echo && blue "------------------ GENERATING SELF-SIGNED CERT ------------------" && echo
+generate_selfsignedcert $MIDDLEWARE_API_SERVICE
+mkdir -p ./$working_directory/src/$node_version/etc/certs
+mv ./*.pem ./$working_directory/src/$node_version/etc/certs/ 
+set_keyvalue KEY_NAME certs/key.pem ./middleware/k8s/$sdenv.env
+set_keyvalue CERT_NAME certs/cert.pem ./middleware/k8s/$sdenv.env
 dependency_list=(
   ./$working_directory/src/$node_version/etc\
   ./$working_directory/src/$node_version/src\
+  ./$working_directory/src/$node_version/etc/certs/cert.pem\
+  ./$working_directory/src/$node_version/etc/certs/key.pem\
 )
 for dep in ${dependency_list[@]}; do
   expanded_path=$(eval echo "$dep")
@@ -543,10 +551,6 @@ for dep in ${dependency_list[@]}; do
     exit 1
   fi
 done
-# echo && blue "------------------ GENERATING SELF-SIGNED CERT ------------------" && echo
-# generate_selfsignedcert $MIDDLEWARE_API_SERVICE
-# set_keyvalue KEY_NAME key.pem ./middleware/k8s/$sdenv.env
-# set_keyvalue CERT_NAME cert.pem ./middleware/k8s/$sdenv.env
 
 pushd ./$working_directory
 export NVM_HOME=$(pwd)/.nvm
@@ -562,7 +566,7 @@ fi
 mkdir -p $MIDDLEWARE_APPNAME
 cp ./src/$node_version/Dockerfile .
 cd $MIDDLEWARE_APPNAME
-cp ../src/$node_version/etc/* .
+cp -r ../src/$node_version/etc/* .
 cp -r ../src/$node_version/src/* .
 npm install
 popd
@@ -890,7 +894,7 @@ function generate_selfsignedcert {
 (
 set -u
 canonical_name=$1
-# mkdir -p ./certs &&\
+mkdir -p ./certs &&\
   openssl req -x509 -newkey rsa:4096 -nodes -keyout ./key.pem \
     -out ./cert.pem -days 365 \
     -subj "/CN=$canonical_name"
