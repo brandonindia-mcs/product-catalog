@@ -7,7 +7,7 @@
     "start": "node index.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Brandon R. India",
   "license": "ISC",
   "description": "",
   "dependencies": {

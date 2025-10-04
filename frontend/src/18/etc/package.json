@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "proxy": "http://api-service:3000",
+  "author": "Brandon R. India",
   "engines": {
     "node": ">=18.0.0"
   },
   "keywords": [],
-  "author": "",
   "license": "MIT",
   "description": "",
   "dependencies": {
