@@ -36,17 +36,6 @@ function fail { echo; echo "$(tput setaf 8;tput setab 1)$(date "+%Y-%m-%d %H:%M:
 function abort_hard  { echo; red "**** ABORT($1): $(date "+%Y-%m-%d %H:%M:%S") **** " && echo -e "\t${@:2}\n" && read -p "press CTRL+C or die!" ; exit 1; }
 function abort       { echo; red "**** ABORT($1): $(date "+%Y-%m-%d %H:%M:%S") ****" && echo -e "\t${@:2}\n"; }
 
-##################  SETUP ENV  ##################
-function setenv {
-if [ -r ./$sdenv.env ];then
-set -a
-source ./$sdenv.env
-set +a
-else
-abort_hard "install.sh:$LINENO"  ${FUNCNAME[0]}: file $sdenv.env not found in $PWD
-fi
-}
-setenv
 
 function default_product_catalog {
 ##########  RUN COMMAND  ##########
@@ -257,7 +246,7 @@ set_keyvalue HUB $DOCKERHUB ./frontend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
 set_keyvalue REPLICAS 2 ./frontend/k8s/$sdenv.env
 set -a
-source ./frontend/k8s/$sdenv.env
+source ./frontend/k8s/$sdenv.env || exit 1
 set +a
 # envsubst < ./frontend/k8s/web.template.yaml | kubectl apply -f -
 envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
@@ -279,7 +268,7 @@ set_keyvalue REPLICAS 2 ./middleware/k8s/$sdenv.env
 set_keyvalue RUNPORT $MIDDLEWARE_API_RUN_PORT ./middleware/k8s/$sdenv.env
 set_keyvalue SERVICENAME $MIDDLEWARE_API_SERVICE ./middleware/k8s/$sdenv.env
 set -a
-source ./middleware/k8s/$sdenv.env
+source ./middleware/k8s/$sdenv.env || exit 1
 set +a
 # envsubst < ./middleware/k8s/api.template.yaml | kubectl apply -f -
 envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
@@ -299,7 +288,7 @@ set_keyvalue HUB $DOCKERHUB ./backend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./backend/k8s/$sdenv.env
 set_keyvalue RUNPORT $POSTGRE_SQL_RUN_PORT ./backend/k8s/$sdenv.env
 set -a
-source ./backend/k8s/$sdenv.env
+source ./backend/k8s/$sdenv.env || exit 1
 set +a
 # envsubst < ./backend/k8s/postgres.template.yaml | kubectl apply -f -
 envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
@@ -338,7 +327,7 @@ cp ./src/$node_version/Dockerfile .
 cd $FRONTEND_APPNAME
 cp ../src/$node_version/etc/* .
 cp -r ../src/$node_version/src/* ./src
-cp ../src/$node_version/$sdenv.env ./.env
+cp ../src/$node_version/$sdenv.env ./.env || exit 1
 npm install react@18.2.0 react-dom@18.2.0 react-router-dom@6 axios --legacy-peer-deps
 npm install
 popd
@@ -388,7 +377,7 @@ cd $FRONTEND_APPNAME
 rm -rf ./node_modules ./package-lock.json
 cp ../src/$node_version/etc/* .
 cp -r ../src/$node_version/src/* ./src
-cp ../src/$node_version/$sdenv.env ./.env
+cp ../src/$node_version/$sdenv.env ./.env || exit 1
 npm install
 npm run build
 
@@ -588,7 +577,7 @@ function k8s_api {
 
 # EOF
 set -a
-source ./middleware/k8s/$sdenv.env
+source ./middleware/k8s/$sdenv.env || exit 1
 set +a
 logit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
@@ -634,7 +623,7 @@ function validate_api {
 
 # EOF
 set -a
-source ./middleware/k8s/$sdenv.env
+source ./middleware/k8s/$sdenv.env || exit 1
 set +a
 logit "info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\
   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
@@ -772,7 +761,7 @@ image_version=$1
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./opt/pgadmin/k8s/$sdenv.env
 set_keyvalue TAG $image_version ./opt/pgadmin/k8s/$sdenv.env
 set -a
-source ./opt/pgadmin/k8s/$sdenv.env
+source ./opt/pgadmin/k8s/$sdenv.env || exit 1
 set +a
 # envsubst < ./backend/k8s/postgres.template.yaml | kubectl apply -f -
 envsubst >./opt/pgadmin/k8s/pgadmin.yaml <./opt/pgadmin/k8s/pgadmin.template.yaml
