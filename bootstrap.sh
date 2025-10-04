@@ -528,8 +528,7 @@ function middleware {
 # middleware
 ###################################
 (
-echo && blue "------------------ GENERATING SELF-SIGNED CERT ------------------" && echo
-node_version=18
+node_version=20
 working_directory=middleware
 dependency_list=(
   ./$working_directory/src/$node_version/etc\
