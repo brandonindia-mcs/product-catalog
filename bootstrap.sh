@@ -4,12 +4,20 @@
 GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 alias stamp="echo \$(date +%Y%m%dT%H%M%S)"
 export FRONTEND_APPNAME=product-catalog-frontend
-export MIDDLEWARE_APPNAME=product-catalog-middleware
+export FRONTEND_API_SERVICE=web-service
+export FRONTEND_SERVICE_NAME=web
+export FRONTEND_SELECTOR_NAME=web
+export FRONTEND_DEPLOYMENT_NAME=web
+export FRONTEND_PODTEMPLATE_NAME=web
+export FRONTEND_CONTAINER_NAME=web
 export WEB_HTTP_RUN_PORT_FRONTEND=80
 export WEB_HTTPS_RUN_PORT_FRONTEND=443
+
+export MIDDLEWARE_APPNAME=product-catalog-middleware
 export API_HTTP_RUN_PORT_MIDDLEWARE=3000
 export API_HTTPS_RUN_PORT_MIDDLEWARE=3443
 export MIDDLEWARE_API_SERVICE=api-service
+
 export BACKEND_APPNAME=product-catalog-backend
 export POSTGRE_SQL_RUN_PORT=5432
 
@@ -259,6 +267,11 @@ set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB ./frontend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
 set_keyvalue REPLICAS 2 ./frontend/k8s/$sdenv.env
+set_keyvalue SERVICE $FRONTEND_SERVICE_NAME ./frontend/k8s/$sdenv.env
+set_keyvalue SELECTOR $FRONTEND_SELECTOR_NAME ./frontend/k8s/$sdenv.env
+set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT_NAME ./frontend/k8s/$sdenv.env
+set_keyvalue PODTEMPLATE $FRONTEND_PODTEMPLATE_NAME ./frontend/k8s/$sdenv.env
+set_keyvalue CONTAINER $FRONTEND_CONTAINER_NAME ./frontend/k8s/$sdenv.env
 set -a
 source ./frontend/k8s/$sdenv.env || exit 1
 set +a
@@ -655,7 +668,8 @@ set_registry
 # formatrun <<'EOF'
 docker build $NOCACHE\
   -t $appname:$image_version\
-  --build-arg EXPOSE_PORT=$API_HTTP_RUN_PORT_MIDDLEWARE\
+  --build-arg EXPOSE_PORT_HTTP=$API_HTTP_RUN_PORT_MIDDLEWARE\
+  --build-arg EXPOSE_PORT_HTTPS=$API_HTTPS_RUN_PORT_MIDDLEWARE\
   middleware\
   || return 1
 # EOF

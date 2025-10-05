@@ -2,18 +2,25 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: $NAMESPACE
-  name: web-service
+# TELLS KUBERNETES HOW TO IDENTIFY THIS SERVICE.
+  name: $SERVICE
 spec:
   ports:
-  - port: 80
+  - name: http
+    port: $RUNPORT_HTTP
+    targetPort: $RUNPORT_HTTP
+  - name: https
+    port: $RUNPORT_HTTPS
+    targetPort: $RUNPORT_HTTPS
   selector:
-    app: web
+    app: $SELECTOR
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: $NAMESPACE
-  name: web
+# TELLS KUBERNETES HOW TO IDENTIFY THIS DEPLOYMENT
+  name: $DEPLOYMENT
 spec:
 ##### replicas: i → Keeps service available during updates
   replicas: $REPLICAS
@@ -27,17 +34,19 @@ spec:
 #       maxSurge: 1         # Add at most one extra pod during update
   selector:
     matchLabels:
-      app: web
+      app: $SELECTOR
   template:
     metadata:
       labels:
-        app: web
+# TELLS KUBERNETES HOW TO IDENTIFY THIS POD
+        app: $PODTEMPLATE
     spec:
       containers:
-        - name: web
+        - name: $CONTAINER
           image: $HUB/$REPOSITORY:$TAG
           ports:
-            - containerPort: 80
+            - containerPort: $RUNPORT_HTTP
+            - containerPort: $RUNPORT_HTTPS
 ##### readinessProbe → Ensures traffic only goes to healthy pods
           # readinessProbe:
           #   httpGet:
