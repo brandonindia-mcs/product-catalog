@@ -14,9 +14,16 @@ export WEB_HTTP_RUN_PORT_FRONTEND=80
 export WEB_HTTPS_RUN_PORT_FRONTEND=443
 
 export MIDDLEWARE_APPNAME=product-catalog-middleware
+export MIDDLEWARE_API_SERVICE_NAME=api-service
+export MIDDLEWARE_SELECTOR_NAME=api
+export MIDDLEWARE_DEPLOYMENT_NAME=api
+export MIDDLEWARE_PODTEMPLATE_NAME=api
+export MIDDLEWARE_CONTAINER_NAME=api
+export MIDDLEWARE_TLS_MOUNT_PATH=/certs
+export MIDDLEWARE_TLS_CERT_VOLUME=tls-certs
+export MIDDLEWARE_TLS_SECRET=middleware-tls
 export API_HTTP_RUN_PORT_MIDDLEWARE=3000
 export API_HTTPS_RUN_PORT_MIDDLEWARE=3443
-export MIDDLEWARE_API_SERVICE=api-service
 
 export BACKEND_APPNAME=product-catalog-backend
 export POSTGRE_SQL_RUN_PORT=5432
@@ -267,7 +274,15 @@ set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/$sdenv.env
 set_keyvalue REPLICAS 2 ./middleware/k8s/$sdenv.env
 set_keyvalue RUNPORT_HTTP_FRONTEND_LISTENER $API_HTTP_RUN_PORT_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue RUNPORT_HTTPS_FRONTEND_LISTENER $API_HTTPS_RUN_PORT_MIDDLEWARE ./middleware/k8s/$sdenv.env
-set_keyvalue SERVICENAME $MIDDLEWARE_API_SERVICE ./middleware/k8s/$sdenv.env
+set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE_NAME ./middleware/k8s/$sdenv.env
+set_keyvalue SELECTOR $MIDDLEWARE_SELECTOR_NAME ./middleware/k8s/$sdenv.env
+set_keyvalue DEPLOYMENT $MIDDLEWARE_DEPLOYMENT_NAME ./middleware/k8s/$sdenv.env
+set_keyvalue PODTEMPLATE $MIDDLEWARE_PODTEMPLATE_NAME ./middleware/k8s/$sdenv.env
+set_keyvalue CONTAINER $MIDDLEWARE_CONTAINER_NAME ./middleware/k8s/$sdenv.env
+set_keyvalue TLS_MOUNT_PATH $MIDDLEWARE_TLS_MOUNT_PATH ./middleware/k8s/$sdenv.env
+set_keyvalue TLS_CERT_VOLUME $MIDDLEWARE_TLS_CERT_VOLUME ./middleware/k8s/$sdenv.env
+set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv.env
+
 set -a
 source ./middleware/k8s/$sdenv.env || exit 1
 set +a
@@ -691,7 +706,7 @@ set +a
 logit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
     --for=condition=Ready pod -l app=api --timeout=60s\
-  && kubectl create secret generic middleware-tls\
+  && kubectl create secret generic $MIDDLEWARE_TLS_SECRET\
     --from-file=cert.pem=certs/cert.pem\
     --from-file=key.pem=certs/key.pem\
   && kubectl port-forward --namespace $GLOBAL_NAMESPACE\

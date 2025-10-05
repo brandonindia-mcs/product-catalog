@@ -2,10 +2,10 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: $NAMESPACE
-  name: $SERVICENAME
+  name: $SERVICE
 spec:
   selector:
-    app: api
+    app: $SELECTOR
   ports:
     - name: http
       port: $RUNPORT_HTTP_FRONTEND_LISTENER
@@ -18,7 +18,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: $NAMESPACE
-  name: api
+  name: $DEPLOYMENT
 spec:
   replicas: $REPLICAS
   # strategy:
@@ -28,22 +28,22 @@ spec:
   #     maxSurge: 1         # Add at most one extra pod during update
   selector:
     matchLabels:
-      app: api
+      app: $SELECTOR
   template:
     metadata:
       labels:
-        app: api
+        app: $PODTEMPLATE
     spec:
       volumes:
-        - name: tls-certs
+        - name: $MIDDLEWARE_TLS_CERT_VOLUME
           secret:
-            secretName: middleware-tls
+            secretName: $TLS_SECRET
       containers:
-        - name: api
+        - name: $CONTAINER
           image: $HUB/$REPOSITORY:$TAG
           volumeMounts:
-            - name: tls-certs
-              mountPath: /certs
+            - name: $MIDDLEWARE_TLS_CERT_VOLUME
+              mountPath: $MIDDLEWARE_TLS_MOUNT_PATH
               readOnly: true
           env:
               #####***  ALLOW SKETCHY CERTS, NOT FOR PRODUCTION  ***####
