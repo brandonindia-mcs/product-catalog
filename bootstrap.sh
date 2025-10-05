@@ -665,44 +665,45 @@ runit "kubectl apply -f ./middleware/k8s/api.yaml\
 
 
 function validate_api {
-# formatrun <<'EOF'
-# info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\
-#   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
-#   && info http://localhost:$MIDDLEWARE_API_RUN_PORT/products\
-#   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/products|jq\
-#   && info http://localhost:$MIDDLEWARE_API_RUN_PORT/products/1\
-#   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/products/1|jq\
-#   && weblist=$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
-#   for pod in ${weblist[@]};do
-#    info "$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db"\
-#     && kubectl exec -it $pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
-#     && info "$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products"\
-#     && kubectl exec -it $pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products|jq\
-#    && info "$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products/1"\
-#    && kubectl exec -it $pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products/1|jq
-#   done
-
-# EOF
-set -a
-source ./middleware/k8s/$sdenv.env || exit 1
-set +a
-logit "info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\
+cat ./middleware/k8s/$sdenv.env || exit 1
+formatrun <<'EOF'
+info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\
   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
   && info http://localhost:$MIDDLEWARE_API_RUN_PORT/products\
   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/products|jq\
   && info http://localhost:$MIDDLEWARE_API_RUN_PORT/products/1\
   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/products/1|jq\
-  && weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
-  for pod in \${weblist[@]};do
-    info "Connection tests $MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT for \$pod, press Enter"  && read x;\
-    info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db"\
-    && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
-    && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products"\
-    && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products|jq\
-    && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products/1"\
-    && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products/1|jq
+  && weblist=$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
+  for pod in ${weblist[@]};do
+   info "$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db"\
+    && kubectl exec -it $pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
+    && info "$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products"\
+    && kubectl exec -it $pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products|jq\
+   && info "$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products/1"\
+   && kubectl exec -it $pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products/1|jq
   done
-"
+
+EOF
+# set -a
+# source ./middleware/k8s/$sdenv.env || exit 1
+# set +a
+# logit "info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\
+#   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
+#   && info http://localhost:$MIDDLEWARE_API_RUN_PORT/products\
+#   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/products|jq\
+#   && info http://localhost:$MIDDLEWARE_API_RUN_PORT/products/1\
+#   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/products/1|jq\
+#   && weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
+#   for pod in \${weblist[@]};do
+#     info "Connection tests $MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT for \$pod, press Enter"  && read x;\
+#     info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db"\
+#     && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
+#     && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products"\
+#     && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products|jq\
+#     && info "\$pod http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products/1"\
+#     && kubectl exec -it \$pod -- curl -s http://$MIDDLEWARE_API_SERVICE:$MIDDLEWARE_API_RUN_PORT/products/1|jq
+#   done
+# "
 
 # runit "info http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db\
 #   && curl -s http://localhost:$MIDDLEWARE_API_RUN_PORT/health/db|jq\
@@ -876,7 +877,6 @@ function getyarn() {
 
 function formatrun {
 (
-# local raw_cmd
 raw_cmd=$(cat)
 # CMD=$(echo "$raw_cmd" | sed -E ':a;N;$!ba;s/\\\s*\n/ /g')
 # eval "$CMD"

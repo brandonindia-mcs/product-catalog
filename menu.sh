@@ -20,6 +20,8 @@
   function run_frontend() { frontend ;}
   function run_middleware() { middleware ;}
   function run_install_api() { GLOBAL_NAMESPACE=$1 install_api $2; }
+  function run_validate_api() { validate_api; }
+  function run_backend() { eecho && cho menu.js: no overwriting postgres && return 1; backend; }
   function run_install_postgres() { eecho && cho menu.js: no overwriting postgres && return 1; GLOBAL_NAMESPACE=$1 install_postgres $2; }
   function run_install_all() {
     GLOBAL_NAMESPACE=$1 install_webservice $2\
@@ -31,27 +33,25 @@
     namespace=default && image_version="$namespace-$(version)"
     echo tag is: $image_version && echo
 
-    echo "Select an option:"
-    echo "1) system_check"
-    echo "2) frontend"
-    echo "3) install_webservice"
-    echo "4) upgrade_webservice"
-    echo "5) middleware"
-    echo "6) install_api"
-    # echo "7) install_postgres"
-    echo "50) net new install"
-    echo "*) Exit"
+    echo -e "\nSelect an option:"
+    echo -e "\n10) sys_check \t*) Exit"
+    echo -e "\n20) frontend \t21) install_webservice \t22) upgrade_webservice"
+    echo -e "\n30) middleware \t31) install_api \t32) validate_api"
+    # echo -e "\n40) backend \t 41) install_postgres"
+    echo -e "\n90) net new install"
     read -p "Enter choice or exit: " choice
 
     case $choice in
-      1) run_system_check ;;
-      2) system_check && run_frontend ;;
-      3) system_check && run_install_webservice $namespace $image_version ;;
-      4) system_check && run_upgrade_webservice $namespace $image_version ;;
-      5) system_check && run_middleware ;;
-      6) system_check && run_install_api $namespace $image_version ;;
-      7) system_check && run_install_postgres $namespace $image_version ;;
-      50) system_check && run_install_all $namespace $image_version ;;
+      10) run_system_check ;;
+      20) system_check && run_frontend ;;
+      21) system_check && run_install_webservice $namespace $image_version ;;
+      22) system_check && run_upgrade_webservice $namespace $image_version ;;
+      30) system_check && run_middleware ;;
+      31) system_check && run_install_api $namespace $image_version ;;
+      32) system_check && run_validate_api ;;
+      40) system_check && run_backend $namespace $image_version ;;
+      41) system_check && run_install_postgres $namespace $image_version ;;
+      90) system_check && run_install_all $namespace $image_version ;;
       *) echo "Exiting..."; exit 0 ;;
     esac
   }
