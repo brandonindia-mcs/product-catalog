@@ -5,6 +5,8 @@ GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 alias stamp="echo \$(date +%Y%m%dT%H%M%S)"
 export FRONTEND_APPNAME=product-catalog-frontend
 export MIDDLEWARE_APPNAME=product-catalog-middleware
+export WEB_HTTP_RUN_PORT_FRONTEND=80
+export WEB_HTTPS_RUN_PORT_FRONTEND=443
 export API_HTTP_RUN_PORT_MIDDLEWARE=3000
 export API_HTTPS_RUN_PORT_MIDDLEWARE=3443
 export MIDDLEWARE_API_SERVICE=api-service
@@ -98,12 +100,21 @@ frontend\
 )
 }
 
+function frontend_convert_18_20 {
+##########  RUN COMMAND  ##########
+# frontend_convert_18_20
+###################################
+(
+frontend_upgrade_20
+)
+}
+
 function upgrade_webservice {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=$namespace upgrade_webservice $image_version
 ###################################
 (
-frontend_upgrade_20\
+frontend_upgrade\
   && set -u\
   && build_image_frontend $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $1\
@@ -242,6 +253,8 @@ function configure_webservice {
 set -u
 image_version=$1
 set_keyvalue REPOSITORY $FRONTEND_APPNAME ./frontend/k8s/$sdenv.env
+set_keyvalue RUNPORT_HTTP $WEB_HTTP_RUN_PORT_FRONTEND ./frontend/k8s/$sdenv.env
+set_keyvalue RUNPORT_HTTPS $WEB_HTTPS_RUN_PORT_FRONTEND ./frontend/k8s/$sdenv.env
 set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB ./frontend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
@@ -408,6 +421,49 @@ SEARCH='process.env.REACT_APP_API_URL'
 REPLACE='import.meta.env.VITE_API_URL'
 find ./$FRONTEND_APPNAME/src -type f \( -name "*.jsx" \) -exec sed -i "s|$SEARCH|$REPLACE|g" {} +
 
+frontend_upgrade
+
+fi
+)
+)
+}
+
+function frontend_upgrade {
+##########  RUN COMMAND  ##########
+# frontend_upgrade
+###################################
+(
+node_version=${1:-20}
+working_directory=frontend
+dependency_list=(
+  ./$working_directory/src/$node_version/etc\
+  ./$working_directory/src/$node_version/src\
+  ./$working_directory/src/$node_version/Dockerfile\
+  ./$working_directory/src/$node_version/$sdenv.env\
+)
+for dep in ${dependency_list[@]}; do
+  expanded_path=$(eval echo "$dep")
+  if [ -e "$expanded_path" ]; then
+    echo "[✔] Found: $expanded_path"
+  else
+    echo "[✘] Missing: $expanded_path"
+    exit 1
+  fi
+done
+
+pushd ./$working_directory
+export NVM_HOME=$(pwd)/.nvm
+export NVM_DIR=$(pwd)/.nvm
+echo NVM_HOME is $NVM_HOME
+
+if [ ! -d $NVM_DIR ];then
+    install_nvm;
+fi
+if [ -d $NVM_DIR ];then
+    installnode;
+    nodever $node_version;
+fi
+
 cp ./src/$node_version/Dockerfile .
 cd $FRONTEND_APPNAME
 rm -rf ./node_modules ./package-lock.json
@@ -417,8 +473,6 @@ cp ../src/$node_version/$sdenv.env ./.env || exit 1
 npm install
 npm run build
 
-fi
-)
 )
 }
 
