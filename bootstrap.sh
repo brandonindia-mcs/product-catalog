@@ -10,33 +10,6 @@ export MIDDLEWARE_API_SERVICE=api-service
 export BACKEND_APPNAME=product-catalog-backend
 export POSTGRE_SQL_RUN_PORT=5432
 
-##########  CHEATSHEET  ###########
-# GLOBAL_NAMESPACE=default (middleware SAMETAG && build_image_middleware SAMETAG && GLOBAL_NAMESPACE=default k8s_api)
-# GLOBAL_NAMESPACE=default install_postgres `stamp`
-# GLOBAL_NAMESPACE=default install_api `stamp`
-# GLOBAL_NAMESPACE=default install_frontenc `stamp`
-# GLOBAL_NAMESPACE=default k8s_webservice_update
-# GLOBAL_NAMESPACE=default install_api `stamp`
-# configure_default && GLOBAL_NAMESPACE=default k8s_api
-# 
-# 
-# GLOBAL_NAMESPACE=default pgadmin `stamp`
-###################################
-
-#############  HELPER FUNCTIONS AT TOP  #############
-function green { println '\e[32m%s\e[0m' "$*"; }
-function yellow { println '\e[33m%s\e[0m' "$*"; }
-function blue { println '\e[34m%s\e[0m' "$*"; }                                                                                    
-function red { println '\e[31m%s\e[0m' "$*"; }
-function banner { echo; echo "$(tput setaf 0;tput setab 6)$(date "+%Y-%m-%d %H:%M:%S") BANNER:${FUNCNAME[1]}: ${*}$(tput sgr 0)"; }
-function info { echo; echo "$(tput setaf 0;tput setab 7)$(date "+%Y-%m-%d %H:%M:%S") INFO:$(tput sgr 0) ${*}"; }
-function warn { echo; echo "$(tput setaf 1;tput setab 3)$(date "+%Y-%m-%d %H:%M:%S") WARN:$(tput sgr 0) ${*}"; }
-function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS:$(tput sgr 0) ${*}"; }
-function fail { echo; echo "$(tput setaf 8;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL:$(tput sgr 0) ${*}"; }
-function abort_hard  { echo; red "**** ABORT($1): $(date "+%Y-%m-%d %H:%M:%S") **** " && echo -e "\t${@:2}\n" && read -p "press CTRL+C or die!" ; exit 1; }
-function abort       { echo; red "**** ABORT($1): $(date "+%Y-%m-%d %H:%M:%S") ****" && echo -e "\t${@:2}\n"; }
-
-
 function default_product_catalog {
 ##########  RUN COMMAND  ##########
 # default_product_catalog
@@ -914,6 +887,20 @@ function getyarn() {
   echo && blue "------------------ YARN - NEEDS NVM ------------------" && echo
   if ! command -v yarn >/dev/null 2>&1; then grey "Getting yarn: " && npm install --global yarn >/dev/null; fi
 }
+
+function green { println '\e[32m%s\e[0m' "$*"; }
+function yellow { println '\e[33m%s\e[0m' "$*"; }
+function blue { println '\e[34m%s\e[0m' "$*"; }                                                                                    
+function red { println '\e[31m%s\e[0m' "$*"; }
+function banner { echo; echo "$(tput setaf 0;tput setab 6)$(date "+%Y-%m-%d %H:%M:%S") BANNER:${FUNCNAME[1]}: ${*}$(tput sgr 0)"; }
+function info { echo; echo "$(tput setaf 0;tput setab 7)$(date "+%Y-%m-%d %H:%M:%S") INFO:$(tput sgr 0) ${*}"; }
+function warn { echo; echo "$(tput setaf 1;tput setab 3)$(date "+%Y-%m-%d %H:%M:%S") WARN:$(tput sgr 0) ${*}"; }
+function pass { echo; echo "$(tput setaf 0;tput setab 2)$(date "+%Y-%m-%d %H:%M:%S") PASS:$(tput sgr 0) ${*}"; }
+function fail { echo; echo "$(tput setaf 8;tput setab 1)$(date "+%Y-%m-%d %H:%M:%S") FAIL:$(tput sgr 0) ${*}"; }
+function abort_hard  { echo; red "**** ABORT($1): $(date "+%Y-%m-%d %H:%M:%S") **** " && echo -e "\t${@:2}\n" && read -p "press CTRL+C or die!" ; exit 1; }
+function abort       { echo; red "**** ABORT($1): $(date "+%Y-%m-%d %H:%M:%S") ****" && echo -e "\t${@:2}\n"; }
+
+
 
 
 function formatrun {
