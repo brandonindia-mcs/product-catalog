@@ -406,6 +406,57 @@ SEARCH='process.env.REACT_APP_API_URL'
 REPLACE='import.meta.env.VITE_API_URL'
 find ./$FRONTEND_APPNAME/src -type f \( -name "*.jsx" \) -exec sed -i "s|$SEARCH|$REPLACE|g" {} +
 
+frontend_upgrade
+
+fi
+)
+)
+}
+
+function node_refresh {
+# (
+node_version=${1:-20}
+banner Refreshing node to $node_version
+export NVM_HOME=$(pwd)/.nvm
+export NVM_DIR=$(pwd)/.nvm
+echo NVM_HOME is $NVM_HOME
+
+if [ ! -d $NVM_DIR ];then
+    install_nvm;
+fi
+if [ -d $NVM_DIR ];then
+    installnode;
+    nodever $node_version;
+fi
+# )
+}
+
+function frontend_upgrade {
+##########  RUN COMMAND  ##########
+# frontend_upgrade
+###################################
+(
+node_version=${1:-20}
+working_directory=frontend
+dependency_list=(
+  ./$working_directory/src/$node_version/etc\
+  ./$working_directory/src/$node_version/src\
+  ./$working_directory/src/$node_version/Dockerfile\
+  ./$working_directory/src/$node_version/$sdenv.env\
+)
+for dep in ${dependency_list[@]}; do
+  expanded_path=$(eval echo "$dep")
+  if [ -e "$expanded_path" ]; then
+    echo "[✔] Found: $expanded_path"
+  else
+    echo "[✘] Missing: $expanded_path"
+    exit 1
+  fi
+done
+
+pushd ./$working_directory
+node_refresh $node_version
+
 cp ./src/$node_version/Dockerfile .
 cd $FRONTEND_APPNAME
 rm -rf ./node_modules ./package-lock.json
