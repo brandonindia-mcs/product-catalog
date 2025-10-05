@@ -133,7 +133,7 @@ function install_postgres {
 backend\
   && set -u\
   && build_image_backend $1\
-  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $1\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgre $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_postgres
 )
 }
@@ -229,7 +229,7 @@ set -u
 image_version=$1
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $image_version
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $image_version
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $image_version
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgre $image_version
 )
 }
 
@@ -275,9 +275,9 @@ envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
 )
 }
 
-function configure_postgres {
+function configure_postgre {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace configure_postgres $image_version
+# GLOBAL_NAMESPACE=$namespace configure_postgre $image_version
 ###################################
 (
 set -u
