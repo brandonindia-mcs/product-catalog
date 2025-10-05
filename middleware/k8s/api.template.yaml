@@ -8,11 +8,11 @@ spec:
     app: api
   ports:
     - name: http
-      port: $RUNPORT
-      targetPort: $RUNPORT
+      port: $RUNPORT_HTTP_FRONTEND_LISTENER
+      targetPort: $RUNPORT_HTTP_FRONTEND_LISTENER
     - name: https
-      port: 3443
-      targetPort: 3443
+      port: $RUNPORT_HTTPS_FRONTEND_LISTENER
+      targetPort: $RUNPORT_HTTPS_FRONTEND_LISTENER
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -81,7 +81,7 @@ spec:
             #       name: postgres-secret
             #       key: password
           ports:
-            - containerPort: $RUNPORT
+            - containerPort: $RUNPORT_HTTP_FRONTEND_LISTENER
           # readinessProbe:
           #   httpGet:
           #     path: /health    # Adjust to your API's health endpoint

@@ -5,7 +5,8 @@ GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 alias stamp="echo \$(date +%Y%m%dT%H%M%S)"
 export FRONTEND_APPNAME=product-catalog-frontend
 export MIDDLEWARE_APPNAME=product-catalog-middleware
-export MIDDLEWARE_API_RUN_PORT=3000
+export API_HTTP_RUN_PORT_MIDDLEWARE=3000
+export API_HTTPS_RUN_PORT_MIDDLEWARE=3443
 export MIDDLEWARE_API_SERVICE=api-service
 export BACKEND_APPNAME=product-catalog-backend
 export POSTGRE_SQL_RUN_PORT=5432
@@ -265,7 +266,8 @@ set_keyvalue TAG $image_version ./middleware/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB ./middleware/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/$sdenv.env
 set_keyvalue REPLICAS 2 ./middleware/k8s/$sdenv.env
-set_keyvalue RUNPORT $MIDDLEWARE_API_RUN_PORT ./middleware/k8s/$sdenv.env
+set_keyvalue RUNPORT_HTTP_FRONTEND_LISTENER $API_HTTP_RUN_PORT_MIDDLEWARE ./middleware/k8s/$sdenv.env
+set_keyvalue RUNPORT_HTTPS_FRONTEND_LISTENER $API_HTTPS_RUN_PORT_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SERVICENAME $MIDDLEWARE_API_SERVICE ./middleware/k8s/$sdenv.env
 set -a
 source ./middleware/k8s/$sdenv.env || exit 1
@@ -286,7 +288,7 @@ set_keyvalue REPOSITORY $BACKEND_APPNAME ./backend/k8s/$sdenv.env
 set_keyvalue TAG $image_version ./backend/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB ./backend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./backend/k8s/$sdenv.env
-set_keyvalue RUNPORT $POSTGRE_SQL_RUN_PORT ./backend/k8s/$sdenv.env
+set_keyvalue RUNPORT_POSTGRE $POSTGRE_SQL_RUN_PORT ./backend/k8s/$sdenv.env
 set -a
 source ./backend/k8s/$sdenv.env || exit 1
 set +a
@@ -599,7 +601,7 @@ set_registry
 # formatrun <<'EOF'
 docker build $NOCACHE\
   -t $appname:$image_version\
-  --build-arg EXPOSE_PORT=$MIDDLEWARE_API_RUN_PORT\
+  --build-arg EXPOSE_PORT=$API_HTTP_RUN_PORT_MIDDLEWARE\
   middleware\
   || return 1
 # EOF
@@ -644,7 +646,7 @@ logit "kubectl apply -f ./middleware/k8s/api.yaml\
     --from-file=cert.pem=certs/cert.pem\
     --from-file=key.pem=certs/key.pem\
   && kubectl port-forward --namespace $GLOBAL_NAMESPACE\
-    svc/$MIDDLEWARE_API_SERVICE $MIDDLEWARE_API_RUN_PORT:$MIDDLEWARE_API_RUN_PORT
+    svc/$MIDDLEWARE_API_SERVICE $API_HTTP_RUN_PORT_MIDDLEWARE:$API_HTTP_RUN_PORT_MIDDLEWARE
 "
 
 runit "kubectl apply -f ./middleware/k8s/api.yaml\
