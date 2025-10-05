@@ -37,10 +37,10 @@
     echo tag is: $image_version
     echo -e "\nSelect an option:"
     echo -e "10) sys_check \t*) Exit"
-    echo -e "20) frontend \t21) install_webservice \t22) upgrade_webservice \t23) configure_webservice"
-    echo -e "30) middleware \t31) install_api \t32) validate_api \t33) configure_api"
+    echo -e "20) frontend   \t21) install_webservice \t22) upgrade_webservice \t23) configure_webservice"
+    echo -e "30) middleware \t31) install_api        \t32) validate_api       \t33) configure_api"
     # echo -e "40) backend \t 41) install_postgres"
-    echo -e "43) run_configure_postgre"
+    echo -e "               \t                       \t                       \t43) configure_postgre"
     # echo -e "90) net new install"
     read -p "Enter choice or exit: " choice
 
