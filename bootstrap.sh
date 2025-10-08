@@ -10,11 +10,13 @@ export FRONTEND_SELECTOR_NAME=web
 export FRONTEND_DEPLOYMENT_NAME=web
 export FRONTEND_PODTEMPLATE_NAME=web
 export FRONTEND_CONTAINER_NAME=web
-export WEB_HTTP_RUN_PORT_FRONTEND=80
-export WEB_HTTPS_RUN_PORT_FRONTEND=443
+export WEB_HTTP_RUNPORT_PUBLIC_FRONTEND=80
+export WEB_HTTPS_RUNPORT_PUBLIC_FRONTEND=443
+# export VITE_API_URL=https://localhost:8443
 
 export MIDDLEWARE_APPNAME=product-catalog-middleware
 export MIDDLEWARE_API_SERVICE_NAME=api-service
+export MIDDLEWARE_API_SERVICE_LOCALCLUSTER_NAME=https://api-service.default.svc.cluster.local
 export MIDDLEWARE_SELECTOR_NAME=api
 export MIDDLEWARE_DEPLOYMENT_NAME=api
 export MIDDLEWARE_PODTEMPLATE_NAME=api
@@ -22,11 +24,15 @@ export MIDDLEWARE_CONTAINER_NAME=api
 export MIDDLEWARE_TLS_MOUNT_PATH=/certs
 export MIDDLEWARE_TLS_CERT_VOLUME=tls-certs
 export MIDDLEWARE_TLS_SECRET=middleware-tls
-export API_HTTP_RUN_PORT_MIDDLEWARE=3000
-export API_HTTPS_RUN_PORT_MIDDLEWARE=3443
+export API_HTTP_RUNPORT_K8S_MIDDLEWARE=3000
+export API_HTTPS_RUNPORT_K8S_MIDDLEWARE=3443
+
+STAMP=`stamp`
+CERTIFICATE=$MIDDLEWARE_TLS_MOUNT/cert$MIDDLEWARE_API_SERVICE$STAMP.pem
+CERTIFICATE_KEY=$MIDDLEWARE_TLS_MOUNT/key$MIDDLEWARE_API_SERVICE$STAMP.pem
 
 export BACKEND_APPNAME=product-catalog-backend
-export POSTGRE_SQL_RUN_PORT=5432
+export POSTGRE_SQL_RUNPORT=5432
 
 function default_product_catalog {
 ##########  RUN COMMAND  ##########
@@ -241,8 +247,8 @@ function configure_webservice {
 set -u
 image_version=$1
 set_keyvalue REPOSITORY $FRONTEND_APPNAME ./frontend/k8s/$sdenv.env
-set_keyvalue RUNPORT_HTTP $WEB_HTTP_RUN_PORT_FRONTEND ./frontend/k8s/$sdenv.env
-set_keyvalue RUNPORT_HTTPS $WEB_HTTPS_RUN_PORT_FRONTEND ./frontend/k8s/$sdenv.env
+set_keyvalue RUNPORT_HTTP $WEB_HTTP_RUNPORT_PUBLIC_FRONTEND ./frontend/k8s/$sdenv.env
+set_keyvalue RUNPORT_HTTPS $WEB_HTTPS_RUNPORT_PUBLIC_FRONTEND ./frontend/k8s/$sdenv.env
 set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB ./frontend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
@@ -272,8 +278,8 @@ set_keyvalue TAG $image_version ./middleware/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB ./middleware/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/$sdenv.env
 set_keyvalue REPLICAS 2 ./middleware/k8s/$sdenv.env
-set_keyvalue RUNPORT_HTTP_FRONTEND_LISTENER $API_HTTP_RUN_PORT_MIDDLEWARE ./middleware/k8s/$sdenv.env
-set_keyvalue RUNPORT_HTTPS_FRONTEND_LISTENER $API_HTTPS_RUN_PORT_MIDDLEWARE ./middleware/k8s/$sdenv.env
+set_keyvalue RUNPORT_HTTP_FRONTEND_LISTENER $API_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
+set_keyvalue RUNPORT_HTTPS_FRONTEND_LISTENER $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue SELECTOR $MIDDLEWARE_SELECTOR_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $MIDDLEWARE_DEPLOYMENT_NAME ./middleware/k8s/$sdenv.env
@@ -302,7 +308,7 @@ set_keyvalue REPOSITORY $BACKEND_APPNAME ./backend/k8s/$sdenv.env
 set_keyvalue TAG $image_version ./backend/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB ./backend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./backend/k8s/$sdenv.env
-set_keyvalue RUNPORT_POSTGRE $POSTGRE_SQL_RUN_PORT ./backend/k8s/$sdenv.env
+set_keyvalue RUNPORT_POSTGRE $POSTGRE_SQL_RUNPORT ./backend/k8s/$sdenv.env
 set -a
 source ./backend/k8s/$sdenv.env || exit 1
 set +a
@@ -664,8 +670,8 @@ set_registry
 # formatrun <<'EOF'
 docker build $NOCACHE\
   -t $appname:$image_version\
-  --build-arg EXPOSE_PORT_HTTP=$API_HTTP_RUN_PORT_MIDDLEWARE\
-  --build-arg EXPOSE_PORT_HTTPS=$API_HTTPS_RUN_PORT_MIDDLEWARE\
+  --build-arg EXPOSE_PORT_HTTP=$API_HTTP_RUNPORT_K8S_MIDDLEWARE\
+  --build-arg EXPOSE_PORT_HTTPS=$API_HTTPS_RUNPORT_K8S_MIDDLEWARE\
   middleware\
   || return 1
 # EOF
@@ -697,7 +703,7 @@ function k8s_api {
 # formatrun <<'EOF'
 # kubectl apply -f ./middleware/k8s/api.yaml\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
-#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE $API_HTTP_RUN_PORT_MIDDLEWARE:$API_HTTP_RUN_PORT_MIDDLEWARE
+#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
 
 # EOF
 set -a
@@ -710,7 +716,7 @@ logit "kubectl apply -f ./middleware/k8s/api.yaml\
     --from-file=cert.pem=certs/cert.pem\
     --from-file=key.pem=certs/key.pem\
   && kubectl port-forward --namespace $GLOBAL_NAMESPACE\
-    svc/$MIDDLEWARE_API_SERVICE $API_HTTP_RUN_PORT_MIDDLEWARE:$API_HTTP_RUN_PORT_MIDDLEWARE
+    svc/$MIDDLEWARE_API_SERVICE $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
 "
 
 runit "kubectl apply -f ./middleware/k8s/api.yaml\
@@ -721,7 +727,7 @@ runit "kubectl apply -f ./middleware/k8s/api.yaml\
 # echo -e "
 # kubectl apply -f ./middleware/k8s/api.yaml\\\\\n\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\\\\\n\
-#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE $API_HTTP_RUN_PORT_MIDDLEWARE:$API_HTTP_RUN_PORT_MIDDLEWARE
+#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
 # "
 
 # validate_api
