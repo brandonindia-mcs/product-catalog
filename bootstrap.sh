@@ -39,8 +39,8 @@ info ${FUNCNAME[0]}: callling backend\
   && backend\
   && info ${FUNCNAME[0]}: callling middleware\
   && middleware\
-  && info ${FUNCNAME[0]}: callling frontend\
-  && frontend
+  && info ${FUNCNAME[0]}: callling frontend_18\
+  && frontend_18
 )
 }
 
@@ -73,7 +73,7 @@ function install_webservice {
 # GLOBAL_NAMESPACE=$namespace install_webservice $image_version
 ###################################
 (
-frontend\
+frontend_18\
   && set -u\
   && build_image_frontend $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $1\
@@ -297,9 +297,9 @@ envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 }
 
 
-function frontend {
+function frontend_18 {
 ##########  RUN COMMAND  ##########
-# frontend
+# frontend_18
 ###################################
 (
 node_version=18
