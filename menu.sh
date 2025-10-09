@@ -40,7 +40,7 @@
 
   
   function run_install_webservice() { GLOBAL_NAMESPACE=$1 install_webservice $2 ; }
-  function run_upgrade_webservice() { GLOBAL_NAMESPACE=$1 upgrade_webservice $2 ; }
+  function run_update_webservice() { GLOBAL_NAMESPACE=$1 update_webservice $2 ; }
   function run_install_api() { GLOBAL_NAMESPACE=$1 install_api $2; }
   function run_install_postgres() { GLOBAL_NAMESPACE=$1 install_postgres $2; }
   function run_validate_api() { validate_api; }
@@ -50,7 +50,7 @@
     echo tag is: $image_version
     echo -e "\nSelect an option:"
     echo -e "10) sys_check \t*) Exit"
-    echo -e "20) install_webservice  \t21) frontend   \t22) upgrade_webservice \t23) image_frontend   \t24) configure_webservice  \t25) k8s_webservice"
+    echo -e "20) install_webservice  \t21) frontend   \t22) update_webservice \t23) image_frontend   \t24) configure_webservice  \t25) k8s_webservice"
     echo -e "30) install_api         \t31) middleware \t32) validate_api       \t33) image_middleware \t34) configure_api         \t35) k8s_api"
     # echo -e "40) backend \t 41) install_postgres"
     echo -e "40) install_postgres    \t               \t                       \t43) image_backend    \t44) configure_postgre     \t45) k8s_postgre"
@@ -61,7 +61,7 @@
       10) run_system_check ;;
       21) system_check && run_frontend ;;
       20) system_check && run_install_webservice $namespace $image_version ;;
-      22) system_check && run_upgrade_webservice $namespace $image_version ;;
+      22) system_check && run_update_webservice $namespace $image_version ;;
       24) system_check && run_configure_webservice $namespace $image_version ;;
       25) system_check && run_k8s_webservice $namespace ;;
       23) system_check && run_build_image_frontend $image_version ;;

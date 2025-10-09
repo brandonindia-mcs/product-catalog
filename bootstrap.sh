@@ -90,12 +90,12 @@ frontend_upgrade_20
 )
 }
 
-function upgrade_webservice {
+function update_webservice {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace upgrade_webservice $image_version
+# GLOBAL_NAMESPACE=$namespace update_webservice $image_version
 ###################################
 (
-frontend_upgrade\
+frontend_update\
   && set -u\
   && build_image_frontend $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $1\
@@ -407,7 +407,7 @@ SEARCH='process.env.REACT_APP_API_URL'
 REPLACE='import.meta.env.VITE_API_URL'
 find ./$FRONTEND_APPNAME/src -type f \( -name "*.jsx" \) -exec sed -i "s|$SEARCH|$REPLACE|g" {} +
 
-frontend_upgrade
+frontend_update
 
 fi
 )
@@ -432,9 +432,9 @@ fi
 # )
 }
 
-function frontend_upgrade {
+function frontend_update {
 ##########  RUN COMMAND  ##########
-# frontend_upgrade
+# frontend_update
 ###################################
 (
 node_version=${1:-20}
