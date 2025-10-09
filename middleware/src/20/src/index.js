@@ -44,35 +44,53 @@ const pool = new Pool({
 // Shared route registration function
 const registerRoutes = (app) => {
   app.register(fastifyCors, {
-    origin: process.env.CORS_ORIGIN || '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    origin: process.env.CORS_ORIGIN || 'http://localhost:8081',
+    methods: ['GET', 'POST'],
     credentials: true
   });
 
-  app.get('/products', async () => {
-    const { rows } = await pool.query('SELECT * FROM products');
-    return rows;
+  app.get('/products', async (req, reply) => {
+    try {
+      const client = await pool.connect();
+      const result = await client.query('SELECT * FROM products');
+      reply.send(result.rows);
+    } catch (err) {
+      app.log.error(err);
+      reply.code(500).send({ status: 'error', error: err.message , message: 'Failed to fetch products' });
+    } finally {
+      if (client) client.release();
+    }
   });
 
-  app.get('/products/:id', async (req) => {
-    const { rows } = await pool.query(
-      'SELECT * FROM products WHERE id=$1', [req.params.id]
-    );
-    return rows[0] || app.httpErrors.notFound();
+  app.get('/products:id', async (req, reply) => {
+    try {
+      const client = await pool.connect();
+      const result = await client.query('SELECT * FROM products WHERE id=$1', [req.params.id]);
+      reply.send(result.rows);
+    } catch (err) {
+      app.log.error(err);
+      reply.code(500).send({ status: 'error', error: err.message , message: 'Failed to fetch product', id: req.params.id });
+    } finally {
+      if (client) client.release();
+    }
   });
 
   app.get('/health/db', async (request, reply) => {
     try {
-      await pool.query('SELECT 1');
-      reply.send({ status: 'ok', db: true });
+      const client = await pool.connect();
+      await client.query('SELECT 1');
+      reply.send({ status: 'ok' });
     } catch (err) {
-      reply.code(500).send({ status: 'error', db: false, error: err.message });
+      app.log.error(err);
+      reply.code(500).send({ status: 'error', error: err.message , message: 'Database unreachable' });
+    } finally {
+      if (client) client.release();
     }
   });
 
   app.get('/debug', async (req, reply) => {
     reply.send({
-      env: process.env.NODE_ENV || 'development',
+      env: process.env.NODE_ENV || 'dev',
       dbPool: {
         total: pool.totalCount,
         idle: pool.idleCount,

@@ -8,8 +8,8 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 // TLS certificate paths
-const certPath = path.resolve('/certs/cert.pem');
-const keyPath = path.resolve('/certs/key.pem');
+const certPath = path.resolve('/cert/cert.pem');
+const keyPath = path.resolve('/cert/key.pem');
 
 // Shared logger config
 const loggerConfig = {
