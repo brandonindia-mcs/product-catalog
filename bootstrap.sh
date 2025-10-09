@@ -52,8 +52,8 @@ info ${FUNCNAME[0]}: callling backend\
   && backend\
   && info ${FUNCNAME[0]}: callling middleware\
   && middleware\
-  && info ${FUNCNAME[0]}: callling frontend\
-  && frontend
+  && info ${FUNCNAME[0]}: callling frontend_18\
+  && frontend_18
 )
 }
 
@@ -86,7 +86,7 @@ function install_webservice {
 # GLOBAL_NAMESPACE=$namespace install_webservice $image_version
 ###################################
 (
-frontend\
+frontend_18\
   && set -u\
   && build_image_frontend $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $1\
@@ -103,12 +103,12 @@ frontend_upgrade_20
 )
 }
 
-function upgrade_webservice {
+function update_webservice {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace upgrade_webservice $image_version
+# GLOBAL_NAMESPACE=$namespace update_webservice $image_version
 ###################################
 (
-frontend_upgrade\
+frontend_update\
   && set -u\
   && build_image_frontend $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $1\
@@ -318,9 +318,9 @@ envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 }
 
 
-function frontend {
+function frontend_18 {
 ##########  RUN COMMAND  ##########
-# frontend
+# frontend_18
 ###################################
 (
 node_version=18
@@ -428,7 +428,7 @@ SEARCH='process.env.REACT_APP_API_URL'
 REPLACE='import.meta.env.VITE_API_URL'
 find ./$FRONTEND_APPNAME/src -type f \( -name "*.jsx" \) -exec sed -i "s|$SEARCH|$REPLACE|g" {} +
 
-frontend_upgrade
+frontend_update
 
 fi
 )
@@ -453,9 +453,9 @@ fi
 # )
 }
 
-function frontend_upgrade {
+function frontend_update {
 ##########  RUN COMMAND  ##########
-# frontend_upgrade
+# frontend_update
 ###################################
 (
 node_version=${1:-20}
