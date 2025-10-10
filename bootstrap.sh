@@ -20,15 +20,14 @@ export MIDDLEWARE_SELECTOR_NAME=api
 export MIDDLEWARE_DEPLOYMENT_NAME=api
 export MIDDLEWARE_PODTEMPLATE_NAME=api
 export MIDDLEWARE_CONTAINER_NAME=api
-export MIDDLEWARE_TLS_MOUNT_PATH=/certs
+export MIDDLEWARE_TLS_MOUNT=certs
+export MIDDLEWARE_TLS_MOUNT_PATH=/$MIDDLEWARE_TLS_MOUNT
 export MIDDLEWARE_TLS_CERT_VOLUME=tls-certs
-export MIDDLEWARE_TLS_SECRET=middleware-tls
 export API_HTTP_RUNPORT_K8S_MIDDLEWARE=3000
 export API_HTTPS_RUNPORT_K8S_MIDDLEWARE=3443
 
 STAMP=`stamp`
-CERTIFICATE=$MIDDLEWARE_TLS_MOUNT/cert$MIDDLEWARE_API_SERVICE$STAMP.pem
-CERTIFICATE_KEY=$MIDDLEWARE_TLS_MOUNT/key$MIDDLEWARE_API_SERVICE$STAMP.pem
+export MIDDLEWARE_TLS_SECRET=middleware-tls-$STAMP
 
 export BACKEND_APPNAME=product-catalog-backend
 export POSTGRE_SQL_RUNPORT=5432
@@ -582,12 +581,18 @@ function middleware {
 (
 node_version=20
 working_directory=middleware
-STAMP=`stamp`
-echo && blue "------------------ GENERATING SELF-SIGNED CERT ------------------"
-warn not generating certs
-# generate_selfsignedcert $MIDDLEWARE_API_SERVICE $STAMP
+cert_directory=certs && mkdir -p ./$cert_directory
+(
+  shopt -s nullglob dotglob
+  files=($cert_directory/*.pem)
+  [ ${#files[@]} -eq 0 ]\
+    && generate_selfsignedcert $cert_directory\
+    || warn $cert_directory has .pem files, not generating certs
+)
+
 mkdir -p ./$working_directory/src/$node_version/etc/certs
 cp ./certs/*.pem ./$working_directory/src/$node_version/etc/certs/ 
+
 set_keyvalue KEY_NAME certs/key.pem ./middleware/k8s/$sdenv.env
 set_keyvalue CERT_NAME certs/cert.pem ./middleware/k8s/$sdenv.env
 dependency_list=(
@@ -690,19 +695,17 @@ function k8s_api {
 set -a
 source ./middleware/k8s/$sdenv.env || exit 1
 set +a
-logit "kubectl apply -f ./middleware/k8s/api.yaml\
-  && kubectl wait --namespace $GLOBAL_NAMESPACE\
-    --for=condition=Ready pod -l app=api --timeout=60s\
-  && kubectl create secret generic $MIDDLEWARE_TLS_SECRET\
+runit "kubectl create secret generic $MIDDLEWARE_TLS_SECRET\
     --from-file=cert.pem=certs/cert.pem\
-    --from-file=key.pem=certs/key.pem\
-  && kubectl port-forward --namespace $GLOBAL_NAMESPACE\
-    svc/$MIDDLEWARE_API_SERVICE $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
+    --from-file=key.pem=certs/key.pem
 "
-
 runit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
     --for=condition=Ready pod -l app=api --timeout=60s
+"
+
+logit "kubectl port-forward --namespace $GLOBAL_NAMESPACE\
+    svc/$MIDDLEWARE_API_SERVICE_NAME $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
 "
 
 # echo -e "
@@ -1021,21 +1024,17 @@ function logone {
 echo -e "$*"
 }
 
-function generate_selfsignedcert_old {
+function generate_selfsignedcert {
 (
 set -u
-# canonical_name=$1
-# stamp=$2
-canonical_name=
-stamp=
-mkdir -p ./certs &&\
-  openssl req -x509 -newkey rsa:4096 -nodes -keyout ./certs/key$canonical_name$stamp.pem \
-    -out ./certs/cert$canonical_name$stamp.pem -days 365 \
-    -subj "/CN=$canonical_name"
-
-  # openssl req -x509 -newkey rsa:4096 -nodes -keyout ./certs/$canonical_name-x509-key.pem \
-  #   -out ./certs/$canonical_name-x509-cert.pem -days 365 \
-  #   -subj "/CN=$canonical_name"
-
+blue "------------------ GENERATING SELF-SIGNED CERTIFICATE ------------------"
+dir=$1
+canonical_name=localhost
+CMD="openssl req -x509 -newkey rsa:4096 -nodes -keyout ./$dir/key.pem \
+    -out ./$dir/cert.pem -days 365 \
+    -subj \"/CN=$canonical_name\""
+echo $CMD
+mkdir -p ./$dir &&\
+  eval $CMD
 )
 }
