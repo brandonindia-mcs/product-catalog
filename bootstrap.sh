@@ -2,10 +2,9 @@
 
 ##################  GLOBAL VARS  ##################
 GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
-alias stamp="echo \$(date +%Y%m%dT%H%M%S)"
+alias stamp="echo \$(date +%Y%m%d%H%M%S)"
 export FRONTEND_APPNAME=product-catalog-frontend
-export FRONTEND_API_SERVICE=web-service
-export FRONTEND_SERVICE_NAME=web
+export FRONTEND_WEB_SERVICE_NAME=web-service
 export FRONTEND_SELECTOR_NAME=web
 export FRONTEND_DEPLOYMENT_NAME=web
 export FRONTEND_PODTEMPLATE_NAME=web
@@ -36,7 +35,7 @@ export POSTGRE_SQL_RUNPORT=5432
 
 function product_catalog {
 ##########  RUN COMMAND  ##########
-# product_catalog
+# GLOBAL_NAMESPACE=$namespace product_catalog $image_version
 ###################################
 (
 info ${FUNCNAME[0]}: callling backend\
@@ -130,7 +129,7 @@ function install_postgres {
 backend\
   && set -u\
   && build_image_backend $1\
-  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgre $1\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_postgres
 )
 }
@@ -226,7 +225,7 @@ set -u
 image_version=$1
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $image_version
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $image_version
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgre $image_version
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $image_version
 )
 }
 
@@ -244,7 +243,7 @@ set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB ./frontend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
 set_keyvalue REPLICAS 2 ./frontend/k8s/$sdenv.env
-set_keyvalue SERVICE $FRONTEND_SERVICE_NAME ./frontend/k8s/$sdenv.env
+set_keyvalue SERVICE $FRONTEND_WEB_SERVICE_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue SELECTOR $FRONTEND_SELECTOR_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue PODTEMPLATE $FRONTEND_PODTEMPLATE_NAME ./frontend/k8s/$sdenv.env
@@ -288,9 +287,9 @@ envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
 )
 }
 
-function configure_postgre {
+function configure_postgres {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace configure_postgre $image_version
+# GLOBAL_NAMESPACE=$namespace configure_postgres $image_version
 ###################################
 (
 set -u
