@@ -52,6 +52,7 @@
   function run_k8s_api() {        parent && run_image_middleware $2 &&  run_configure_api $1 $2 &&        GLOBAL_NAMESPACE=$1 k8s_api && validate_api ; }
   function run_k8s_postgres() {   parent && run_image_backend $2 &&     run_configure_postgre $1 $2 &&    GLOBAL_NAMESPACE=$1 k8s_postgres ; }
   function run_redeploy() { run_k8s_webservice $1 $2 && run_k8s_api $1 $2 && run_k8s_postgres $1 $2; }
+  function run_generate_selfsignedcert() { generate_selfsignedcert $1 ; }
 
   function run_product_catalog() { parent && GLOBAL_NAMESPACE=$1 product_catalog $2 ; }
   function run_install_webservice() { parent && echo menu disabled, manual run only: GLOBAL_NAMESPACE=$1 install_webservice $2 && return 1 ; }
@@ -63,7 +64,7 @@
   function show_menu() {
     namespace=default && image_version="$namespace-$(version)"
     echo -e "\nSelect an option (namespace: $namespace, tag: $image_version):"
-    echo -e " 1) sys_check \t3) redeploy \t5) product_catalog \t*) Exit"
+    echo -e " 1) sys_check \t3) redeploy \t5) product_catalog \t9) certificates \t*) Exit"
     echo -e "20) install_webservice \t21) frontend_18\t22) update_webservice\t23) image_frontend  \t24) configure_webservice \t25) k8s_webservice"
     echo -e "30) middleware         \t31) install_api\t32) validate_api     \t33) image_middleware\t34) configure_api        \t35) k8s_api"
     # echo -e "40) backend \t 41) install_postgres"
@@ -75,6 +76,7 @@
        1) run_system_check ;;
        3) system_check && run_redeploy $namespace $image_version ;;
        5) system_check && run_product_catalog $namespace $image_version ;;
+       9) system_check && run_generate_selfsignedcert build && ls ./build ;;
       21) system_check && run_frontend_18 ;;
       20) system_check && run_install_webservice $namespace $image_version ;;
       22) system_check && run_update_webservice $namespace $image_version ;;
