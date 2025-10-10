@@ -38,36 +38,26 @@ function product_catalog {
 # GLOBAL_NAMESPACE=$namespace product_catalog $image_version
 ###################################
 (
-info ${FUNCNAME[0]}: callling backend\
-  && backend\
-  && info ${FUNCNAME[0]}: callling middleware\
-  && middleware\
-  && info ${FUNCNAME[0]}: callling frontend_18\
-  && frontend_18
-)
-}
-
-function install_product_catalog {
-##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace install_product_catalog $image_version
-###################################
-(
-set -u\
-  && install_api $1\
-  && install_webservice $1\
-  && k8s
+banner1\
+  && yellow ${FUNCNAME[0]}: callling install_postgres\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE install_postgres $1\
+  && yellow ${FUNCNAME[0]}: callling update_webservice\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE update_webservice $1\
+  && yellow ${FUNCNAME[0]}: callling install_api\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE install_api $1
 )
 }
 
 function update_product_catalog {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace update_product_catalog $image_version
+# GLOBAL_NAMESPACE=$namespace install_product_catalog $image_version
 ###################################
 (
-set -u\
-  && install_api $1\
-  && install_webservice $1\
-  && k8s_update
+banner1\
+  && yellow ${FUNCNAME[0]}: callling update_webservice\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE update_webservice $1\
+  && yellow ${FUNCNAME[0]}: callling install_api\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE install_api $1
 )
 }
 
@@ -989,6 +979,20 @@ function fail { echo; echo "$(tput setaf 8;tput setab 1)$(date "+%Y-%m-%d %H:%M:
 function abort_hard  { echo; red "**** ABORT($1): $(date "+%Y-%m-%d %H:%M:%S") **** " && echo -e "\t${@:2}\n" && read -p "press CTRL+C or die!" ; exit 1; }
 function abort       { echo; red "**** ABORT($1): $(date "+%Y-%m-%d %H:%M:%S") ****" && echo -e "\t${@:2}\n"; }
 function yesno { read -p "$1 yes (default) or no: " && if [[ ${REPLY} = n ]] || [[ ${REPLY} = no ]]; then return 1; fi; return 0; }
+
+__BOOTSTRAP_DEBUG__() {
+  [ "$1" = "on" ] || [ "$1" = "true" ] && echo "DEBUGGING ON ${FUNCNAME[1]}"
+  if is_set_u_enabled; then
+    echo "set -u is ON"
+  else
+    echo "set -u is OFF"
+  fi
+}
+
+is_set_u_enabled() {
+  ( unset __test__; : "$__test__" ) 2>/dev/null
+  [ $? -ne 0 ]
+}
 
 function formatrun {
 (
