@@ -82,6 +82,7 @@ spec:
             #       key: password
           ports:
             - containerPort: $RUNPORT_HTTP_FRONTEND_LISTENER
+            - containerPort: $RUNPORT_HTTPS_FRONTEND_LISTENER
           # readinessProbe:
           #   httpGet:
           #     path: /health    # Adjust to your API's health endpoint
