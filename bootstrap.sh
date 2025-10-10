@@ -538,11 +538,6 @@ runit "kubectl apply -f ./frontend/k8s/web.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s
 "
 
-# echo -e "
-# kubectl apply -f ./frontend/k8s/web.yaml\\\\\n\
-#  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\\\\\n\
-#  && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
-# "
 )
 }
 
@@ -565,11 +560,6 @@ logit "kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
   && kubectl rollout status deployment/web
 "
 
-# echo -e "
-# kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\\\\\n\
-#  && kubectl rollout status deployment/web
-# "
-
 )
 }
 
@@ -591,7 +581,7 @@ cert_directory=certs && mkdir -p ./$cert_directory
 )
 
 mkdir -p ./$working_directory/src/$node_version/etc/certs
-cp ./certs/*.pem ./$working_directory/src/$node_version/etc/certs/ 
+cp ./certs/*.pem ./$working_directory/src/$node_version/etc/certs/
 
 set_keyvalue KEY_NAME certs/key.pem ./middleware/k8s/$sdenv.env
 set_keyvalue CERT_NAME certs/cert.pem ./middleware/k8s/$sdenv.env
@@ -689,7 +679,7 @@ function k8s_api {
 # formatrun <<'EOF'
 # kubectl apply -f ./middleware/k8s/api.yaml\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
-#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
+#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE_NAME $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
 
 # EOF
 set -a
@@ -708,13 +698,6 @@ logit "kubectl port-forward --namespace $GLOBAL_NAMESPACE\
     svc/$MIDDLEWARE_API_SERVICE_NAME $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
 "
 
-# echo -e "
-# kubectl apply -f ./middleware/k8s/api.yaml\\\\\n\
-#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\\\\\n\
-#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
-# "
-
-# validate_api
 # kubectl rollout restart deployment api
 )
 }
@@ -900,11 +883,6 @@ runit "kubectl apply -f ./backend/k8s/postgres.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
 "
 
-
-# echo -e "
-# kubectl apply -f ./backend/k8s/postgres.yaml\\\\\n\
-#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
-# "
 # kubectl rollout restart deployment postgres
 )
 }
