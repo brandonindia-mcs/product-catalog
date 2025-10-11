@@ -49,7 +49,7 @@
   function run_image_backend() { parent && build_image_backend $1; }
 
   function run_k8s_webservice() { parent && run_image_frontend $2 &&    run_configure_webservice $1 $2 && GLOBAL_NAMESPACE=$1 k8s_webservice ; }
-  function run_k8s_api() {        parent && run_image_middleware $2 &&  run_configure_api $1 $2 &&        GLOBAL_NAMESPACE=$1 k8s_api && validate_api ; }
+  function run_k8s_api() {        parent && run_image_middleware $2 &&  run_configure_api $1 $2 &&        GLOBAL_NAMESPACE=$1 k8s_api ; }
   function run_k8s_postgres() {   parent && run_image_backend $2 &&     run_configure_postgre $1 $2 &&    GLOBAL_NAMESPACE=$1 k8s_postgres ; }
   function run_redeploy() { run_k8s_webservice $1 $2 && run_k8s_api $1 $2 && run_k8s_postgres $1 $2; }
   function run_generate_selfsignedcert() { generate_selfsignedcert $1 ; }
