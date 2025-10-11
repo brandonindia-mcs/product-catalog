@@ -44,43 +44,103 @@ const pool = new Pool({
 // Shared route registration function
 const registerRoutes = (app) => {
   app.register(fastifyCors, {
-    origin: process.env.CORS_ORIGIN || '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    origin: process.env.CORS_ORIGIN || 'http://localhost:8081',
+    methods: ['GET', 'POST'],
     credentials: true
   });
 
-  app.get('/products', async () => {
-    const { rows } = await pool.query('SELECT * FROM products');
-    return rows;
-  });
-
-  app.get('/products/:id', async (req) => {
-    const { rows } = await pool.query(
-      'SELECT * FROM products WHERE id=$1', [req.params.id]
-    );
-    return rows[0] || app.httpErrors.notFound();
-  });
-
-  app.get('/health/db', async (request, reply) => {
+  app.get('/products', async (req, reply) => {
+    let client;
     try {
-      await pool.query('SELECT 1');
-      reply.send({ status: 'ok', db: true });
+      client = await pool.connect();
+      const { rows } = await client.query('SELECT * FROM products');
+      reply.send(rows);
     } catch (err) {
-      reply.code(500).send({ status: 'error', db: false, error: err.message });
+      app.log.error(err);
+      reply.code(500).send({
+        timestamp: new Date().toISOString(), // Adds ISO 8601 formatted timestamp
+        status: 'error',
+        error: err.message,
+        message: 'Failed to fetch products'
+      });
+    } finally {
+      if (client) client.release();
+    }
+  });
+
+  app.get('/products/:id', async (req, reply) => {
+    let client;
+    try {
+      client = await pool.connect();
+      const { rows } = await client.query(
+        'SELECT * FROM products WHERE id=$1',
+        [req.params.id]
+      );
+      if (rows.length === 0) {
+        reply.code(404).send({
+          status: 'not_found',
+          id: req.params.id,
+          message: 'Product not found'
+        });
+      } else {
+        reply.send(rows[0]);
+      }
+    } catch (err) {
+      app.log.error(err);
+      reply.code(500).send({
+        timestamp: new Date().toISOString(), // Adds ISO 8601 formatted timestamp
+        status: 'error',
+        error: err.message,
+        id: req.params.id,
+        message: 'Failed to fetch product'
+      });
+    } finally {
+      if (client) client.release();
+    }
+  });
+
+  app.get('/health/db', async (req, reply) => {
+    let client;
+    try {
+      client = await pool.connect();
+      await client.query('SELECT 1');
+      reply.send({ status: 'ok', message: 'Database connection success' });
+    } catch (err) {
+      app.log.error(err);
+      reply.code(500).send({
+        timestamp: new Date().toISOString(), // Adds ISO 8601 formatted timestamp
+        status: 'error',
+        error: err.message,
+        message: 'Database unreachable'
+      });
+    } finally {
+      if (client) client.release();
     }
   });
 
   app.get('/debug', async (req, reply) => {
-    reply.send({
-      env: process.env.NODE_ENV || 'development',
-      dbPool: {
-        total: pool.totalCount,
-        idle: pool.idleCount,
-        waiting: pool.waitingCount
-      },
-      tlsEnabled: !!app.server?.setSecureContext
-    });
+    try {
+      reply.send({
+        status: 'ok',
+        env: process.env.NODE_ENV || 'dev',
+        dbPool: {
+          total: pool.totalCount,
+          idle: pool.idleCount,
+          waiting: pool.waitingCount
+        },
+        tlsEnabled: !!req.server?.setSecureContext
+      });
+    } catch (err) {
+      app.log.error(err);
+      reply.code(500).send({
+        timestamp: new Date().toISOString(), // Adds ISO 8601 formatted timestamp
+        status: 'error',
+        error: err.message,
+        message: 'Failed to generate debug info'
+      });
+    }
   });
+
 
   app.addHook('onClose', async () => {
     await pool.end();
