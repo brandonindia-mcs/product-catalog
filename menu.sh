@@ -38,7 +38,7 @@
 
   function run_configure_webservice() { parent && GLOBAL_NAMESPACE=$1 configure_webservice $2 ; }
   function run_configure_api() { parent && GLOBAL_NAMESPACE=$1 configure_api $2 ; }
-  function run_configure_postgre() { parent && GLOBAL_NAMESPACE=$1 configure_postgre $2 ; }
+  function run_configure_postgres() { parent && GLOBAL_NAMESPACE=$1 configure_postgres $2 ; }
 
   function run_frontend_18() { parent && echo menu disabled, manual run only: frontend_18 && return 1 ;}
   function run_middleware() { parent && middleware ;}
@@ -50,7 +50,7 @@
 
   function run_k8s_webservice() { parent && run_image_frontend $2 &&    run_configure_webservice $1 $2 && GLOBAL_NAMESPACE=$1 k8s_webservice ; }
   function run_k8s_api() {        parent && run_image_middleware $2 &&  run_configure_api $1 $2 &&        GLOBAL_NAMESPACE=$1 k8s_api ; }
-  function run_k8s_postgres() {   parent && run_image_backend $2 &&     run_configure_postgre $1 $2 &&    GLOBAL_NAMESPACE=$1 k8s_postgres ; }
+  function run_k8s_postgres() {   parent && run_image_backend $2 &&     run_configure_postgres $1 $2 &&    GLOBAL_NAMESPACE=$1 k8s_postgres ; }
   function run_redeploy() { run_k8s_webservice $1 $2 && run_k8s_api $1 $2 && run_k8s_postgres $1 $2; }
   function run_generate_selfsignedcert() { generate_selfsignedcert $1 ; }
 
@@ -59,16 +59,18 @@
   function run_update_webservice() { parent && GLOBAL_NAMESPACE=$1 update_webservice $2 ; }
   function run_install_api() { parent && GLOBAL_NAMESPACE=$1 install_api $2; }
   function run_install_postgres() { parent && GLOBAL_NAMESPACE=$1 install_postgres $2; }
-  function run_validate_api() { parent && validate_api; }
+  function run_validate_api_k8s() { parent && validate_api_k8s; }
+  function run_validate_api_http() { parent && validate_api_http; }
 
   function show_menu() {
     namespace=default && image_version="$namespace-$(version)"
     echo -e "\nSelect an option (namespace: $namespace, tag: $image_version):"
     echo -e " 1) sys_check \t3) redeploy \t5) product_catalog \t9) certificates \t*) Exit"
     echo -e "                   \t               \t22) update_webservice\t23) image_frontend  \t24) configure_webservice\t25) k8s_webservice"
-    echo -e "30) middleware     \t31) install_api\t32) validate_api     \t33) image_middleware\t34) configure_api       \t35) k8s_api"
+    echo -e "30) middleware     \t31) install_api\t50) validate_api_http\t33) image_middleware\t34) configure_api       \t35) k8s_api"
+    echo -e "                   \t               \t51) validate_api_k8s"
     # echo -e "40) backend \t 41) install_postgres"
-    echo -e "40) install_postgres\t              \t                     \t43) image_backend   \t44) configure_postgre   \t45) k8s_postgre"
+    echo -e "40) install_postgres\t              \t                     \t43) image_backend   \t44) configure_postgres   \t45) k8s_postgres"
     # echo -e "90) net new install"
     echo && read -p "Enter choice or exit: " choice
 
@@ -85,13 +87,14 @@
       23) system_check && run_image_frontend $image_version ;;
       30) system_check && run_middleware ;;
       31) system_check && run_install_api $namespace $image_version ;;
-      32) system_check && run_validate_api ;;
+      51) system_check && run_validate_api_k8s ;;
+      50) system_check && run_validate_api_http ;;
       34) system_check && run_configure_api $namespace $image_version ;;
       35) system_check && run_k8s_api $namespace $image_version ;;
       33) system_check && run_image_middleware $image_version ;;
       41) system_check && run_backend $namespace $image_version ;;
       40) system_check && run_install_postgres $namespace $image_version ;;
-      44) system_check && run_configure_postgre $namespace $image_version ;;
+      44) system_check && run_configure_postgres $namespace $image_version ;;
       45) system_check && run_k8s_postgres $namespace ;;
       43) system_check && run_image_backend $image_version ;;
       90) system_check && run_install_all $namespace $image_version ;;

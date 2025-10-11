@@ -37,13 +37,13 @@ function product_catalog {
 # GLOBAL_NAMESPACE=$namespace product_catalog $image_version
 ###################################
 (
-banner1\
+info ${FUNCNAME[0]}\
   && yellow ${FUNCNAME[0]}: callling install_postgres\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE install_postgres $1\
-  && yellow ${FUNCNAME[0]}: callling update_webservice\
-  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE update_webservice $1\
   && yellow ${FUNCNAME[0]}: callling install_api\
-  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE install_api $1
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE install_api $1\
+  && yellow ${FUNCNAME[0]}: callling update_webservice\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE update_webservice $1
 )
 }
 
@@ -52,7 +52,7 @@ function update_product_catalog {
 # GLOBAL_NAMESPACE=$namespace install_product_catalog $image_version
 ###################################
 (
-banner1\
+info ${FUNCNAME[0]}\
   && yellow ${FUNCNAME[0]}: callling update_webservice\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE update_webservice $1\
   && yellow ${FUNCNAME[0]}: callling install_api\
@@ -104,8 +104,7 @@ middleware\
   && set -u\
   && build_image_middleware $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $1\
-  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_api\
-  && validate_api
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_api
 
 )
 }
@@ -417,7 +416,7 @@ fi
 function node_refresh {
 # (
 node_version=${1:-20}
-banner1 Refreshing node to $node_version
+banner3 refreshing node, node_version $node_version
 export NVM_HOME=$(pwd)/.nvm
 export NVM_DIR=$(pwd)/.nvm
 echo NVM_HOME is $NVM_HOME
@@ -439,6 +438,7 @@ function frontend_update {
 (
 node_version=${1:-20}
 working_directory=frontend
+banner2 working_directory $working_directory, node_version $node_version
 dependency_list=(
   ./$working_directory/src/$node_version/etc\
   ./$working_directory/src/$node_version/src\
@@ -571,13 +571,14 @@ function middleware {
 (
 node_version=20
 working_directory=middleware
+banner2 working_directory $working_directory, node_version $node_version
 cert_directory=certs && mkdir -p ./$cert_directory
 (
   shopt -s nullglob dotglob
   files=($cert_directory/*.pem)
   [ ${#files[@]} -eq 0 ]\
     && generate_selfsignedcert $cert_directory\
-    || warn $cert_directory has .pem files, not generating certs
+    || warn $cert_directory not generating certs
 )
 
 mkdir -p ./$working_directory/src/$node_version/etc/certs
@@ -710,19 +711,19 @@ cat ./middleware/k8s/$sdenv.env || exit 1
 cat ./frontend/$sdenv.env || exit 1
 formatrun <<'EOF'
    banner validate_api::formatrun\
-   && info curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/health/db \
-        && curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/health/db|jq\
-   && info curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/products \
-        && curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/products|jq\
-   && info curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/products/1 \
-        && curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/products/1|jq\
+   && info curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/health/db \
+        && curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/health/db|jq\
+   && info curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/products \
+        && curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/products|jq\
+   && info curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/products/1 \
+        && curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/products/1|jq\
         \
-   && info curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/health/db \
-        && curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/health/db|jq\
-   && info curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/products \
-        && curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/products|jq\
-   && info curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/products/1 \
-        && curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/products/1|jq\
+   && info curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/health/db \
+        && curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/health/db|jq\
+   && info curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products \
+        && curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products|jq\
+   && info curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products/1 \
+        && curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products/1|jq\
         \
   && weblist=$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
     for pod in ${weblist[@]};do
@@ -750,19 +751,19 @@ source ./middleware/k8s/$sdenv.env || exit 1
 source ./frontend/$sdenv.env || exit 1
 set +a
 logit "
-      info curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/health/db \
-        && curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/health/db|jq\
-   && info curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/products \
-        && curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/products|jq\
-   && info curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/products/1 \
-        && curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/products/1|jq\
+   && info curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/health/db \
+        && curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/health/db|jq\
+   && info curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/products \
+        && curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/products|jq\
+   && info curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/products/1 \
+        && curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/products/1|jq\
         \
-   && info curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/health/db \
-        && curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/health/db|jq\
-   && info curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/products \
-        && curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/products|jq\
-   && info curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/products/1 \
-        && curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/products/1|jq\
+      info curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/health/db \
+        && curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/health/db|jq\
+   && info curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products \
+        && curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products|jq\
+   && info curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products/1 \
+        && curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products/1|jq\
         \
   && weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web) &&\
     for pod in \${weblist[@]};do
@@ -789,32 +790,77 @@ set -a
 source ./middleware/k8s/$sdenv.env || exit 1
 source ./frontend/$sdenv.env || exit 1
 set +a
-logone "curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/health/db|jq"
-logone "curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/health/db|jq"
+banner1 printit
+logone "
+curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/health/db|jq
+curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/health/db|jq
 
-logone "curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/products|jq"
-logone "curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/products|jq"
+curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/products|jq
+curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products|jq
 
-logone "curl -s http://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE/products/1|jq"
-logone "curl -ks https://localhost:$VITE_PORT_FRONTEND_MIDDLEWARE_TLS/products/1|jq"
+curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/products/1|jq
+curl -s https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products/1|jq
 
-logone "weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web)"
+weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web)
 
-logone "\nfor pod in \${weblist[@]};do"
-logone "\tkubectl exec -it \$pod -- curl -s http://$SERVICE:$RUNPORT_HTTP_FRONTEND_LISTENER/health/db|jq"
-logone "\tkubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/health/db|jq"
-logone "done"
+for pod in \${weblist[@]};do
+  kubectl exec -it \$pod -- curl -s http://$SERVICE:$RUNPORT_HTTP_FRONTEND_LISTENER/health/db|jq
+  kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/health/db|jq
+ done
 
-logone "\nfor pod in \${weblist[@]};do"
-logone "\tkubectl exec -it \$pod -- curl -s http://$SERVICE:$RUNPORT_HTTP_FRONTEND_LISTENER/products|jq"
-logone "\tkubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products|jq"
-logone "done"
+for pod in \${weblist[@]};do
+kubectl exec -it \$pod -- curl -s http://$SERVICE:$RUNPORT_HTTP_FRONTEND_LISTENER/products|jq
+kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products|jq
+done
 
-logone "\nfor pod in \${weblist[@]};do"
-logone "\tkubectl exec -it \$pod -- curl -s http://$SERVICE:$RUNPORT_HTTP_FRONTEND_LISTENER/products/1|jq"
-logone "\tkubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products/1|jq"
-logone "done"
-# "
+for pod in \${weblist[@]};do
+kubectl exec -it \$pod -- curl -s http://$SERVICE:$RUNPORT_HTTP_FRONTEND_LISTENER/products/1|jq
+kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products/1|jq
+done
+"
+)
+
+}
+
+
+function validate_api_k8s_http {
+(
+set -a
+source ./middleware/k8s/$sdenv.env || exit 1
+source ./frontend/$sdenv.env || exit 1
+set +a
+
+runit_nolog "weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web)
+for pod in \${weblist[@]};do
+CMD=\"kubectl exec -it \$pod -- curl -s http://$SERVICE:$RUNPORT_HTTP_FRONTEND_LISTENER/health/db|jq\"
+echo \$CMD && eval \$CMD
+CMD=\"kubectl exec -it \$pod -- curl -s http://$SERVICE:$RUNPORT_HTTP_FRONTEND_LISTENER/products|jq\"
+echo \$CMD && eval \$CMD
+CMD=\"kubectl exec -it \$pod -- curl -s http://$SERVICE:$RUNPORT_HTTP_FRONTEND_LISTENER/products/1|jq\"
+echo \$CMD && eval \$CMD
+done"
+)
+
+}
+
+
+function validate_api_k8s_https {
+(
+set -a
+source ./middleware/k8s/$sdenv.env || exit 1
+source ./frontend/$sdenv.env || exit 1
+set +a
+
+runit_nolog "weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web)
+for pod in \${weblist[@]};do
+echo \$CMD && eval \$CMD
+CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/health/db|jq\"
+echo \$CMD && eval \$CMD
+CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products|jq\"
+echo \$CMD && eval \$CMD
+CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products/1|jq\"
+echo \$CMD && eval \$CMD
+done"
 )
 
 }
@@ -985,6 +1031,11 @@ raw_cmd=$(cat)
 # runit "$(echo "$raw_cmd" | sed -E ':a;N;$!ba;s/\\\s*\n/ /g')"
 echo -e "$raw_cmd"
 )
+}
+
+function runit_nolog {
+banner2
+eval "$*"
 }
 
 function runit {
