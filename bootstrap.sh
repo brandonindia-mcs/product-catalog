@@ -1034,7 +1034,8 @@ CMD="openssl req -x509 -newkey rsa:4096 -nodes -keyout ./$dir/key.pem \
     -out ./$dir/cert.pem -days 365 \
     -subj \"/CN=$canonical_name\""
 echo $CMD
-mkdir -p ./$dir &&\
-  eval $CMD
+mkdir -p ./$dir\
+  && eval $CMD
+ls $dir
 )
 }
