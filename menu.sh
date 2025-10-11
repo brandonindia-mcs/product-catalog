@@ -65,10 +65,10 @@
     namespace=default && image_version="$namespace-$(version)"
     echo -e "\nSelect an option (namespace: $namespace, tag: $image_version):"
     echo -e " 1) sys_check \t3) redeploy \t5) product_catalog \t9) certificates \t*) Exit"
-    echo -e "20) install_webservice \t21) frontend_18\t22) update_webservice\t23) image_frontend  \t24) configure_webservice \t25) k8s_webservice"
-    echo -e "30) middleware         \t31) install_api\t32) validate_api     \t33) image_middleware\t34) configure_api        \t35) k8s_api"
+    echo -e "                   \t               \t22) update_webservice\t23) image_frontend  \t24) configure_webservice\t25) k8s_webservice"
+    echo -e "30) middleware     \t31) install_api\t32) validate_api     \t33) image_middleware\t34) configure_api       \t35) k8s_api"
     # echo -e "40) backend \t 41) install_postgres"
-    echo -e "40) install_postgres   \t               \t                     \t43) image_backend    \t44) configure_postgre   \t45) k8s_postgre"
+    echo -e "40) install_postgres\t              \t                     \t43) image_backend   \t44) configure_postgre   \t45) k8s_postgre"
     # echo -e "90) net new install"
     echo && read -p "Enter choice or exit: " choice
 
