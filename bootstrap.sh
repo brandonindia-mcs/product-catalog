@@ -458,7 +458,7 @@ done
 pushd ./$working_directory
 node_refresh $node_version
 
-cp ./src/$node_version/Dockerfile .
+cp ./src/$node_version/* .
 cd $FRONTEND_APPNAME
 rm -rf ./node_modules ./package-lock.json
 cp ../src/$node_version/etc/* .
@@ -614,7 +614,7 @@ if [ -d $NVM_DIR ];then
     nodever $node_version;
 fi
 mkdir -p $MIDDLEWARE_APPNAME
-cp ./src/$node_version/Dockerfile .
+cp ./src/$node_version/* .
 cd $MIDDLEWARE_APPNAME
 cp -r ../src/$node_version/etc/* .
 cp -r ../src/$node_version/src/* .
