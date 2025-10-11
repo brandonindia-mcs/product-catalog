@@ -320,17 +320,7 @@ for dep in ${dependency_list[@]}; do
 done
 
 pushd ./$working_directory
-export NVM_HOME=$(pwd)/.nvm
-export NVM_DIR=$(pwd)/.nvm
-echo NVM_HOME is $NVM_HOME
-
-if [ ! -d $NVM_DIR ];then
-    install_nvm;
-fi
-if [ -d $NVM_DIR ];then
-    installnode;
-    nodever $node_version;
-fi
+node_refresh $node_version
 
 (
 if [ -d $FRONTEND_APPNAME ];then
@@ -376,17 +366,7 @@ for dep in ${dependency_list[@]}; do
 done
 
 pushd ./$working_directory
-export NVM_HOME=$(pwd)/.nvm
-export NVM_DIR=$(pwd)/.nvm
-echo NVM_HOME is $NVM_HOME
-
-if [ ! -d $NVM_DIR ];then
-    install_nvm;
-fi
-if [ -d $NVM_DIR ];then
-    installnode;
-    nodever $node_version;
-fi
+node_refresh $node_version
 
 ### RENAME AND PRESERVE LEGACY
 for f in $(/bin/ls ./src/$old_version/src); do echo cp "./src/$old_version/src/$f" "./src/$node_version/legacy/$old_version/${f%.js}.jsx";done
@@ -603,16 +583,7 @@ for dep in ${dependency_list[@]}; do
 done
 
 pushd ./$working_directory
-export NVM_HOME=$(pwd)/.nvm
-export NVM_DIR=$(pwd)/.nvm
-echo NVM_HOME is $NVM_HOME
-if [ ! -d $NVM_DIR ];then
-    install_nvm;
-fi
-if [ -d $NVM_DIR ];then
-    installnode;
-    nodever $node_version;
-fi
+node_refresh $node_version
 mkdir -p $MIDDLEWARE_APPNAME
 cp ./src/$node_version/* .
 cd $MIDDLEWARE_APPNAME
