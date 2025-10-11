@@ -59,16 +59,18 @@
   function run_update_webservice() { parent && GLOBAL_NAMESPACE=$1 update_webservice $2 ; }
   function run_install_api() { parent && GLOBAL_NAMESPACE=$1 install_api $2; }
   function run_install_postgres() { parent && GLOBAL_NAMESPACE=$1 install_postgres $2; }
-  function run_validate_api_k8s() { parent && validate_api_k8s; }
-  function run_validate_api_http() { parent && validate_api_http; }
+  function run_validate_api_k8s_http() { parent && validate_api_k8s_http; }
+  function run_validate_api_k8s_https() { parent && validate_api_k8s_https; }
+  function run_validate_api() { parent && validate_api; }
 
   function show_menu() {
     namespace=default && image_version="$namespace-$(version)"
     echo -e "\nSelect an option (namespace: $namespace, tag: $image_version):"
-    echo -e " 1) sys_check \t3) redeploy \t5) product_catalog \t9) certificates \t*) Exit"
+    echo -e " 1) sys_check \t3) deploy \t5) build_deploy \t9) certificates \t*) Exit"
     echo -e "                   \t               \t22) update_webservice\t23) image_frontend  \t24) configure_webservice\t25) k8s_webservice"
-    echo -e "30) middleware     \t31) install_api\t50) validate_api_http\t33) image_middleware\t34) configure_api       \t35) k8s_api"
-    echo -e "                   \t               \t51) validate_api_k8s"
+    echo -e "30) middleware     \t31) install_api\t50) validate_api\t33) image_middleware\t34) configure_api       \t35) k8s_api"
+    echo -e "                   \t               \t51) validate_api_k8s_http"
+    echo -e "                   \t               \t52) validate_api_k8s_https"
     # echo -e "40) backend \t 41) install_postgres"
     echo -e "40) install_postgres\t              \t                     \t43) image_backend   \t44) configure_postgres   \t45) k8s_postgres"
     # echo -e "90) net new install"
@@ -87,8 +89,9 @@
       23) system_check && run_image_frontend $image_version ;;
       30) system_check && run_middleware ;;
       31) system_check && run_install_api $namespace $image_version ;;
-      51) system_check && run_validate_api_k8s ;;
-      50) system_check && run_validate_api_http ;;
+      51) system_check && run_validate_api_k8s_http ;;
+      52) system_check && run_validate_api_k8s_https ;;
+      50) system_check && run_validate_api ;;
       34) system_check && run_configure_api $namespace $image_version ;;
       35) system_check && run_k8s_api $namespace $image_version ;;
       33) system_check && run_image_middleware $image_version ;;
