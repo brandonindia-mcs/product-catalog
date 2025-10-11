@@ -931,9 +931,10 @@ kubectl apply -f ./opt/pgadmin/k8s/pgamin.yaml -n $GLOBAL_NAMESPACE\\\\\n\
 function install_nvm() {
   NVM_DIR="${NVM_DIR:-$(pwd)/.nvm}"
   echo && blue "------------------ INSTALL NVM ------------------" && echo
-  echo installing mvn @ $NVM_DIR
   git clone https://github.com/nvm-sh/nvm.git $NVM_DIR
-  echo $([ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && [ -s $NVM_DIR/bash_completion ] && . $NVM_DIR/bash_completion && nvm install --lts)
+  echo installing nvm @ $NVM_DIR
+  # echo $([ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && [ -s $NVM_DIR/bash_completion ] && . $NVM_DIR/bash_completion && nvm install --lts)
+  echo $([ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && [ -s $NVM_DIR/bash_completion ] && . $NVM_DIR/bash_completion && nvm install-latest-npm)
 }
 
 function installnode() {
@@ -952,7 +953,7 @@ function nodever() {
     nvm install ${1} >/dev/null 2>&1 && nvm use ${_} > /dev/null 2>&1\
       && nvm alias default ${_} > /dev/null 2>&1; nodever; else
     yellow "INFORMATIONAL: Use nodever to install or switch node versions:" && echo -e "\tusage: nodever [ver]"
-    blue "Node: $(node -v)"
+    blue "node: $(node -v)"
     blue "npm: $(npm -v)"
     blue "nvm: $(nvm -v)"
   fi
