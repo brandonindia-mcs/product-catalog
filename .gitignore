@@ -4,3 +4,4 @@ node_modules
 # middleware/product-catalog-middleware
 *.env
 *.tar.gz
+build/

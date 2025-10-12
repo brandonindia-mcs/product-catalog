@@ -177,7 +177,7 @@ function print_k8s_env {
 for dir in frontend backend middleware;do cat $dir/k8s/$sdenv.env;done
 }
 function clean_productcatalog {
-for dir in frontend/.nvm middleware/.nvm frontend/product-catalog-frontend middleware/product-catalog-middleware;do echo cleaning $dir && rm -rf $dir;done
+for dir in frontend/.nvm middleware/.nvm frontend/$FRONTEND_APPNAME middleware/$MIDDLEWARE_APPNAME;do echo cleaning $dir && rm -rf $dir;done
 }
 
 function local_registry {
@@ -300,6 +300,7 @@ function frontend_18 {
 ##########  RUN COMMAND  ##########
 # frontend_18
 ###################################
+# fail ${FUNCNAME[0]} disabled; return 1
 (
 node_version=18
 working_directory=frontend
@@ -395,6 +396,7 @@ fi
 
 function node_refresh {
 # (
+# warn node refresh disabled; return 1
 node_version=${1:-20}
 banner3 refreshing node, node_version $node_version
 export NVM_HOME=$(pwd)/.nvm
@@ -438,11 +440,13 @@ done
 pushd ./$working_directory
 node_refresh $node_version
 
+node_version=${1:-20}
 cp ./src/$node_version/* .
-cd $FRONTEND_APPNAME
+mkdir -p $FRONTEND_APPNAME && cd $_
 rm -rf ./node_modules ./package-lock.json
-cp ../src/$node_version/etc/* .
-cp -r ../src/$node_version/src/* ./src
+cp ../src/$node_version/etc/* ../src/$node_version/etc/.* .
+cp -r ../src/$node_version/src/. ./src/
+cp -r ../src/$node_version/public/. ./public/
 cp ../src/$node_version/$sdenv.env ./.env || exit 1
 npm install
 npm run build
@@ -584,9 +588,8 @@ done
 
 pushd ./$working_directory
 node_refresh $node_version
-mkdir -p $MIDDLEWARE_APPNAME
 cp ./src/$node_version/* .
-cd $MIDDLEWARE_APPNAME
+mkdir -p $MIDDLEWARE_APPNAME && cd $_
 cp -r ../src/$node_version/etc/* .
 cp -r ../src/$node_version/src/* .
 npm install
