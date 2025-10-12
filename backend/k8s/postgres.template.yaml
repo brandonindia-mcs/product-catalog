@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: $NAMESPACE
-  name: pg-service
+  name: $SERVICE
 spec:
   ports:
     - port: $RUNPORT_POSTGRE
@@ -34,11 +34,11 @@ spec:
           image: $HUB/$REPOSITORY:$TAG
           env:
             - name: POSTGRES_DB
-              value: catalog
+              value: $POSTGRES_DB
             - name: POSTGRES_USER
-              value: catalog
+              value: $POSTGRES_USER
             - name: POSTGRES_PASSWORD
-              value: catalog
+              value: $POSTGRES_PASSWORD
           ports:
             - containerPort: $RUNPORT_POSTGRE
           # readinessProbe:

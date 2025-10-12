@@ -51,17 +51,17 @@ spec:
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: "0"
             - name: NODE_ENV
-              value: development
+              value: $NODE_ENV
             - name: PG_HOST
-              value: pg-service
+              value: $PG_HOST
             - name: PG_DATABASE
-              value: catalog
+              value: $PG_DATABASE
             - name: PG_USER
-              value: catalog
+              value: $PG_DATABASE
             - name: PG_PASSWORD
-              value: catalog
+              value: $PG_DATABASE
             - name: PG_PORT
-              value: "5432"
+              value: "$PG_PORT"
             # - name: DB_HOST
             #   value: postgres
             # - name: DB_PORT
@@ -81,7 +81,7 @@ spec:
             #       name: postgres-secret
             #       key: password
           ports:
-            - containerPort: $RUNPORT_HTTP_FRONTEND_LISTENER
+            # - containerPort: $RUNPORT_HTTP_FRONTEND_LISTENER
             - containerPort: $RUNPORT_HTTPS_FRONTEND_LISTENER
           # readinessProbe:
           #   httpGet:

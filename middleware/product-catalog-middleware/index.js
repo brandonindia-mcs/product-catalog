@@ -20,7 +20,7 @@ const loggerConfig = {
 };
 
 // Create HTTP and HTTPS Fastify instances
-const fastifyHttp = fastifyFactory({ logger: loggerConfig });
+// const fastifyHttp = fastifyFactory({ logger: loggerConfig });
 const fastifyHttps = fastifyFactory({
   logger: loggerConfig,
   https: {
@@ -31,11 +31,11 @@ const fastifyHttps = fastifyFactory({
 
 // PostgreSQL connection pool (Kubernetes service)
 const pool = new Pool({
-  host: process.env.PG_HOST || 'pg-service',
-  database: process.env.PG_DATABASE || 'catalog',
-  user: process.env.PG_USER || 'catalog',
-  password: process.env.PG_PASSWORD || 'catalog',
-  port: process.env.PG_PORT || 5432
+  host: process.env.PG_HOST,
+  database: process.env.PG_DATABASE,
+  user: process.env.PG_USER,
+  password: process.env.PG_PASSWORD,
+  port: process.env.PG_PORT,
   // ,max: 10,
   // idleTimeoutMillis: 30000,
   // ssl: process.env.DB_SSL === 'true'
@@ -149,14 +149,14 @@ const registerRoutes = (app) => {
 };
 
 // Register routes on both servers
-registerRoutes(fastifyHttp);
+// registerRoutes(fastifyHttp);
 registerRoutes(fastifyHttps);
 
 // Start both servers
 const start = async () => {
   try {
-    await fastifyHttp.listen({ port: 3000, host: '0.0.0.0' });
-    fastifyHttp.log.info('HTTP middleware listening on port 3000');
+    // await fastifyHttp.listen({ port: 3000, host: '0.0.0.0' });
+    // fastifyHttp.log.info('HTTP middleware listening on port 3000');
 
     await fastifyHttps.listen({ port: 3443, host: '0.0.0.0' });
     fastifyHttps.log.info('HTTPS middleware listening on port 3443');

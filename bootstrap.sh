@@ -3,6 +3,14 @@
 ##################  GLOBAL VARS  ##################
 GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 alias stamp="echo \$(date +%Y%m%d%H%M%S)"
+
+export BACKEND_APPNAME=product-catalog-backend
+export BACKEND_POSTGRES_SERVICE_NAME=pg-service
+export POSTGRES_USER=catalog
+export POSTGRES_DB=catalog
+export POSTGRES_PASSWORD=catalog
+export POSTGRE_SQL_RUNPORT=5432
+
 export FRONTEND_APPNAME=product-catalog-frontend
 export FRONTEND_WEB_SERVICE_NAME=web-service
 export FRONTEND_SELECTOR_NAME=web
@@ -25,12 +33,17 @@ export MIDDLEWARE_TLS_MOUNT_PATH=/$MIDDLEWARE_TLS_MOUNT
 export MIDDLEWARE_TLS_CERT_VOLUME=tls-certs
 export API_HTTP_RUNPORT_K8S_MIDDLEWARE=3000
 export API_HTTPS_RUNPORT_K8S_MIDDLEWARE=3443
+export CERTIFICATE_BUILD_DIRECTORY=build_cert
+
+export NODE_ENV=development
+export PG_HOST=$BACKEND_POSTGRES_SERVICE_NAME
+export PG_DATABASE=$POSTGRES_DB
+export PG_USER=$POSTGRES_USER
+export PG_PASSWORD=$POSTGRES_PASSWORD
+export PG_PORT=$POSTGRE_SQL_RUNPORT
 
 STAMP=`stamp`
 export MIDDLEWARE_TLS_SECRET=middleware-tls-$STAMP
-
-export BACKEND_APPNAME=product-catalog-backend
-export POSTGRE_SQL_RUNPORT=5432
 
 function product_catalog {
 ##########  RUN COMMAND  ##########
@@ -267,6 +280,13 @@ set_keyvalue TLS_MOUNT_PATH $MIDDLEWARE_TLS_MOUNT_PATH ./middleware/k8s/$sdenv.e
 set_keyvalue TLS_CERT_VOLUME $MIDDLEWARE_TLS_CERT_VOLUME ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv.env
 
+set_keyvalue NODE_ENV development ./middleware/k8s/$sdenv.env
+set_keyvalue PG_HOST $PG_HOST ./middleware/k8s/$sdenv.env
+set_keyvalue PG_DATABASE $PG_DATABASE ./middleware/k8s/$sdenv.env
+set_keyvalue PG_USER $PG_USER ./middleware/k8s/$sdenv.env
+set_keyvalue PG_PASSWORD $PG_PASSWORD ./middleware/k8s/$sdenv.env
+set_keyvalue PG_PORT $PG_PORT ./middleware/k8s/$sdenv.env
+
 set -a
 source ./middleware/k8s/$sdenv.env || exit 1
 set +a
@@ -287,6 +307,11 @@ set_keyvalue TAG $image_version ./backend/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB ./backend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./backend/k8s/$sdenv.env
 set_keyvalue RUNPORT_POSTGRE $POSTGRE_SQL_RUNPORT ./backend/k8s/$sdenv.env
+
+set_keyvalue SERVICE $BACKEND_POSTGRES_SERVICE_NAME ./backend/k8s/$sdenv.env
+set_keyvalue POSTGRES_DB $POSTGRES_DB ./backend/k8s/$sdenv.env
+set_keyvalue POSTGRES_USER $POSTGRES_USER ./backend/k8s/$sdenv.env
+set_keyvalue POSTGRES_PASSWORD $POSTGRES_PASSWORD ./backend/k8s/$sdenv.env
 set -a
 source ./backend/k8s/$sdenv.env || exit 1
 set +a
@@ -506,7 +531,7 @@ function k8s_webservice {
 # GLOBAL_NAMESPACE=$namespace k8s_webservice
 ###################################
 (
-set -u
+set -ue
 # formatrun <<'EOF'
 # kubectl apply -f ./frontend/k8s/web.yaml\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\
@@ -532,7 +557,7 @@ function k8s_webservice_update {
 ###################################
 (
 export $(grep -v '^#' ./frontend/k8s/$sdenv.env | xargs)
-set -u
+set -ue
 configure_webservice $TAG
 # formatrun <<'EOF'
 # kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
@@ -557,16 +582,17 @@ node_version=20
 working_directory=middleware
 banner2 working_directory $working_directory, node_version $node_version
 cert_directory=certs && mkdir -p ./$cert_directory
+build_cert_directory=$CERTIFICATE_BUILD_DIRECTORY
 (
   shopt -s nullglob dotglob
-  files=($cert_directory/*.pem)
+  files=($build_cert_directory/*.pem)
   [ ${#files[@]} -eq 0 ]\
-    && generate_selfsignedcert $cert_directory\
+    && generate_selfsignedcert_cnf $build_cert_directory\
     || warn $cert_directory not generating certs
 )
 
 mkdir -p ./$working_directory/src/$node_version/etc/certs
-cp ./certs/*.pem ./$working_directory/src/$node_version/etc/certs/
+cp ./$build_cert_directory/*.pem ./$working_directory/src/$node_version/etc/certs/
 
 set_keyvalue KEY_NAME certs/key.pem ./middleware/k8s/$sdenv.env
 set_keyvalue CERT_NAME certs/cert.pem ./middleware/k8s/$sdenv.env
@@ -650,19 +676,21 @@ function k8s_api {
 # GLOBAL_NAMESPACE=$namespace k8s_api
 ###################################
 (
-# set -u
+set -e
 # formatrun <<'EOF'
 # kubectl apply -f ./middleware/k8s/api.yaml\
 #   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
 #   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE_NAME $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
 
 # EOF
+MIDDLEWARE_CERTIFICATE_FILE_NAME=cert.pem
+MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=key.pem
 set -a
 source ./middleware/k8s/$sdenv.env || exit 1
 set +a
 runit "kubectl create secret generic $MIDDLEWARE_TLS_SECRET\
-    --from-file=cert.pem=certs/cert.pem\
-    --from-file=key.pem=certs/key.pem
+    --from-file=$MIDDLEWARE_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
+    --from-file=$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
 "
 runit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
@@ -679,6 +707,11 @@ logit "kubectl port-forward --namespace $GLOBAL_NAMESPACE\
 
 
 function validate_api {
+validate_api_web_https
+validate_api_k8s_https
+}
+
+function print_validate_api {
 banner1 printit
 echo '('
 cat ./middleware/k8s/$sdenv.env || exit 1
@@ -773,7 +806,7 @@ curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/products|jq
 curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products|jq
 
 curl -s http://$API_HOST:$API_HTTP_RUNPORT_K8S_MIDDLEWARE/products/1|jq
-curl -s https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products/1|jq
+curl -ks https://$API_HOST:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products/1|jq
 
 weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web)
 
@@ -818,23 +851,63 @@ done"
 }
 
 
+function validate_api_web_https {
+(
+set -a
+source ./frontend/$sdenv.env || exit 1
+set +a
+
+# runit_nolog "
+# CMD=\"curl -ks https://\$API_HOST_DOCKER:\$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/health/db|jq\"
+# echo \$CMD && eval \$CMD
+
+# CMD=\"curl -ks https://\$API_HOST_DOCKER:\$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products|jq\"
+# echo \$CMD && eval \$CMD
+
+# CMD=\"curl -ks https://\$API_HOST_DOCKER:\$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products/1|jq\"
+# echo \$CMD && eval \$CMD"
+# )
+
+runit "
+curl -ks https://$API_HOST_DOCKER:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/health/db|jq
+curl -ks https://$API_HOST_DOCKER:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products|jq
+curl -ks https://$API_HOST_DOCKER:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products/1|jq
+"
+
+)
+
+}
+
+
 function validate_api_k8s_https {
 (
 set -a
 source ./middleware/k8s/$sdenv.env || exit 1
-source ./frontend/$sdenv.env || exit 1
 set +a
 
-runit_nolog "weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web)
+# runit_nolog "
+# weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web)
+# for pod in \${weblist[@]};do
+
+# CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/health/db|jq\"
+# echo \$CMD && eval \$CMD
+
+# CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products|jq\"
+# echo \$CMD && eval \$CMD
+
+# CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products/1|jq\"
+# echo \$CMD && eval \$CMD
+# done"
+
+
+runit "
+weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web)
 for pod in \${weblist[@]};do
-echo \$CMD && eval \$CMD
-CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/health/db|jq\"
-echo \$CMD && eval \$CMD
-CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products|jq\"
-echo \$CMD && eval \$CMD
-CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products/1|jq\"
-echo \$CMD && eval \$CMD
-done"
+kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/health/db|jq
+kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products|jq
+kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products/1|jq
+done
+"
 )
 
 }
@@ -888,7 +961,7 @@ function k8s_postgres {
 # GLOBAL_NAMESPACE=$namespace k8s_postgres
 ###################################
 (
-set -u
+set -ue
 
 # formatrun <<'EOF'
 # kubectl apply -f ./backend/k8s/postgres.yaml\
@@ -1026,6 +1099,36 @@ echo -e "$*"
 
 function logone {
 echo -e "$*"
+}
+
+function generate_selfsignedcert_cnf_new {
+(
+set -u
+blue "------------------ GENERATING SELF-SIGNED CERTIFICATE ------------------"
+dir=$1
+CMD="openssl req -x509 -newkey rsa:4096 -nodes -keyout ./$dir/product-catalog-selfsigned-key-$STAMP.pem \
+    -out ./$dir/product-catalog-selfsigned-cert-$STAMP.pem -days 365\
+    -config ./$CERTIFICATE_BUILD_DIRECTORY/openssl.cnf"
+echo $CMD
+mkdir -p ./$dir\
+  && eval $CMD
+ls $dir
+)
+}
+
+function generate_selfsignedcert_cnf {
+(
+set -u
+blue "------------------ GENERATING SELF-SIGNED CERTIFICATE ------------------"
+dir=$1
+CMD="openssl req -x509 -newkey rsa:4096 -nodes -keyout ./$dir/key.pem \
+    -out ./$dir/cert.pem -days 365\
+    -config ./$CERTIFICATE_BUILD_DIRECTORY/openssl.cnf"
+echo $CMD
+mkdir -p ./$dir\
+  && eval $CMD
+ls $dir
+)
 }
 
 function generate_selfsignedcert {
