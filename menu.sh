@@ -64,11 +64,12 @@
   function run_validate_api_web_https() { parent && validate_api_web_https; }
   function run_validate_api() { parent && validate_api; }
   function run_frontend_update() { parent && frontend_update; }
+  function run_k8s_nginx() { parent && k8s_nginx; }
 
   function show_menu() {
     namespace=default && image_version="$namespace-$(version)"
     echo -e "\nSelect an option (namespace: $namespace, tag: $image_version):"
-    echo -e " 1) sys_check \t9) certificates\t3) deploy \t5) Build & Deploy (product_catalog)\t*) Exit"
+    echo -e " 1) sys_check \t9) certificates\t3) deploy \t5) Build & Deploy\t 11) k8s_nginx\t*) Exit"
     echo -e "20) frontend_update\t22) update_webservice\t          \t23) image_frontend  \t24) configure_webservice\t25) k8s_webservice"
     echo -e "30) middleware     \t31) install_api\t50) validate_api\t33) image_middleware\t34) configure_api       \t35) k8s_api"
     echo -e "                   \t               \t51) validate_api_web_https"
@@ -83,6 +84,7 @@
        3) system_check && run_redeploy $namespace $image_version ;;
        5) system_check && run_product_catalog $namespace $image_version ;;
        9) system_check && run_generate_selfsignedcert_cnf build_cert && ls ./build_cert ;;
+      11) system_check && run_k8s_nginx ;;
       20) system_check && run_frontend_update $namespace $image_version ;;
       22) system_check && run_update_webservice $namespace $image_version ;;
       24) system_check && run_configure_webservice $namespace $image_version ;;

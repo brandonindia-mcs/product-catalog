@@ -184,7 +184,7 @@ fi
 }
 
 function watch_productcatelog {
-(namespace=${1:-default}; while true; do echo && blue $namespace $(date) && kubectl get all --namespace $namespace -o wide && sleep 5;done)
+(namespace=${1:-default}; while true; do echo && blue $namespace $(date) && kubectl get deploy,pod,svc,ingress,rs --namespace $namespace -o wide && sleep 5;done)
 }
 function print_k8s_env {
 for dir in frontend backend middleware;do cat $dir/k8s/$sdenv.env;done
@@ -692,14 +692,15 @@ runit "kubectl create secret generic $MIDDLEWARE_TLS_SECRET\
     --from-file=$MIDDLEWARE_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
     --from-file=$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
 "
+runit "kubectl apply -f ./middleware/k8s/api-ingress.yaml"
 runit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
     --for=condition=Ready pod -l app=api --timeout=60s
 "
 
-logit "kubectl port-forward --namespace $GLOBAL_NAMESPACE\
-    svc/$MIDDLEWARE_API_SERVICE_NAME $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
-"
+# logit "kubectl port-forward --namespace $GLOBAL_NAMESPACE\
+#     svc/$MIDDLEWARE_API_SERVICE_NAME $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
+# "
 
 # kubectl rollout restart deployment api
 )
@@ -978,6 +979,14 @@ runit "kubectl apply -f ./backend/k8s/postgres.yaml\
 
 # kubectl rollout restart deployment postgres
 )
+}
+
+function k8s_nginx {
+##########  RUN COMMAND  ##########
+# k8s_nginx
+###################################
+kubectl apply\
+  -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
 }
 
 
