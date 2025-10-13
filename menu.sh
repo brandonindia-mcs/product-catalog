@@ -88,7 +88,7 @@
       20) system_check && run_frontend_update $namespace $image_version ;;
       22) system_check && run_update_webservice $namespace $image_version ;;
       24) system_check && run_configure_webservice $namespace $image_version ;;
-      25) system_check && run_k8s_webservice $namespace ;;
+      25) system_check && run_k8s_webservice $namespace $image_version ;;
       23) system_check && run_image_frontend $image_version ;;
       30) system_check && run_middleware ;;
       31) system_check && run_install_api $namespace $image_version ;;
