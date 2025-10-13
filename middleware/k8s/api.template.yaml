@@ -7,9 +7,6 @@ spec:
   selector:
     app: $SELECTOR
   ports:
-    - name: http
-      port: $RUNPORT_HTTP_FRONTEND_LISTENER
-      targetPort: $RUNPORT_HTTP_FRONTEND_LISTENER
     - name: https
       port: $RUNPORT_HTTPS_FRONTEND_LISTENER
       targetPort: $RUNPORT_HTTPS_FRONTEND_LISTENER
@@ -81,7 +78,6 @@ spec:
             #       name: postgres-secret
             #       key: password
           ports:
-            # - containerPort: $RUNPORT_HTTP_FRONTEND_LISTENER
             - containerPort: $RUNPORT_HTTPS_FRONTEND_LISTENER
           # readinessProbe:
           #   httpGet:
