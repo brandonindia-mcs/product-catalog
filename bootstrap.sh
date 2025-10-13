@@ -588,14 +588,13 @@ function middleware {
 node_version=20
 working_directory=middleware
 banner2 working_directory $working_directory, node_version $node_version
-cert_directory=certs && mkdir -p ./$cert_directory
 build_cert_directory=$CERTIFICATE_BUILD_DIRECTORY
 (
   shopt -s nullglob dotglob
   files=($build_cert_directory/*.pem)
   [ ${#files[@]} -eq 0 ]\
     && generate_selfsignedcert_cnf $build_cert_directory\
-    || warn $cert_directory not generating certs
+    || warn $build_cert_directory not generating certs
 )
 
 mkdir -p ./$working_directory/src/$node_version/etc/certs
