@@ -32,7 +32,9 @@ export MIDDLEWARE_TLS_MOUNT=certs
 export MIDDLEWARE_TLS_MOUNT_PATH=/$MIDDLEWARE_TLS_MOUNT
 export MIDDLEWARE_TLS_CERT_VOLUME=tls-certs
 export API_HTTP_RUNPORT_K8S_MIDDLEWARE=3000
+export API_HTTPS_SSLPORT_K8S_MIDDLEWARE=443
 export API_HTTPS_RUNPORT_K8S_MIDDLEWARE=2443
+export API_HTTPS_NODEPORT_K8S_MIDDLEWARE=32443
 export CERTIFICATE_BUILD_DIRECTORY=build_cert
 
 export NODE_ENV=development
@@ -270,7 +272,9 @@ set_keyvalue HUB $DOCKERHUB ./middleware/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/$sdenv.env
 set_keyvalue REPLICAS 2 ./middleware/k8s/$sdenv.env
 set_keyvalue RUNPORT_HTTP_FRONTEND_LISTENER $API_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
-set_keyvalue RUNPORT_HTTPS_FRONTEND_LISTENER $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
+set_keyvalue SSL_PORT $API_HTTPS_SSLPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
+set_keyvalue SSL_TARGET_PORT $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
+set_keyvalue SSL_NODE_PORT $API_HTTPS_NODEPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue SELECTOR $MIDDLEWARE_SELECTOR_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $MIDDLEWARE_DEPLOYMENT_NAME ./middleware/k8s/$sdenv.env
@@ -692,7 +696,10 @@ runit "kubectl create secret generic $MIDDLEWARE_TLS_SECRET\
     --from-file=$MIDDLEWARE_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
     --from-file=$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
 "
-runit "kubectl apply -f ./middleware/k8s/api-ingress.yaml"
+runit "kubectl create secret tls $MIDDLEWARE_TLS_SECRET-tls\
+    --cert=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
+    --key=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
+"
 runit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
     --for=condition=Ready pod -l app=api --timeout=60s
@@ -859,20 +866,20 @@ source ./frontend/$sdenv.env || exit 1
 set +a
 
 # runit_nolog "
-# CMD=\"curl -ks https://\$API_HOST_DOCKER:\$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/health/db|jq\"
+# CMD=\"curl -ks https://\$API_HTTPS_FQDN_WITH_PORT/health/db|jq\"
 # echo \$CMD && eval \$CMD
 
-# CMD=\"curl -ks https://\$API_HOST_DOCKER:\$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products|jq\"
+# CMD=\"curl -ks https://\$API_HTTPS_FQDN_WITH_PORT/products|jq\"
 # echo \$CMD && eval \$CMD
 
-# CMD=\"curl -ks https://\$API_HOST_DOCKER:\$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products/1|jq\"
+# CMD=\"curl -ks https://\$API_HTTPS_FQDN_WITH_PORT/products/1|jq\"
 # echo \$CMD && eval \$CMD"
 # )
 
 runit "
-curl -ks https://$API_HOST_DOCKER:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/health/db|jq
-curl -ks https://$API_HOST_DOCKER:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products|jq
-curl -ks https://$API_HOST_DOCKER:$API_HTTPS_RUNPORT_K8S_MIDDLEWARE/products/1|jq
+curl -ks https://$API_HTTPS_FQDN_WITH_PORT/health/db|jq
+curl -ks https://$API_HTTPS_FQDN_WITH_PORT/products|jq
+curl -ks https://$API_HTTPS_FQDN_WITH_PORT/products/1|jq
 "
 
 )
@@ -890,13 +897,13 @@ set +a
 # weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web)
 # for pod in \${weblist[@]};do
 
-# CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/health/db|jq\"
+# CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$SSL_PORT/health/db|jq\"
 # echo \$CMD && eval \$CMD
 
-# CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products|jq\"
+# CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$SSL_PORT/products|jq\"
 # echo \$CMD && eval \$CMD
 
-# CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products/1|jq\"
+# CMD=\"kubectl exec -it \$pod -- curl -ks https://$SERVICE:$SSL_PORT/products/1|jq\"
 # echo \$CMD && eval \$CMD
 # done"
 
@@ -904,13 +911,25 @@ set +a
 runit "
 weblist=\$(kubectl get pods --no-headers -o custom-columns=:metadata.name|/usr/bin/grep -E ^web)
 for pod in \${weblist[@]};do
-kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/health/db|jq
-kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products|jq
-kubectl exec -it \$pod -- curl -ks https://$SERVICE:$RUNPORT_HTTPS_FRONTEND_LISTENER/products/1|jq
+kubectl exec -it \$pod -- curl -ks https://$SERVICE:$SSL_PORT/health/db|jq
+kubectl exec -it \$pod -- curl -ks https://$SERVICE:$SSL_PORT/products|jq
+kubectl exec -it \$pod -- curl -ks https://$SERVICE:$SSL_PORT/products/1|jq
 done
 "
 )
 
+}
+
+
+function validate_ingress {
+(
+component=${1:-controller}
+kubectl logs -n ingress-nginx -l app.kubernetes.io/component=$component
+kubectl get ingressclass
+kubectl get svc -n ingress-nginx
+kubectl get svc ingress-nginx-controller -n ingress-nginx -o yaml
+
+)
 }
 
 

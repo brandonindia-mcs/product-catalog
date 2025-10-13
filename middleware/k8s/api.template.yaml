@@ -3,13 +3,47 @@ kind: Service
 metadata:
   namespace: $NAMESPACE
   name: $SERVICE
+# spec:
+#   selector:
+#     app: $SELECTOR
+#   ports:
+#     - name: https
+#       port: $SSL_PORT
+#       targetPort: $SSL_TARGET_PORT
 spec:
+  type: NodePort
   selector:
     app: $SELECTOR
   ports:
     - name: https
-      port: $RUNPORT_HTTPS_FRONTEND_LISTENER
-      targetPort: $RUNPORT_HTTPS_FRONTEND_LISTENER
+      port: $SSL_PORT
+      targetPort: $SSL_TARGET_PORT
+      nodePort: $SSL_NODE_PORT
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: $SERVICE-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+#### BIND TO NGINX FROM: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api-ingress.progress.me
+      secretName: $TLS_SECRET-tls
+  rules:
+    - host: api-ingress.progress.me
+      http:
+        paths:
+          - path: /products
+            pathType: Prefix
+            backend:
+              service:
+                name: $SERVICE
+                port:
+                  number: $SSL_PORT
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -78,7 +112,7 @@ spec:
             #       name: postgres-secret
             #       key: password
           ports:
-            - containerPort: $RUNPORT_HTTPS_FRONTEND_LISTENER
+            - containerPort: $SSL_NODE_PORT
           # readinessProbe:
           #   httpGet:
           #     path: /health    # Adjust to your API's health endpoint
@@ -93,3 +127,4 @@ spec:
             limits:
               cpu: "250m"
               memory: "256Mi"
+---
