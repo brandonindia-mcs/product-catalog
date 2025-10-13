@@ -256,6 +256,7 @@ source ./frontend/k8s/$sdenv.env || exit 1
 set +a
 # envsubst < ./frontend/k8s/web.template.yaml | kubectl apply -f -
 envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
+sed -i '/^[[:space:]]*#/d' ./frontend/k8s/web.yaml
 )
 }
 
@@ -296,6 +297,7 @@ source ./middleware/k8s/$sdenv.env || exit 1
 set +a
 # envsubst < ./middleware/k8s/api.template.yaml | kubectl apply -f -
 envsubst >./middleware/k8s/api.yaml <./middleware/k8s/api.template.yaml
+sed -i '/^[[:space:]]*#/d' ./middleware/k8s/api.yaml
 )
 }
 
@@ -321,6 +323,7 @@ source ./backend/k8s/$sdenv.env || exit 1
 set +a
 # envsubst < ./backend/k8s/postgres.template.yaml | kubectl apply -f -
 envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
+sed -i '/^[[:space:]]*#/d' ./backend/k8s/postgres.yaml
 )
 }
 
@@ -1020,6 +1023,7 @@ source ./opt/pgadmin/k8s/$sdenv.env || exit 1
 set +a
 # envsubst < ./backend/k8s/postgres.template.yaml | kubectl apply -f -
 envsubst >./opt/pgadmin/k8s/pgadmin.yaml <./opt/pgadmin/k8s/pgadmin.template.yaml
+sed -i '/^[[:space:]]*#/d' ./opt/pgadmin/k8s/pgadmin.yaml
 # kubectl rollout restart deployment api
 
 # kubectl apply -f ./opt/pgadmin/k8s/pgamin.yaml -n $GLOBAL_NAMESPACE\
