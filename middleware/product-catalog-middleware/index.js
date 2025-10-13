@@ -158,8 +158,8 @@ const start = async () => {
     // await fastifyHttp.listen({ port: 3000, host: '0.0.0.0' });
     // fastifyHttp.log.info('HTTP middleware listening on port 3000');
 
-    await fastifyHttps.listen({ port: 3443, host: '0.0.0.0' });
-    fastifyHttps.log.info('HTTPS middleware listening on port 3443');
+    await fastifyHttps.listen({ port: 2443, host: '0.0.0.0' });
+    fastifyHttps.log.info('HTTPS middleware listening on port 2443');
   } catch (err) {
     console.error('Startup error:', err);
     process.exit(1);
