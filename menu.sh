@@ -50,7 +50,7 @@
 
   function run_k8s_webservice() { parent && run_image_frontend $2 &&    run_configure_webservice $1 $2 && GLOBAL_NAMESPACE=$1 k8s_webservice ; }
   function run_k8s_api() {        parent && run_image_middleware $2 &&  run_configure_api $1 $2 &&        GLOBAL_NAMESPACE=$1 k8s_api ; }
-  function run_k8s_postgres() {   parent && run_image_backend $2 &&     run_configure_postgres $1 $2 &&    GLOBAL_NAMESPACE=$1 k8s_postgres ; }
+  function run_k8s_postgres() {   parent && run_image_backend $2 &&     run_configure_postgres $1 $2 &&   GLOBAL_NAMESPACE=$1 k8s_postgres ; }
   function run_redeploy() { run_k8s_webservice $1 $2 && run_k8s_api $1 $2 && run_k8s_postgres $1 $2; }
   function run_generate_selfsignedcert_cnf() { generate_selfsignedcert_cnf $1 ; }
 
@@ -101,7 +101,7 @@
       41) system_check && run_backend $namespace $image_version ;;
       40) system_check && run_install_postgres $namespace $image_version ;;
       44) system_check && run_configure_postgres $namespace $image_version ;;
-      45) system_check && run_k8s_postgres $namespace ;;
+      45) system_check && run_k8s_postgres $namespace $image_version ;;
       43) system_check && run_image_backend $image_version ;;
       90) system_check && run_install_all $namespace $image_version ;;
       *) echo "Exiting..."; exit 0 ;;
