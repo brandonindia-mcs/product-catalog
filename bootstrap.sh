@@ -46,6 +46,7 @@ export PG_PORT=$POSTGRE_SQL_RUNPORT
 
 STAMP=`stamp`
 export MIDDLEWARE_TLS_SECRET=middleware-tls-$STAMP
+export FRONTEND_TLS_SECRET=frontend-tls-$STAMP
 
 function product_catalog {
 ##########  RUN COMMAND  ##########
@@ -298,6 +299,7 @@ set_keyvalue SELECTOR $FRONTEND_SELECTOR_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue PODTEMPLATE $FRONTEND_PODTEMPLATE_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue CONTAINER $FRONTEND_CONTAINER_NAME ./frontend/k8s/$sdenv.env
+set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET ./frontend/k8s/$sdenv.env
 set -a
 source ./frontend/k8s/$sdenv.env || exit 1
 set +a
@@ -959,6 +961,25 @@ done
 }
 
 
+function validate_web {
+(
+component=${1:-controller}
+kubectl logs -n ingress-nginx -l app.kubernetes.io/component=$component
+kubectl get ingressclass
+kubectl get svc -n ingress-nginx
+kubectl get svc ingress-nginx-controller -n ingress-nginx -o yaml
+
+kubectl logs -n ingress-nginx -l app.kubernetes.io/component=$component
+curl -v http://product-catalog.progress.me/
+curl -vk https://product-catalog.progress.me/
+kubectl describe ingress web-ingress
+kubectl get svc web-service
+kubectl get pods -l app=web
+
+)
+}
+
+
 function validate_ingress {
 (
 component=${1:-controller}
@@ -966,6 +987,19 @@ kubectl logs -n ingress-nginx -l app.kubernetes.io/component=$component
 kubectl get ingressclass
 kubectl get svc -n ingress-nginx
 kubectl get svc ingress-nginx-controller -n ingress-nginx -o yaml
+
+)
+}
+
+function validate_getyaml {
+(
+namespace=default
+kubectl get deployment web -n $namespace -o yaml
+kubectl get svc web-service -n $namespace -o yaml
+kubectl get deployment api -n $namespace -o yaml
+kubectl get svc api-service -n $namespace -o yaml
+kubectl get ingress api-service-ingress -n $namespace -o yaml
+kubectl get ingress web-service-ingress -n $namespace -o yaml
 
 )
 }
