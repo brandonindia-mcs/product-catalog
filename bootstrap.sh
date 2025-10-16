@@ -12,7 +12,7 @@ export POSTGRES_PASSWORD=catalog
 export POSTGRE_SQL_RUNPORT=5432
 
 export FRONTEND_APPNAME=product-catalog-frontend
-export FRONTEND_WEB_SERVICE_NAME=web-service
+export FRONTEND_WEBSERVICE_NAME=web-service
 export FRONTEND_SELECTOR_NAME=web
 export FRONTEND_DEPLOYMENT_NAME=web
 export FRONTEND_PODTEMPLATE_NAME=web
@@ -203,10 +203,10 @@ echo REGISTRY START: $(docker run -d -p 5001:5000 --name registry registry:2 2>/
 function set_registry {
 (
 set -u
-set_keyvalue HUB $DOCKERHUB ./frontend/k8s/$sdenv.env
-set_keyvalue HUB $DOCKERHUB ./middleware/k8s/$sdenv.env
-set_keyvalue HUB $DOCKERHUB ./backend/k8s/$sdenv.env
-local_registry
+set_keyvalue HUB $DOCKERHUB:$HUBPORT ./frontend/k8s/$sdenv.env
+set_keyvalue HUB $DOCKERHUB:$HUBPORT ./middleware/k8s/$sdenv.env
+set_keyvalue HUB $DOCKERHUB:$HUBPORT ./backend/k8s/$sdenv.env
+registry_local
 )
 }
 
@@ -239,14 +239,16 @@ function configure_webservice {
 (
 set -u
 image_version=$1
+FRONTEND_WEBSERVICE_REPLICAS=2
 set_keyvalue REPOSITORY $FRONTEND_APPNAME ./frontend/k8s/$sdenv.env
 set_keyvalue RUNPORT_HTTP $WEB_HTTP_RUNPORT_PUBLIC_FRONTEND ./frontend/k8s/$sdenv.env
 set_keyvalue RUNPORT_HTTPS $WEB_HTTPS_RUNPORT_PUBLIC_FRONTEND ./frontend/k8s/$sdenv.env
 set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
-set_keyvalue HUB $DOCKERHUB ./frontend/k8s/$sdenv.env
+# set_keyvalue HUB $DOCKERHUB ./frontend/k8s/$sdenv.env
+set_keyvalue HUB $DOCKERHUB:$HUBPORT ./frontend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
-set_keyvalue REPLICAS 2 ./frontend/k8s/$sdenv.env
-set_keyvalue SERVICE $FRONTEND_WEB_SERVICE_NAME ./frontend/k8s/$sdenv.env
+set_keyvalue REPLICAS $FRONTEND_WEBSERVICE_REPLICAS ./frontend/k8s/$sdenv.env
+set_keyvalue SERVICE $FRONTEND_WEBSERVICE_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue SELECTOR $FRONTEND_SELECTOR_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue PODTEMPLATE $FRONTEND_PODTEMPLATE_NAME ./frontend/k8s/$sdenv.env
@@ -267,11 +269,13 @@ function configure_api {
 (
 set -u
 image_version=$1
+MIDDLEWARE_API_REPLICAS=2
 set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME ./middleware/k8s/$sdenv.env
 set_keyvalue TAG $image_version ./middleware/k8s/$sdenv.env
-set_keyvalue HUB $DOCKERHUB ./middleware/k8s/$sdenv.env
+# set_keyvalue HUB $DOCKERHUB ./middleware/k8s/$sdenv.env
+set_keyvalue HUB $DOCKERHUB:$HUBPORT ./middleware/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/$sdenv.env
-set_keyvalue REPLICAS 2 ./middleware/k8s/$sdenv.env
+set_keyvalue REPLICAS $MIDDLEWARE_API_REPLICAS ./middleware/k8s/$sdenv.env
 set_keyvalue RUNPORT_HTTP_FRONTEND_LISTENER $API_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SSL_PORT $API_HTTPS_SSLPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SSL_TARGET_PORT $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
@@ -310,7 +314,8 @@ set -u
 image_version=$1
 set_keyvalue REPOSITORY $BACKEND_APPNAME ./backend/k8s/$sdenv.env
 set_keyvalue TAG $image_version ./backend/k8s/$sdenv.env
-set_keyvalue HUB $DOCKERHUB ./backend/k8s/$sdenv.env
+# set_keyvalue HUB $DOCKERHUB ./backend/k8s/$sdenv.env
+set_keyvalue HUB $DOCKERHUB:$HUBPORT ./backend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./backend/k8s/$sdenv.env
 set_keyvalue RUNPORT_POSTGRE $POSTGRE_SQL_RUNPORT ./backend/k8s/$sdenv.env
 
@@ -507,20 +512,13 @@ appname=$FRONTEND_APPNAME
 echo -e \\nBuilding $appname:$image_version
 
 set_registry
-# formatrun <<'EOF'
-docker build $NOCACHE\
+runit "docker build $NOCACHE\
   -t $appname:$image_version\
-  frontend\
+  frontend"\
   || return 1
-# EOF
-
-# formatrun <<'EOF'
-docker tag $appname:$image_version $DOCKERHUB/$appname:$image_version
-docker push $DOCKERHUB/$appname:$image_version
-
-# docker tag $appname $DOCKERHUB/$appname
-# docker push $DOCKERHUB/$appname
-# EOF
+runit "docker image ls $appname"
+runit "docker tag $appname:$image_version $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
+runit "docker push $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
 
 echo Pushed $DOCKERHUB/$appname:$image_version
 )
@@ -650,22 +648,15 @@ appname=$MIDDLEWARE_APPNAME
 echo -e \\nBuilding $appname:$image_version
 
 set_registry
-# formatrun <<'EOF'
-docker build $NOCACHE\
+runit "docker build $NOCACHE\
   -t $appname:$image_version\
   --build-arg EXPOSE_PORT_HTTP=$API_HTTP_RUNPORT_K8S_MIDDLEWARE\
   --build-arg EXPOSE_PORT_HTTPS=$API_HTTPS_RUNPORT_K8S_MIDDLEWARE\
-  middleware\
+  middleware"\
   || return 1
-# EOF
-
-# formatrun <<'EOF'
-docker tag $appname:$image_version $DOCKERHUB/$appname:$image_version
-docker push $DOCKERHUB/$appname:$image_version
-
-# docker tag $appname $DOCKERHUB/$appname
-# docker push $DOCKERHUB/$appname
-# EOF
+runit "docker image ls $appname"
+runit "docker tag $appname:$image_version $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
+runit "docker push $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
 
 echo Pushed $DOCKERHUB/$appname:$image_version
 )
@@ -953,20 +944,13 @@ appname=$BACKEND_APPNAME
 echo -e \\nBuilding $appname:$image_version
 
 set_registry
-# formatrun <<'EOF'
-docker build $NOCACHE\
+runit "docker build $NOCACHE\
   -t $appname:$image_version\
-  backend\
+  backend"\
   || return 1
-# EOF
-
-# formatrun <<'EOF'
-docker tag $appname:$image_version $DOCKERHUB/$appname:$image_version
-docker push $DOCKERHUB/$appname:$image_version
-
-# docker tag $appname $DOCKERHUB/$appname
-# docker push $DOCKERHUB/$appname
-# EOF
+runit "docker image ls $appname"
+runit "docker tag $appname:$image_version $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
+runit "docker push $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
 
 echo Pushed $DOCKERHUB/$appname:$image_version
 )
