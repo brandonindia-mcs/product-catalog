@@ -195,9 +195,8 @@ function clean_productcatalog {
 for dir in frontend/.nvm middleware/.nvm frontend/$FRONTEND_APPNAME middleware/$MIDDLEWARE_APPNAME;do echo cleaning $dir && rm -rf $dir;done
 }
 
-function local_registry {
-# docker run -d -p 5001:5000 --name registry registry:2
-echo REGISTRY START: $(docker run -d -p 5001:5000 --name registry registry:2 2>/dev/null || docker start registry >/dev/null && echo -n registry@$DOCKERHUB)
+function registry_local {
+echo ${FUNCNAME[1]}::${FUNCNAME[0]} $(docker run -d -p $HUBPORT:5000 --name registry_local registry:2 2>/dev/null || docker start registry_local >/dev/null && echo -n registry@$DOCKERHUB:$HUBPORT)
 }
 
 function set_registry {
