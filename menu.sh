@@ -8,7 +8,7 @@
       source ./$sdenv.env || exit 1
       set +a
     else
-      abort_hard "go.sh"  ${FUNCNAME[0]}: file $sdenv.env not found in $PWD || exit 1
+      abort_hard "menu.sh"  ${FUNCNAME[0]}: file $sdenv.env not found in $PWD || exit 1
     fi
   }
   function blue { println '\e[34m%s\e[0m' "$*"; }                                                                                    
@@ -34,8 +34,29 @@
       && GLOBAL_NAMESPACE=$1 install_postgres $2
   }
   function run_system_check() { parent && system_check && echo -e "\n\tsdenv is $sdenv\n\tDOCKERHUB is $DOCKERHUB" ; }
-  function system_check() { . ./bootstrap.sh && setenv; }
+  function system_check() { setenv && . ./bootstrap.sh ; }
 
+  function registry_local_images { curl -s http://localhost:5001/v2/_catalog | jq; }
+  function registry_local_tags {
+    REGISTRY_URL="http://localhost:5001"
+    # Get list of repositories
+    REPOS=$(curl -s ${REGISTRY_URL}/v2/_catalog | jq -r '.repositories[]')
+    # Loop through each repo and get tags
+    for repo in $REPOS; do
+      echo "Repository: $repo"
+      curl -s ${REGISTRY_URL}/v2/${repo}/tags/list | jq
+      echo ""
+    done
+  }
+  function registry_local_repository {
+    REGISTRY_URL="http://localhost:5001"
+    # Get list of repositories
+    REPOS=$(curl -s ${REGISTRY_URL}/v2/_catalog | jq -r '.repositories[]')
+    # Loop through each repo and get tags
+      echo "Repository: $repo"
+      curl -s ${REGISTRY_URL}/v2/$1/tags/list | jq
+      echo ""
+  }
   function run_configure_webservice() { parent && GLOBAL_NAMESPACE=$1 configure_webservice $2 ; }
   function run_configure_api() { parent && GLOBAL_NAMESPACE=$1 configure_api $2 ; }
   function run_configure_postgres() { parent && GLOBAL_NAMESPACE=$1 configure_postgres $2 ; }
@@ -76,6 +97,7 @@
     echo -e "                   \t               \t52) validate_api_k8s_https"
     # echo -e "40) backend \t 41) install_postgres"
     echo -e "40) install_postgres\t              \t                     \t43) image_backend   \t44) configure_postgres   \t45) k8s_postgres"
+    echo -e "61) reg_local_front \t62) reg_local_middle\t63) reg_local_back \t"
     # echo -e "90) net new install"
     echo && read -p "Enter choice or exit: " choice
 
@@ -103,6 +125,9 @@
       44) system_check && run_configure_postgres $namespace $image_version ;;
       45) system_check && run_k8s_postgres $namespace $image_version ;;
       43) system_check && run_image_backend $image_version ;;
+      61) system_check && registry_local_repository product-catalog-frontend ;;
+      62) system_check && registry_local_repository product-catalog-middleware ;;
+      63) system_check && registry_local_repository product-catalog-backend ;;
       90) system_check && run_install_all $namespace $image_version ;;
       *) echo "Exiting..."; exit 0 ;;
     esac
