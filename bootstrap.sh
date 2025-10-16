@@ -199,6 +199,52 @@ function registry_local {
 echo ${FUNCNAME[1]}::${FUNCNAME[0]} $(docker run -d -p $HUBPORT:5000 --name registry_local registry:2 2>/dev/null || docker start registry_local >/dev/null && echo -n registry@$DOCKERHUB:$HUBPORT)
 }
 
+function registry_cluster {
+(
+cluster=${1:-catalog-cluster-control-plane}
+control_plane_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $cluster)
+echo ${FUNCNAME[1]}::${FUNCNAME[0]} "$cluster @ control_plane_ip"
+registry_node_port=30500
+registry_url=registry.local
+# echo 'added "insecure-registries": ["$registry_url:$registry_node_port"] to docker config on host'
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+spec:
+  selector:
+    app: registry
+  ports:
+    - port: 5000
+      targetPort: 5000
+      nodePort: $registry_node_port
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+        - name: registry
+          image: registry:2
+          ports:
+            - containerPort: 5000
+EOF
+)
+kubectl get svc registry
+}
+
 function set_registry {
 (
 set -u
