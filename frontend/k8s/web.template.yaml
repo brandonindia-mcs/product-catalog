@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: $NAMESPACE
-# TELLS KUBERNETES HOW TO IDENTIFY THIS SERVICE.
+  # TELLS KUBERNETES HOW TO IDENTIFY THIS SERVICE.
   name: $SERVICE
 spec:
   ports:
@@ -19,26 +19,26 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: $NAMESPACE
-# TELLS KUBERNETES HOW TO IDENTIFY THIS DEPLOYMENT
+  # TELLS KUBERNETES HOW TO IDENTIFY THIS DEPLOYMENT
   name: $DEPLOYMENT
 spec:
-##### replicas: i → Keeps service available during updates
+  ##### replicas: i → Keeps service available during updates
   replicas: $REPLICAS
-##### strategy block → Explicitly sets rolling update behavior.
-#   strategy:
-#     type: RollingUpdate
-#     rollingUpdate:
-# ##### maxUnavailable: 0 → Ensures no downtime
-#       maxUnavailable: 0   # Never take a pod down until a new one is ready
-# ##### maxSurge: i → Allows one extra pod during rollout for faster updates
-#       maxSurge: 1         # Add at most one extra pod during update
+  ##### strategy block → Explicitly sets rolling update behavior.
+  #   strategy:
+  #     type: RollingUpdate
+  #     rollingUpdate:
+  # ##### maxUnavailable: 0 → Ensures no downtime
+  #       maxUnavailable: 0   # Never take a pod down until a new one is ready
+  # ##### maxSurge: i → Allows one extra pod during rollout for faster updates
+  #       maxSurge: 1         # Add at most one extra pod during update
   selector:
     matchLabels:
       app: $SELECTOR
   template:
     metadata:
       labels:
-# TELLS KUBERNETES HOW TO IDENTIFY THIS POD
+        # TELLS KUBERNETES HOW TO IDENTIFY THIS POD
         app: $PODTEMPLATE
     spec:
       containers:
@@ -47,7 +47,7 @@ spec:
           ports:
             - containerPort: $RUNPORT_HTTP
             - containerPort: $RUNPORT_HTTPS
-##### readinessProbe → Ensures traffic only goes to healthy pods
+          ##### readinessProbe → Ensures traffic only goes to healthy pods
           # readinessProbe:
           #   httpGet:
           #     path: /health    # Adjust to your app's health endpoint
@@ -62,5 +62,4 @@ spec:
             limits:
               cpu: "250m"
               memory: "256Mi"
-
 # Comment on /health → Replace with your actual health check path.
