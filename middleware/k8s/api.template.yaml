@@ -31,10 +31,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - api-ingress.progress.me
+        - $INGRESS
       secretName: $TLS_SECRET-tls
   rules:
-    - host: api-ingress.progress.me
+    - host: $INGRESS
       http:
         paths:
           - path: /products

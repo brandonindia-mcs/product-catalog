@@ -23,6 +23,7 @@ export WEB_HTTPS_RUNPORT_PUBLIC_FRONTEND=443
 
 export MIDDLEWARE_APPNAME=product-catalog-middleware
 export MIDDLEWARE_API_SERVICE_NAME=api-service
+export MIDDLEWARE_API_INGRESS_HOSTNAME=api-ingress.progress.me
 export MIDDLEWARE_API_SERVICE_LOCALCLUSTER_NAME=https://api-service.default.svc.cluster.local
 export MIDDLEWARE_SELECTOR_NAME=api
 export MIDDLEWARE_DEPLOYMENT_NAME=api
@@ -328,6 +329,7 @@ set_keyvalue SSL_PORT $API_HTTPS_SSLPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.
 set_keyvalue SSL_TARGET_PORT $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SSL_NODE_PORT $API_HTTPS_NODEPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE_NAME ./middleware/k8s/$sdenv.env
+set_keyvalue INGRESS $MIDDLEWARE_API_INGRESS_HOSTNAME ./middleware/k8s/$sdenv.env
 set_keyvalue SELECTOR $MIDDLEWARE_SELECTOR_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $MIDDLEWARE_DEPLOYMENT_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue PODTEMPLATE $MIDDLEWARE_PODTEMPLATE_NAME ./middleware/k8s/$sdenv.env
