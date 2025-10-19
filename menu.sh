@@ -58,34 +58,34 @@
       echo ""
   }
   function run_configure_webservice() { parent && GLOBAL_NAMESPACE=$1 configure_webservice $2 ; }
-  function run_configure_api() { parent && GLOBAL_NAMESPACE=$1 configure_api $2 ; }
-  function run_configure_postgres() { parent && GLOBAL_NAMESPACE=$1 configure_postgres $2 ; }
+  function run_configure_api() {        parent && GLOBAL_NAMESPACE=$1 configure_api $2 ; }
+  function run_configure_postgres() {   parent && GLOBAL_NAMESPACE=$1 configure_postgres $2 ; }
 
-  function run_frontend_18() { parent && echo menu disabled, manual run only: frontend_18 && return 1 ;}
-  function run_middleware() { parent && middleware ;}
-  function run_backend() { parent && backend; }
+  function run_frontend_18() {  parent && echo menu disabled, manual run only: frontend_18 && return 1 ;}
+  function run_middleware() {   parent && middleware ;}
+  function run_backend() {      parent && backend; }
 
-  function run_image_frontend() { parent && build_image_frontend $1; }
+  function run_image_frontend() {   parent && build_image_frontend $1; }
   function run_image_middleware() { parent && build_image_middleware $1; }
-  function run_image_backend() { parent && build_image_backend $1; }
+  function run_image_backend() {    parent && build_image_backend $1; }
 
-  function run_k8s_webservice() { parent && run_image_frontend $2 &&    run_configure_webservice $1 $2 && GLOBAL_NAMESPACE=$1 k8s_webservice ; }
-  function run_k8s_api() {        parent && run_image_middleware $2 &&  run_configure_api $1 $2 &&        GLOBAL_NAMESPACE=$1 k8s_api ; }
-  function run_k8s_postgres() {   parent && run_image_backend $2 &&     run_configure_postgres $1 $2 &&   GLOBAL_NAMESPACE=$1 k8s_postgres ; }
-  function run_redeploy() { run_k8s_webservice $1 $2 && run_k8s_api $1 $2 && run_k8s_postgres $1 $2; }
+  function run_k8s_webservice() { parent && run_image_frontend $2   &&  run_configure_webservice $1 $2  && GLOBAL_NAMESPACE=$1 k8s_webservice ; }
+  function run_k8s_api() {        parent && run_image_middleware $2 &&  run_configure_api $1 $2         && GLOBAL_NAMESPACE=$1 k8s_api ; }
+  function run_k8s_postgres() {   parent && run_image_backend $2    &&  run_configure_postgres $1 $2    && GLOBAL_NAMESPACE=$1 k8s_postgres ; }
+  function run_redeploy_all() { run_k8s_webservice $1 $2 && run_k8s_api $1 $2 && run_k8s_postgres $1 $2; }
   function run_generate_selfsignedcert_cnf() { generate_selfsignedcert_cnf $1 ; }
 
-  function run_product_catalog() { parent && GLOBAL_NAMESPACE=$1 product_catalog $2 ; }
-  function run_install_webservice() { parent && echo menu disabled, manual run only: GLOBAL_NAMESPACE=$1 install_webservice $2 && return 1 ; }
-  function run_update_webservice() { parent && GLOBAL_NAMESPACE=$1 update_webservice $2 ; }
-  function run_install_api() { parent && GLOBAL_NAMESPACE=$1 install_api $2; }
-  function run_install_postgres() { parent && GLOBAL_NAMESPACE=$1 install_postgres $2; }
-  function run_validate_api_k8s_http() { parent && validate_api_k8s_http; }
-  function run_validate_api_k8s_https() { parent && validate_api_k8s_https; }
-  function run_validate_api_web_https() { parent && validate_api_web_https; }
-  function run_validate_api() { parent && validate_api; }
-  function run_frontend_update() { parent && frontend_update; }
-  function run_k8s_nginx() { parent && k8s_nginx; }
+  function run_product_catalog() {          parent && GLOBAL_NAMESPACE=$1 product_catalog $2 ; }
+  function run_install_webservice() {       parent && echo menu disabled, manual run only: GLOBAL_NAMESPACE=$1 install_webservice $2 && return 1 ; }
+  function run_update_webservice() {        parent && GLOBAL_NAMESPACE=$1 update_webservice $2 ; }
+  function run_install_api() {              parent && GLOBAL_NAMESPACE=$1 install_api $2; }
+  function run_install_postgres() {         parent && GLOBAL_NAMESPACE=$1 install_postgres $2; }
+  function run_validate_api_k8s_http() {    parent && validate_api_k8s_http; }
+  function run_validate_api_k8s_https() {   parent && validate_api_k8s_https; }
+  function run_validate_api_web_https() {   parent && validate_api_web_https; }
+  function run_validate_api() {             parent && validate_api; }
+  function run_frontend_update() {          parent && frontend_update; }
+  function run_k8s_nginx() {                parent && k8s_nginx; }
   function run_validate_service_endpoints { parent && validate_service_endpoints ; }
   function validate_service_endpoints {
     kubectl describe svc $MIDDLEWARE_API_SERVICE_NAME
@@ -98,13 +98,13 @@
   function show_menu() {
     namespace=default && image_version="$namespace-$(version)"
     echo -e "\nSelect an option (namespace: $namespace, tag: $image_version):"
-    echo -e " 1) sys_check\t2) frwd 8081\t3) Build & Deploy\t5) deploy\t9) certs\t11) k8s_nginx\t*) Exit"
+    echo -e " 1) sys_check\t3) Build & Deploy\t5) deploy\t9) certs\t11) k8s_nginx\t*) Exit"
     echo -e "20) frontend_update\t21) update_webservice\t          \t23) image_frontend  \t24) configure_webservice\t25) k8s_webservice"
     echo -e "30) middleware     \t31) install_api\t50) validate_api\t33) image_middleware\t34) configure_api       \t35) k8s_api"
     echo -e "                   \t2131)          \t51) validate_api_web_https\t53) validate_web"
     echo -e "                   \t               \t52) validate_api_k8s_https\t54) validate_ingress"
     # echo -e "40) backend \t 41) install_postgres"
-    echo -e "40) install_postgres\t              \t                     \t43) image_backend   \t44) configure_postgres   \t45) k8s_postgres"
+    echo -e "40) install_postgres\t              \t                \t43) image_backend    \t44) configure_postgres  \t45) k8s_postgres"
     echo -e "61) reg_local_front \t62) reg_local_middle\t63) reg_local_back \t"
     echo -e "69) webapi YAML\t70) web YAML \t71) api YAML\t72) validate_endpoints"
     # echo -e "90) net new install"
@@ -112,7 +112,7 @@
 
     case $choice in
        1) run_system_check ;;
-       5) system_check && run_redeploy $namespace $image_version ;;
+       5) system_check && run_redeploy_all $namespace $image_version ;;
        3) system_check && run_product_catalog $namespace $image_version ;;
        9) system_check && run_generate_selfsignedcert_cnf build_cert && ls ./build_cert ;;
       11) system_check && run_k8s_nginx ;;
