@@ -32,7 +32,10 @@ export MIDDLEWARE_CONTAINER_NAME=api
 export MIDDLEWARE_TLS_MOUNT=certs
 export MIDDLEWARE_TLS_MOUNT_PATH=/$MIDDLEWARE_TLS_MOUNT
 export MIDDLEWARE_TLS_CERT_VOLUME=tls-certs
+export CORS_ORIGIN=http://localhost:8081
+export API_HTTP_PORT_K8S_MIDDLEWARE=80
 export API_HTTP_RUNPORT_K8S_MIDDLEWARE=3000
+export API_HTTP_NODEPORT_K8S_MIDDLEWARE=32000
 export API_HTTPS_SSLPORT_K8S_MIDDLEWARE=443
 export API_HTTPS_RUNPORT_K8S_MIDDLEWARE=2443
 export API_HTTPS_NODEPORT_K8S_MIDDLEWARE=32443
@@ -324,7 +327,9 @@ set_keyvalue TAG $image_version ./middleware/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB:$HUBPORT ./middleware/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/$sdenv.env
 set_keyvalue REPLICAS $MIDDLEWARE_API_REPLICAS ./middleware/k8s/$sdenv.env
-set_keyvalue RUNPORT_HTTP_FRONTEND_LISTENER $API_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
+set_keyvalue HTTP_PORT $API_HTTP_PORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
+set_keyvalue HTTP_TARGET_PORT $API_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
+set_keyvalue HTTP_NODE_PORT $API_HTTP_NODEPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SSL_PORT $API_HTTPS_SSLPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SSL_TARGET_PORT $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SSL_NODE_PORT $API_HTTPS_NODEPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
@@ -334,6 +339,8 @@ set_keyvalue SELECTOR $MIDDLEWARE_SELECTOR_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $MIDDLEWARE_DEPLOYMENT_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue PODTEMPLATE $MIDDLEWARE_PODTEMPLATE_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue CONTAINER $MIDDLEWARE_CONTAINER_NAME ./middleware/k8s/$sdenv.env
+
+set_keyvalue CORS_ORIGIN $CORS_ORIGIN ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_MOUNT_PATH $MIDDLEWARE_TLS_MOUNT_PATH ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_CERT_VOLUME $MIDDLEWARE_TLS_CERT_VOLUME ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv.env
@@ -565,7 +572,7 @@ runit "docker build $NOCACHE\
   -t $appname:$image_version\
   frontend"\
   || return 1
-runit "docker image ls $appname"
+# runit "docker image ls $appname"
 runit "docker tag $appname:$image_version $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
 runit "docker push $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
 
@@ -703,7 +710,7 @@ runit "docker build $NOCACHE\
   --build-arg EXPOSE_PORT_HTTPS=$API_HTTPS_RUNPORT_K8S_MIDDLEWARE\
   middleware"\
   || return 1
-runit "docker image ls $appname"
+# runit "docker image ls $appname"
 runit "docker tag $appname:$image_version $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
 runit "docker push $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
 
@@ -723,12 +730,6 @@ function k8s_api {
 ###################################
 (
 set -e
-# formatrun <<'EOF'
-# kubectl apply -f ./middleware/k8s/api.yaml\
-#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=api --timeout=60s\
-#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/$MIDDLEWARE_API_SERVICE_NAME $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
-
-# EOF
 MIDDLEWARE_CERTIFICATE_FILE_NAME=cert.pem
 MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=key.pem
 set -a
@@ -746,10 +747,6 @@ runit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
     --for=condition=Ready pod -l app=api --timeout=60s
 "
-
-# logit "kubectl port-forward --namespace $GLOBAL_NAMESPACE\
-#     svc/$MIDDLEWARE_API_SERVICE_NAME $API_HTTP_RUNPORT_K8S_MIDDLEWARE:$API_HTTP_RUNPORT_K8S_MIDDLEWARE
-# "
 
 # kubectl rollout restart deployment api
 )
@@ -780,7 +777,7 @@ runit "docker build $NOCACHE\
   -t $appname:$image_version\
   backend"\
   || return 1
-runit "docker image ls $appname"
+# runit "docker image ls $appname"
 runit "docker tag $appname:$image_version $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
 runit "docker push $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
 

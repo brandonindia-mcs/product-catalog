@@ -15,6 +15,10 @@ spec:
   selector:
     app: $SELECTOR
   ports:
+    # - name: http
+    #   port: $HTTP_PORT
+    #   targetPort: $HTTP_TARGET_PORT
+    #   nodePort: $HTTP_NODE_PORT
     - name: https
       port: $SSL_PORT
       targetPort: $SSL_TARGET_PORT
@@ -44,6 +48,7 @@ spec:
                 name: $SERVICE
                 port:
                   number: $SSL_PORT
+                  # number: $HTTP_PORT
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -77,12 +82,14 @@ spec:
               mountPath: $MIDDLEWARE_TLS_MOUNT_PATH
               readOnly: true
           env:
+            - name: NODE_ENV
+              value: $NODE_ENV
+            - name: CORS_ORIGIN
+              value: $CORS_ORIGIN
               #####***  ALLOW SKETCHY CERTS, NOT FOR PRODUCTION  ***####
               #####***  AS-IN SELF-SIGNED OR OTHERWISE  ************####
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: "0"
-            - name: NODE_ENV
-              value: $NODE_ENV
             - name: PG_HOST
               value: $PG_HOST
             - name: PG_DATABASE
@@ -113,6 +120,7 @@ spec:
             #       key: password
           ports:
             - containerPort: $SSL_NODE_PORT
+            # - containerPort: $HTTP_NODE_PORT
           # readinessProbe:
           #   httpGet:
           #     path: /health    # Adjust to your API's health endpoint

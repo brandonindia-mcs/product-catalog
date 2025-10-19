@@ -44,7 +44,7 @@ const pool = new Pool({
 // Shared route registration function
 const registerRoutes = (app) => {
   app.register(fastifyCors, {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:8081',
+    origin: process.env.CORS_ORIGIN,
     methods: ['GET', 'POST'],
     credentials: true
   });
