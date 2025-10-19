@@ -5,7 +5,10 @@ GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 alias stamp="echo \$(date +%Y%m%d%H%M%S)"
 
 export BACKEND_APPNAME=product-catalog-backend
-export BACKEND_POSTGRES_SERVICE_NAME=pg-service
+export BACKEND_DATABASE_SERVICE_NAME=pg-service
+export BACKEND_SELECTOR_NAME=postgres
+export BACKEND_DEPLOYMENT_NAME=postgres
+export BACKEND_PODTEMPLATE_NAME=postgres
 export POSTGRES_USER=catalog
 export POSTGRES_DB=catalog
 export POSTGRES_PASSWORD=catalog
@@ -42,7 +45,7 @@ export API_HTTPS_NODEPORT_K8S_MIDDLEWARE=32443
 export CERTIFICATE_BUILD_DIRECTORY=build_cert
 
 export NODE_ENV=development
-export PG_HOST=$BACKEND_POSTGRES_SERVICE_NAME
+export PG_HOST=$BACKEND_DATABASE_SERVICE_NAME
 export PG_DATABASE=$POSTGRES_DB
 export PG_USER=$POSTGRES_USER
 export PG_PASSWORD=$POSTGRES_PASSWORD
@@ -375,7 +378,7 @@ set_keyvalue HUB $DOCKERHUB:$HUBPORT ./backend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./backend/k8s/$sdenv.env
 set_keyvalue RUNPORT_POSTGRE $POSTGRE_SQL_RUNPORT ./backend/k8s/$sdenv.env
 
-set_keyvalue SERVICE $BACKEND_POSTGRES_SERVICE_NAME ./backend/k8s/$sdenv.env
+set_keyvalue SERVICE $BACKEND_DATABASE_SERVICE_NAME ./backend/k8s/$sdenv.env
 set_keyvalue POSTGRES_DB $POSTGRES_DB ./backend/k8s/$sdenv.env
 set_keyvalue POSTGRES_USER $POSTGRES_USER ./backend/k8s/$sdenv.env
 set_keyvalue POSTGRES_PASSWORD $POSTGRES_PASSWORD ./backend/k8s/$sdenv.env

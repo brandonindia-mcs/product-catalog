@@ -208,6 +208,7 @@ done
 function validate_web {
 (
 component=${1:-controller}
+date
 kubectl logs -n ingress-nginx -l app.kubernetes.io/component=$component
 kubectl get ingressclass
 kubectl get svc -n ingress-nginx
@@ -227,6 +228,7 @@ kubectl get pods -l app=web
 function validate_ingress {
 (
 component=${1:-controller}
+date
 kubectl logs -n ingress-nginx -l app.kubernetes.io/component=$component
 kubectl get ingressclass
 kubectl get svc -n ingress-nginx
@@ -238,6 +240,7 @@ kubectl get svc ingress-nginx-controller -n ingress-nginx -o yaml
 function validate_getyaml {
 (
 namespace=default
+date
 kubectl get deployment web -n $namespace -o yaml
 kubectl get svc web-service -n $namespace -o yaml
 kubectl get deployment api -n $namespace -o yaml
@@ -249,3 +252,57 @@ kubectl get ingress web-service-ingress -n $namespace -o yaml
 }
 
 
+function validate_service_endpoints {
+>./build/validate_service_endpoints.out
+(
+date
+echo \*\*\*\*\* Describing $MIDDLEWARE_API_SERVICE_NAME
+kubectl describe svc $MIDDLEWARE_API_SERVICE_NAME
+echo \*\*\*\*\* Netstat $MIDDLEWARE_DEPLOYMENT_NAME
+kubectl exec -it deploy/$MIDDLEWARE_DEPLOYMENT_NAME -- netstat -tlnp
+
+echo \*\*\*\*\* Describing $FRONTEND_WEBSERVICE_NAME
+kubectl describe svc $FRONTEND_WEBSERVICE_NAME
+echo \*\*\*\*\* Netstat $FRONTEND_DEPLOYMENT_NAME
+kubectl exec -it deploy/$FRONTEND_DEPLOYMENT_NAME -- netstat -tlnp
+
+echo \*\*\*\*\* Describing $BACKEND_DATABASE_SERVICE_NAME
+kubectl describe svc $BACKEND_DATABASE_SERVICE_NAME
+echo \*\*\*\*\* Netstat $BACKEND_DEPLOYMENT_NAME
+kubectl exec -it deploy/$BACKEND_DEPLOYMENT_NAME -- netstat -tlnp
+) 2>&1 | tee ./build/validate_service_endpoints.out
+}
+
+function get_yaml_out {
+(
+get_web_out
+get_api_out
+get_postgres_out
+) 2>&1 | tee ./build/yaml.out
+}
+
+function get_web_out {
+(
+date
+kubectl get deployment web -o yaml
+kubectl get svc web-service -o yaml
+kubectl get ingress web-service-ingress -o yaml
+) 2>&1 | tee ./build/web.out
+}
+
+function get_api_out {
+(
+date
+kubectl get deployment api -o yaml
+kubectl get svc api-service -o yaml
+kubectl get ingress api-service-ingress -o yaml
+) 2>&1 | tee ./build/api.out
+}
+
+function get_postgres_out {
+(
+date
+kubectl get deployment postgre -o yaml
+kubectl get svc pg-service -o yaml
+) 2>&1 | tee ./build/postgres.out
+}

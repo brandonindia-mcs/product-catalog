@@ -87,13 +87,6 @@
   function run_frontend_update() {          parent && frontend_update; }
   function run_k8s_nginx() {                parent && k8s_nginx; }
   function run_validate_service_endpoints { parent && validate_service_endpoints ; }
-  function validate_service_endpoints {
-    kubectl describe svc $MIDDLEWARE_API_SERVICE_NAME
-    kubectl exec -it deploy/$MIDDLEWARE_DEPLOYMENT_NAME -- netstat -tlnp
-
-    kubectl describe svc $FRONTEND_WEBSERVICE_NAME
-    kubectl exec -it deploy/$FRONTEND_DEPLOYMENT_NAME -- netstat -tlnp
-  }
 
   function show_menu() {
     namespace=default && image_version="$namespace-$(version)"
@@ -106,7 +99,7 @@
     # echo -e "40) backend \t 41) install_postgres"
     echo -e "40) install_postgres\t              \t                \t43) image_backend    \t44) configure_postgres  \t45) k8s_postgres"
     echo -e "61) reg_local_front \t62) reg_local_middle\t63) reg_local_back \t"
-    echo -e "69) webapi YAML\t70) web YAML \t71) api YAML\t72) validate_endpoints"
+    echo -e "70) webapi YAML\t71) web YAML \tx72) api YAML\t75) validate_endpoints"
     # echo -e "90) net new install"
     echo && read -p "Enter choice or exit: " choice
 
@@ -139,10 +132,10 @@
       61) system_check && registry_local_repository product-catalog-frontend ;;
       62) system_check && registry_local_repository product-catalog-middleware ;;
       63) system_check && registry_local_repository product-catalog-backend ;;
-      69) system_check && get_yaml_out ;;
-      70) system_check && >./build/web.out && kubectl get deployment web -o yaml >>./build/web.out && kubectl get svc web-service -o yaml >>./build/web.out && kubectl get ingress web-service-ingress -o yaml >>./build/web.out ;;
-      71) system_check && >./build/api.out && kubectl get deployment api -o yaml >>./build/api.out && kubectl get svc api-service -o yaml >>./build/api.out && kubectl get ingress api-service-ingress -o yaml >>./build/api.out ;;
-      72) system_check && >./build/validate_service_endpoints.out && validate_service_endpoints >>./build/validate_service_endpoints.out ;;
+      70) system_check && get_yaml_out ;;
+      71) system_check && get_web_out ;;
+      72) system_check && get_api_out ;;
+      72) system_check && validate_service_endpoints ;;
       90) system_check && run_install_all $namespace $image_version ;;
       2131) system_check && run_update_webservice $namespace $image_version && run_install_api $namespace $image_version ;;
       *) echo "invalid entry..."; exit 0 ;;
@@ -150,18 +143,16 @@
   cleanup_k8s_recordset >/dev/null 2>&1 & 
   }
 
-function get_yaml_out {
->./build/webapi.out\
-  && kubectl get deployment web -o yaml >>./build/webapi.out && kubectl get svc web-service -o yaml >>./build/webapi.out && kubectl get ingress web-service-ingress -o yaml >>./build/webapi.out\
-  && kubectl get deployment api -o yaml >>./build/webapi.out && kubectl get svc api-service -o yaml >>./build/webapi.out && kubectl get ingress api-service-ingress -o yaml >>./build/webapi.out\
-  && cat /build/webapi.out
-}
-
 # Loop until user exits
 while true; do
     show_menu
     echo ""
 done
+
+
+
+
+
 )
 
 
