@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/products': {
-          target: env.VITE_API_URL || 'http://localhost:3000',
+          target: env.VITE_API_URL,
           changeOrigin: true,
           secure: false  // allow self-signed certs
         }
