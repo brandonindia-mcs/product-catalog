@@ -36,7 +36,7 @@ spec:
   tls:
     - hosts:
         - $INGRESS
-      secretName: $TLS_SECRET-tls
+      secretName: $TLS_SECRET
   rules:
     - host: $INGRESS
       http:
@@ -74,7 +74,7 @@ spec:
       volumes:
         - name: $TLS_CERT_VOLUME
           secret:
-            secretName: $TLS_SECRET
+            secretName: $SECRET
       containers:
         - name: $CONTAINER
           image: $HUB/$REPOSITORY:$TAG

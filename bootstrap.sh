@@ -55,8 +55,10 @@ export PG_PASSWORD=$POSTGRES_PASSWORD
 export PG_PORT=$POSTGRE_SQL_RUNPORT
 
 STAMP=`stamp`
-export MIDDLEWARE_TLS_SECRET=middleware-tls-$STAMP
-export FRONTEND_TLS_SECRET=frontend-tls-$STAMP
+# export MIDDLEWARE_TLS_SECRET=middleware-tls-$STAMP
+# export FRONTEND_TLS_SECRET=frontend-tls-$STAMP
+export MIDDLEWARE_TLS_SECRET=middleware-secret-static
+export FRONTEND_TLS_SECRET=frontend-secret-static
 
 function product_catalog {
 ##########  RUN COMMAND  ##########
@@ -311,7 +313,7 @@ set_keyvalue SELECTOR $FRONTEND_SELECTOR_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue PODTEMPLATE $FRONTEND_PODTEMPLATE_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue CONTAINER $FRONTEND_CONTAINER_NAME ./frontend/k8s/$sdenv.env
-set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET ./frontend/k8s/$sdenv.env
+set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET-tls ./frontend/k8s/$sdenv.env
 set -a
 source ./frontend/k8s/$sdenv.env || exit 1
 set +a
@@ -354,7 +356,8 @@ set_keyvalue CONTAINER $MIDDLEWARE_CONTAINER_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue CORS_ORIGIN $CORS_ORIGIN ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_MOUNT_PATH $MIDDLEWARE_TLS_MOUNT_PATH ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_CERT_VOLUME $MIDDLEWARE_TLS_CERT_VOLUME ./middleware/k8s/$sdenv.env
-set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv.env
+set_keyvalue SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv.env
+set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET-tls ./middleware/k8s/$sdenv.env
 set_keyvalue CERTIFICATE cert.pem ./middleware/k8s/$sdenv.env
 set_keyvalue CERTIFICATE_KEY key.pem ./middleware/k8s/$sdenv.env
 
@@ -606,17 +609,11 @@ function k8s_webservice {
 ###################################
 (
 set -e
-FRONTEND_CERTIFICATE_FILE_NAME=cert.pem
-FRONTEND_CERTIFICATE_KEY_FILE_NAME=key.pem
 set -a
 source ./frontend/k8s/$sdenv.env || exit 1
 set +a
-runit "kubectl create secret generic $FRONTEND_TLS_SECRET\
-    --from-file=$FRONTEND_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/web/$FRONTEND_CERTIFICATE_FILE_NAME\
-    --from-file=$FRONTEND_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/web/$FRONTEND_CERTIFICATE_KEY_FILE_NAME
-"
 runit "kubectl apply -f ./frontend/k8s/web.yaml\
-  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s
+  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=$FRONTEND_SELECTOR_NAME --timeout=60s
 "
 
 )
@@ -743,29 +740,66 @@ function k8s_api {
 ###################################
 (
 set -e
-MIDDLEWARE_CERTIFICATE_FILE_NAME=cert.pem
-MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=key.pem
 set -a
 source ./middleware/k8s/$sdenv.env || exit 1
 set +a
-runit "kubectl create secret generic $MIDDLEWARE_TLS_SECRET\
-    --from-file=$MIDDLEWARE_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/api/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
-    --from-file=$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/api/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
-"
-runit "kubectl create secret tls $MIDDLEWARE_TLS_SECRET-tls\
-    --cert=./$CERTIFICATE_BUILD_DIRECTORY/api/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
-    --key=./$CERTIFICATE_BUILD_DIRECTORY/api/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
-"
 runit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
-    --for=condition=Ready pod -l app=api --timeout=60s
+    --for=condition=Ready pod -l app=$MIDDLEWARE_SELECTOR_NAME --timeout=60s
 "
 
 # kubectl rollout restart deployment api
 )
 }
 
-. ./bootstrap-validate.sh 2>/dev/null | echo bootstrap-validation no found... continuing
+function k8s_secrets {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace k8s_secrets
+###################################
+(
+set -u
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secret_api
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secret_web
+)
+}
+
+function k8s_secret_api {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace k8s_secret_api
+###################################
+(
+set -e
+MIDDLEWARE_CERTIFICATE_FILE_NAME=cert.pem
+MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=key.pem
+runit "kubectl create secret generic $MIDDLEWARE_TLS_SECRET\
+    --from-file=$MIDDLEWARE_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR_NAME/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
+    --from-file=$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR_NAME/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
+"
+runit "kubectl create secret tls $MIDDLEWARE_TLS_SECRET-tls\
+    --cert=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR_NAME/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
+    --key=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR_NAME/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
+"
+)
+}
+
+
+function k8s_secret_web {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace k8s_secret_web
+###################################
+(
+set -e
+FRONTEND_CERTIFICATE_FILE_NAME=cert.pem
+FRONTEND_CERTIFICATE_KEY_FILE_NAME=key.pem
+runit "kubectl create secret tls $FRONTEND_TLS_SECRET-tls\
+    --cert=./$CERTIFICATE_BUILD_DIRECTORY/$FRONTEND_SELECTOR_NAME/$FRONTEND_CERTIFICATE_FILE_NAME\
+    --key=./$CERTIFICATE_BUILD_DIRECTORY/$FRONTEND_SELECTOR_NAME/$FRONTEND_CERTIFICATE_KEY_FILE_NAME
+"
+)
+}
+
+
+. ./bootstrap-validate.sh 2>/dev/null || echo ./bootstrap-validate.sh not found... continuing
 
 
 function backend {

@@ -27,7 +27,7 @@ spec:
   tls:
     - hosts:
         - $INGRESS
-      secretName: $TLS_SECRET-tls
+      secretName: $TLS_SECRET
   rules:
     - host: $INGRESS
       http:
