@@ -112,6 +112,7 @@
 61) reg_local_front \t62) reg_local_middle\t63) reg_local_back                      \tweb 1000/1001) info 1002) secrets
 70) webapi YAML\t71) web YAML \t72) api YAML\t75) validate_endpoints\t\t            \tapi 2000/2001) info 2002) secrets
 90) clear web, api, ingress\t\t                                                     \tpg  3000/3002) pg
+\t\t                                                                                \t 0000) all secrets
 "
     read -p "Enter choice or exit: " choice
 
@@ -153,6 +154,7 @@
       75) system_check && validate_service_endpoints ;;
       90) system_check && kd deploy api web ; kd svc api-service web-service ; kd ingress api-service-ingress web-service-ingress ;;
       2131) system_check && run_install_api $namespace $image_version && run_update_webservice $namespace $image_version ;;
+      0000) system_check && kubectl describe secret ;;
       1000) system_check && kubectl logs -l app=web ;;
       1001) system_check && kubectl describe svc web-service ;;
       1002) system_check && kubectl describe secret $FRONTEND_TLS_SECRET-tls ;;
