@@ -100,19 +100,19 @@
 
   function show_menu() {
     namespace=default && image_version="$namespace-$(version)"
-    echo -e "\nSelect an option (namespace: $namespace, tag: $image_version):"
-    echo -e " 0) sys_check\t3) Build & Deploy\t5) deploy\t8) certs web\t9) certs api\t11) k8s_nginx\t*) Exit"
-    echo -e "20) frontend_update\t21) update_webservice\t          \t23) image_frontend  \t24) configure_webservice\t25) k8s_webservice"
-    echo -e "30) middleware     \t31) install_api\t50) validate_api\t33) image_middleware\t34) configure_api       \t35) k8s_api"
-    echo -e "                   \t2131)          \t51) validate_api_web_https\t53) validate_web"
-    echo -e "                   \t               \t52) validate_api_k8s_https\t54) validate_ingress"
-    # echo -e "40) backend \t 41) install_postgres"
-    echo -e "40) install_postgres\t              \t                \t43) image_backend    \t44) configure_postgres  \t45) k8s_postgres"
-    echo -e "61) reg_local_front \t62) reg_local_middle\t63) reg_local_back \t"
-    echo -e "70) webapi YAML\t71) web YAML \t72) api YAML\t75) validate_endpoints"
-    echo -e "90) clear web, api, ingress"
-    # echo -e "90) net new install"
-    echo && read -p "Enter choice or exit: " choice
+    echo -e "
+    Select an option (namespace: $namespace, tag: $image_version):
+ 0) sys_check\t3) Build & Deploy\t5) deploy\t8) certs web\t9) certs api\t11) k8s_nginx\t*) Exit
+20) frontend_update\t21) update_webservice\t          \t23) image_frontend  \t24) configure_webservice\t25) k8s_webservice
+30) middleware     \t31) install_api\t50) validate_api\t33) image_middleware\t34) configure_api       \t35) k8s_api
+                   \t2131)          \t51) validate_api_web_https\t53) validate_web
+                   \t               \t52) validate_api_k8s_https\t54) validate_ingress
+40) install_postgres\t              \t                \t43) image_backend    \t44) configure_postgres\t45) k8s_postgres
+61) reg_local_front \t62) reg_local_middle\t63) reg_local_back                      \t1000/1001) web info
+70) webapi YAML\t71) web YAML \t72) api YAML\t75) validate_endpoints\t\t            \t2000/2001) api info
+90) clear web, api, ingress\t\t                                                     \t3000/3002) pg into
+"
+    read -p "Enter choice or exit: " choice
 
     case $choice in
        0) run_system_check ;;
@@ -151,12 +151,12 @@
       75) system_check && validate_service_endpoints ;;
       90) system_check && kd deploy api web ; kd svc api-service web-service ; kd ingress api-service-ingress web-service-ingress ;;
       2131) system_check && run_install_api $namespace $image_version && run_update_webservice $namespace $image_version ;;
-      1000) kubectl describe svc api-service ;;
-      1001) kubectl logs -l app=api ;;
-      2000) kubectl describe svc web-service ;;
-      2001) kubectl logs -l app=web ;;
-      3000) kubectl describe svc pg-service ;;
-      3001) kubectl logs -l app=postgres ;;
+      2001) kubectl describe svc api-service ;;
+      2000) kubectl logs -l app=api ;;
+      1001) kubectl describe svc web-service ;;
+      1000) kubectl logs -l app=web ;;
+      3001) kubectl describe svc pg-service ;;
+      3000) kubectl logs -l app=postgres ;;
       *) echo "invalid entry..."; exit 0 ;;
     esac
   cleanup_k8s_recordset >/dev/null 2>&1 & 
