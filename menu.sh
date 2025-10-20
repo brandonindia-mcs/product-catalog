@@ -88,6 +88,16 @@
   function run_k8s_nginx() {                parent && k8s_nginx; }
   function run_validate_service_endpoints { parent && validate_service_endpoints ; }
 
+  function poll_for_deleted() {
+    for kind in "$@"; do
+      for name in api web api-service web-service api-service-ingress web-service-ingress; do
+        echo "Waiting for $kind/$name..."
+        while kubectl get "$kind" "$name" &> /dev/null; do sleep 1; done
+        echo "$kind/$name deleted."
+      done
+    done
+  }
+
   function show_menu() {
     namespace=default && image_version="$namespace-$(version)"
     echo -e "\nSelect an option (namespace: $namespace, tag: $image_version):"
@@ -139,7 +149,7 @@
       71) system_check && get_web_out ;;
       72) system_check && get_api_out ;;
       75) system_check && validate_service_endpoints ;;
-      90) system_check && kd deploy api web ; kd svc api-service web-service ; kdi api-service-ingress web-service-ingress ;;
+      90) system_check && kd deploy api web ; kd svc api-service web-service ; kd ingress api-service-ingress web-service-ingress ;;
       2131) system_check && run_install_api $namespace $image_version && run_update_webservice $namespace $image_version ;;
       1000) kubectl describe svc api-service ;;
       1001) kubectl logs -l app=api ;;
@@ -157,9 +167,6 @@ while true; do
     show_menu
     echo ""
 done
-
-
-
 
 
 )
