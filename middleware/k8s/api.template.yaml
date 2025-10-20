@@ -72,15 +72,15 @@ spec:
         app: $PODTEMPLATE
     spec:
       volumes:
-        - name: $MIDDLEWARE_TLS_CERT_VOLUME
+        - name: $TLS_CERT_VOLUME
           secret:
             secretName: $TLS_SECRET
       containers:
         - name: $CONTAINER
           image: $HUB/$REPOSITORY:$TAG
           volumeMounts:
-            - name: $MIDDLEWARE_TLS_CERT_VOLUME
-              mountPath: $MIDDLEWARE_TLS_MOUNT_PATH
+            - name: $TLS_CERT_VOLUME
+              mountPath: $TLS_MOUNT_PATH
               readOnly: true
           env:
             - name: NODE_ENV
@@ -101,6 +101,10 @@ spec:
               value: $PG_DATABASE
             - name: PG_PORT
               value: "$PG_PORT"
+            - name: CERTIFICATE_PATH
+              value: $TLS_MOUNT_PATH/$CERTIFICATE
+            - name: CERTIFICATE_KEY_PATH
+              value: $TLS_MOUNT_PATH/$CERTIFICATE_KEY
             # - name: DB_HOST
             #   value: postgres
             # - name: DB_PORT
@@ -136,5 +140,3 @@ spec:
             limits:
               cpu: "250m"
               memory: "256Mi"
----
-

@@ -20,7 +20,7 @@ const loggerConfig = {
 };
 
 // Create HTTP and HTTPS Fastify instances
-// const fastifyHttp = fastifyFactory({ logger: loggerConfig });
+const fastifyHttp = fastifyFactory({ logger: loggerConfig });
 const fastifyHttps = fastifyFactory({
   logger: loggerConfig,
   https: {
@@ -44,7 +44,7 @@ const pool = new Pool({
 // Shared route registration function
 const registerRoutes = (app) => {
   app.register(fastifyCors, {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:8081',
+    origin: process.env.CORS_ORIGIN,
     methods: ['GET', 'POST'],
     credentials: true
   });
@@ -149,14 +149,14 @@ const registerRoutes = (app) => {
 };
 
 // Register routes on both servers
-// registerRoutes(fastifyHttp);
+registerRoutes(fastifyHttp);
 registerRoutes(fastifyHttps);
 
 // Start both servers
 const start = async () => {
   try {
-    // await fastifyHttp.listen({ port: 3000, host: '0.0.0.0' });
-    // fastifyHttp.log.info('HTTP middleware listening on port 3000');
+    await fastifyHttp.listen({ port: 3000, host: '0.0.0.0' });
+    fastifyHttp.log.info('HTTP middleware listening on port 3000');
 
     await fastifyHttps.listen({ port: 2443, host: '0.0.0.0' });
     fastifyHttps.log.info('HTTPS middleware listening on port 2443');

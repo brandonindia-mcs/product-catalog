@@ -22,6 +22,8 @@ export FRONTEND_PODTEMPLATE_NAME=web
 export FRONTEND_CONTAINER_NAME=web
 export WEB_HTTP_RUNPORT_PUBLIC_FRONTEND=80
 export WEB_HTTPS_RUNPORT_PUBLIC_FRONTEND=443
+export FRONTEND_WEBSERVICE_INGRESS_HOSTNAME=product-catalog.progress.me
+export WEBSERVICE_INGRESS_PORT_K8S_FRONTEND=$WEB_HTTP_RUNPORT_PUBLIC_FRONTEND
 # export VITE_API_URL=https://localhost:8443
 
 export MIDDLEWARE_APPNAME=product-catalog-middleware
@@ -35,7 +37,7 @@ export MIDDLEWARE_CONTAINER_NAME=api
 export MIDDLEWARE_TLS_MOUNT=certs
 export MIDDLEWARE_TLS_MOUNT_PATH=/$MIDDLEWARE_TLS_MOUNT
 export MIDDLEWARE_TLS_CERT_VOLUME=tls-certs
-export CORS_ORIGIN=http://localhost:8081
+export CORS_ORIGIN=https://product-catalog.progress.me
 export API_HTTP_PORT_K8S_MIDDLEWARE=80
 export API_HTTP_RUNPORT_K8S_MIDDLEWARE=3000
 export API_HTTP_NODEPORT_K8S_MIDDLEWARE=32000
@@ -302,7 +304,9 @@ set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB:$HUBPORT ./frontend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
 set_keyvalue REPLICAS $FRONTEND_WEBSERVICE_REPLICAS ./frontend/k8s/$sdenv.env
+set_keyvalue INGRESS_PORT $WEBSERVICE_INGRESS_PORT_K8S_FRONTEND ./frontend/k8s/$sdenv.env
 set_keyvalue SERVICE $FRONTEND_WEBSERVICE_NAME ./frontend/k8s/$sdenv.env
+set_keyvalue INGRESS $FRONTEND_WEBSERVICE_INGRESS_HOSTNAME ./frontend/k8s/$sdenv.env
 set_keyvalue SELECTOR $FRONTEND_SELECTOR_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue PODTEMPLATE $FRONTEND_PODTEMPLATE_NAME ./frontend/k8s/$sdenv.env
@@ -349,6 +353,8 @@ set_keyvalue CORS_ORIGIN $CORS_ORIGIN ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_MOUNT_PATH $MIDDLEWARE_TLS_MOUNT_PATH ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_CERT_VOLUME $MIDDLEWARE_TLS_CERT_VOLUME ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv.env
+set_keyvalue CERTIFICATE $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv.env
+set_keyvalue CERTIFICATE_KEY $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv.env
 
 set_keyvalue NODE_ENV development ./middleware/k8s/$sdenv.env
 set_keyvalue PG_HOST $PG_HOST ./middleware/k8s/$sdenv.env
@@ -597,18 +603,16 @@ function k8s_webservice {
 # GLOBAL_NAMESPACE=$namespace k8s_webservice
 ###################################
 (
-set -ue
-# formatrun <<'EOF'
-# kubectl apply -f ./frontend/k8s/web.yaml\
-#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\
-#   && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
-
-# EOF
-logit "kubectl apply -f ./frontend/k8s/web.yaml\
-  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s\
-  && kubectl port-forward --namespace $GLOBAL_NAMESPACE svc/web-service 8081:80
+set -e
+FRONTEND_CERTIFICATE_FILE_NAME=cert.pem
+FRONTEND_CERTIFICATE_KEY_FILE_NAME=key.pem
+set -a
+source ./frontend/k8s/$sdenv.env || exit 1
+set +a
+runit "kubectl create secret generic $FRONTEND_TLS_SECRET\
+    --from-file=$FRONTEND_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/web/$FRONTEND_CERTIFICATE_FILE_NAME\
+    --from-file=$FRONTEND_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/web/$FRONTEND_CERTIFICATE_KEY_FILE_NAME
 "
-
 runit "kubectl apply -f ./frontend/k8s/web.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=web --timeout=60s
 "
@@ -647,7 +651,7 @@ function middleware {
 node_version=20
 working_directory=middleware
 banner2 working_directory $working_directory, node_version $node_version
-build_cert_directory=$CERTIFICATE_BUILD_DIRECTORY
+build_cert_directory=$CERTIFICATE_BUILD_DIRECTORY/api
 (
   shopt -s nullglob dotglob
   files=($build_cert_directory/*.pem)
@@ -661,6 +665,8 @@ cp ./$build_cert_directory/*.pem ./$working_directory/src/$node_version/etc/cert
 
 set_keyvalue KEY_NAME certs/key.pem ./middleware/k8s/$sdenv.env
 set_keyvalue CERT_NAME certs/cert.pem ./middleware/k8s/$sdenv.env
+set_keyvalue CERTIFICATE_KEY key.pem ./middleware/k8s/$sdenv.env
+set_keyvalue CERTIFICATE cert.pem ./middleware/k8s/$sdenv.env
 dependency_list=(
   ./$working_directory/src/$node_version/etc\
   ./$working_directory/src/$node_version/src\
@@ -741,12 +747,12 @@ set -a
 source ./middleware/k8s/$sdenv.env || exit 1
 set +a
 runit "kubectl create secret generic $MIDDLEWARE_TLS_SECRET\
-    --from-file=$MIDDLEWARE_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
-    --from-file=$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
+    --from-file=$MIDDLEWARE_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/api/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
+    --from-file=$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/api/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
 "
 runit "kubectl create secret tls $MIDDLEWARE_TLS_SECRET-tls\
-    --cert=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
-    --key=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
+    --cert=./$CERTIFICATE_BUILD_DIRECTORY/api/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
+    --key=./$CERTIFICATE_BUILD_DIRECTORY/api/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
 "
 runit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
@@ -757,7 +763,7 @@ runit "kubectl apply -f ./middleware/k8s/api.yaml\
 )
 }
 
-. ./bootstrap-validate.sh
+. ./bootstrap-validate.sh 2>/dev/null | echo bootstrap-validation no found... continuing
 
 
 function backend {
@@ -968,11 +974,11 @@ ls $dir
 function generate_selfsignedcert_cnf {
 (
 set -u
-blue "------------------ GENERATING SELF-SIGNED CERTIFICATE ------------------"
 dir=$1
-CMD="openssl req -x509 -newkey rsa:4096 -nodes -keyout ./$dir/key.pem \
-    -out ./$dir/cert.pem -days 365\
-    -config ./$CERTIFICATE_BUILD_DIRECTORY/openssl.cnf"
+blue "------------------ GENERATING SELF-SIGNED CERTIFICATE $dir ------------------"
+CMD="openssl req -x509 -newkey rsa:4096 -nodes -keyout ./build/key-$dir.pem \
+    -out ./build/cert-$dir.pem -days 365\
+    -config ./$CERTIFICATE_BUILD_DIRECTORY/$dir/openssl.cnf"
 echo $CMD
 mkdir -p ./$dir\
   && eval $CMD
