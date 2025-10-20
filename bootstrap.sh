@@ -342,6 +342,8 @@ set_keyvalue SSL_PORT $API_HTTPS_SSLPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.
 set_keyvalue SSL_TARGET_PORT $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SSL_NODE_PORT $API_HTTPS_NODEPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue INGRESS_PORT $API_INGRESS_PORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
+set_keyvalue API_LISTEN_PORT_HTTP $API_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
+set_keyvalue API_LISTEN_PORT_HTTPS $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue INGRESS $MIDDLEWARE_API_INGRESS_HOSTNAME ./middleware/k8s/$sdenv.env
 set_keyvalue SELECTOR $MIDDLEWARE_SELECTOR_NAME ./middleware/k8s/$sdenv.env
@@ -353,8 +355,8 @@ set_keyvalue CORS_ORIGIN $CORS_ORIGIN ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_MOUNT_PATH $MIDDLEWARE_TLS_MOUNT_PATH ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_CERT_VOLUME $MIDDLEWARE_TLS_CERT_VOLUME ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv.env
-set_keyvalue CERTIFICATE $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv.env
-set_keyvalue CERTIFICATE_KEY $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv.env
+set_keyvalue CERTIFICATE cert.pem ./middleware/k8s/$sdenv.env
+set_keyvalue CERTIFICATE_KEY key.pem ./middleware/k8s/$sdenv.env
 
 set_keyvalue NODE_ENV development ./middleware/k8s/$sdenv.env
 set_keyvalue PG_HOST $PG_HOST ./middleware/k8s/$sdenv.env

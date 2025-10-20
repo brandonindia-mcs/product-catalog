@@ -91,6 +91,10 @@ spec:
               #####***  AS-IN SELF-SIGNED OR OTHERWISE  ************####
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: "0"
+            - name: API_LISTEN_PORT_HTTP
+              value: "$HTTP_TARGET_PORT"
+            - name: API_LISTEN_PORT_HTTPS
+              value: "$SSL_TARGET_PORT"
             - name: PG_HOST
               value: $PG_HOST
             - name: PG_DATABASE

@@ -7,8 +7,8 @@ const fastifyCors = require('@fastify/cors');
 const { Pool } = require('pg');
 
 // TLS certificate paths
-const certPath = path.resolve('/certs/cert.pem');
-const keyPath = path.resolve('/certs/key.pem');
+const certPath = path.resolve(`${process.env.CERTIFICATE_PATH}`);
+const keyPath = path.resolve(`${process.env.CERTIFICATE_KEY_PATH}`);
 
 // Shared logger config
 const loggerConfig = {
@@ -155,11 +155,11 @@ registerRoutes(fastifyHttps);
 // Start both servers
 const start = async () => {
   try {
-    await fastifyHttp.listen({ port: 3000, host: '0.0.0.0' });
-    fastifyHttp.log.info('HTTP middleware listening on port 3000');
+    await fastifyHttp.listen({ port: Number(process.env.API_LISTEN_PORT_HTTP), host: '0.0.0.0' });
+    fastifyHttp.log.info(`HTTP middleware listening on port ${process.env.API_LISTEN_PORT_HTTP}`);
 
-    await fastifyHttps.listen({ port: 2443, host: '0.0.0.0' });
-    fastifyHttps.log.info('HTTPS middleware listening on port 2443');
+    await fastifyHttps.listen({ port: Number(process.env.API_LISTEN_PORT_HTTPS), host: '0.0.0.0' });
+    fastifyHttps.log.info(`HTTPS middleware listening on port ${process.env.API_LISTEN_PORT_HTTPS}`);
   } catch (err) {
     console.error('Startup error:', err);
     process.exit(1);
