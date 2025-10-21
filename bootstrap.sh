@@ -722,10 +722,10 @@ echo -e \\nBuilding $appname:$image_version
 set_registry
 runit "docker build $NOCACHE\
   -t $appname:$image_version\
-  --build-arg EXPOSE_PORT_HTTP=$API_HTTP_RUNPORT_K8S_MIDDLEWARE\
   --build-arg EXPOSE_PORT_HTTPS=$API_HTTPS_RUNPORT_K8S_MIDDLEWARE\
   middleware"\
   || return 1
+###  --build-arg EXPOSE_PORT_HTTP=$API_HTTP_RUNPORT_K8S_MIDDLEWARE\
 # runit "docker image ls $appname"
 runit "docker tag $appname:$image_version $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
 runit "docker push $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
