@@ -109,10 +109,11 @@
 30) middleware     \t31) install_api\t50) validate_api\t33) image_middleware\t34) configure_api       \t35) k8s_api
                    \t2131)          \t51) validate_api_web_https\t53) validate_web
                    \t               \t52) validate_api_k8s_https\t54) validate_ingress
+64) valid api
 40) install_postgres\t              \t                \t43) image_backend    \t44) configure_postgres\t45) k8s_postgres
-61) reg_local_front \t62) reg_local_middle\t63) reg_local_back                      \tweb 1000/1001) info 1002) secrets
-70) webapi YAML\t71) web YAML \t72) api YAML\t75) validate_endpoints\t\t            \tapi 2000/2001) info 2002) secrets
-90) clear web, api, ingress\t\t                                                     \tpg  3000/3002) pg
+71) reg_local_front \t72) reg_local_middle\t73) reg_local_back                      \tweb 1000/1001) info 1002) secrets
+80) webapi YAML\t81) web YAML \t82) api YAML\t75) validate_endpoints\t\t            \tapi 2000/2001) info 2002) secrets
+90) clear web, api, ingress\t91) api\t92) web                                                     \tpg  3000/3002) pg
 \t\t                                                                                \t 0000) all secrets
 "
     read -p "Enter choice or exit: " choice
@@ -147,14 +148,18 @@
       44) system_check && run_configure_postgres $namespace $image_version ;;
       45) system_check && run_k8s_postgres $namespace $image_version ;;
       43) system_check && run_image_backend $image_version ;;
-      61) system_check && registry_local_repository product-catalog-frontend ;;
-      62) system_check && registry_local_repository product-catalog-middleware ;;
-      63) system_check && registry_local_repository product-catalog-backend ;;
-      70) system_check && get_yaml_out ;;
-      71) system_check && get_web_out ;;
-      72) system_check && get_api_out ;;
+      64) system_check && curl -vk https://product-catalog.progress.me:32443/products \
+                            --resolve product-catalog.progress.me:32443:127.0.0.1 | jq ;;
+      71) system_check && registry_local_repository product-catalog-frontend ;;
+      72) system_check && registry_local_repository product-catalog-middleware ;;
+      73) system_check && registry_local_repository product-catalog-backend ;;
+      80) system_check && get_yaml_out ;;
+      81) system_check && get_web_out ;;
+      82) system_check && get_api_out ;;
       75) system_check && validate_service_endpoints ;;
       90) system_check && kd deploy api web ; kd svc api-service web-service ; kd ingress api-service-ingress web-service-ingress ;;
+      91) system_check && kd deploy api ; kd svc api-service ; kd ingress api-service-ingress ;;
+      92) system_check && kd deploy web ; kd svc web-service ; kd ingress web-service-ingress ;;
       2131) system_check && run_install_api $namespace $image_version && run_update_webservice $namespace $image_version ;;
       0000) system_check && kubectl describe secret ;;
       1000) system_check && kubectl logs -l app=web ;;

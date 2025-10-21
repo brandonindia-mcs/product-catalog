@@ -28,7 +28,8 @@ export WEBSERVICE_INGRESS_PORT_K8S_FRONTEND=$WEB_HTTP_RUNPORT_PUBLIC_FRONTEND
 
 export MIDDLEWARE_APPNAME=product-catalog-middleware
 export MIDDLEWARE_API_SERVICE_NAME=api-service
-export MIDDLEWARE_API_INGRESS_HOSTNAME=api-ingress.progress.me
+export MIDDLEWARE_API_INGRESS_HOSTNAME=product-catalog.progress.me
+export MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME=api-ingress.progress.me
 export MIDDLEWARE_API_SERVICE_LOCALCLUSTER_NAME=https://api-service.default.svc.cluster.local
 export MIDDLEWARE_SELECTOR_NAME=api
 export MIDDLEWARE_DEPLOYMENT_NAME=api
@@ -45,7 +46,7 @@ export API_HTTP_NODEPORT_K8S_MIDDLEWARE=32000
 export API_HTTPS_SSLPORT_K8S_MIDDLEWARE=443
 export API_HTTPS_RUNPORT_K8S_MIDDLEWARE=2443
 export API_HTTPS_NODEPORT_K8S_MIDDLEWARE=32443
-export API_INGRESS_PORT_K8S_MIDDLEWARE=$API_HTTP_PORT_K8S_MIDDLEWARE
+export API_INGRESS_PORT_K8S_MIDDLEWARE=$API_HTTPS_SSLPORT_K8S_MIDDLEWARE
 export CERTIFICATE_BUILD_DIRECTORY=build_cert
 
 export NODE_ENV=development
@@ -351,7 +352,8 @@ set_keyvalue INGRESS_PORT $API_INGRESS_PORT_K8S_MIDDLEWARE ./middleware/k8s/$sde
 set_keyvalue API_LISTEN_PORT_HTTP $API_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue API_LISTEN_PORT_HTTPS $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE_NAME ./middleware/k8s/$sdenv.env
-set_keyvalue INGRESS $MIDDLEWARE_API_INGRESS_HOSTNAME ./middleware/k8s/$sdenv.env
+set_keyvalue INGRESS_API $MIDDLEWARE_API_INGRESS_HOSTNAME ./middleware/k8s/$sdenv.env
+set_keyvalue INGRESS_PRODUCTS $MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME ./middleware/k8s/$sdenv.env
 set_keyvalue SELECTOR $MIDDLEWARE_SELECTOR_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $MIDDLEWARE_DEPLOYMENT_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue PODTEMPLATE $MIDDLEWARE_PODTEMPLATE_NAME ./middleware/k8s/$sdenv.env
@@ -362,7 +364,7 @@ set_keyvalue CORS_ORIGIN $CORS_ORIGIN ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_MOUNT_PATH $MIDDLEWARE_TLS_MOUNT_PATH ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_CERT_VOLUME $MIDDLEWARE_TLS_CERT_VOLUME ./middleware/k8s/$sdenv.env
 set_keyvalue SECRET $MIDDLEWARE_SECRET ./middleware/k8s/$sdenv.env
-set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET-tls ./middleware/k8s/$sdenv.env
+set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv.env
 set_keyvalue CERTIFICATE cert.pem ./middleware/k8s/$sdenv.env
 set_keyvalue CERTIFICATE_KEY key.pem ./middleware/k8s/$sdenv.env
 
@@ -722,7 +724,7 @@ echo -e \\nBuilding $appname:$image_version
 set_registry
 runit "docker build $NOCACHE\
   -t $appname:$image_version\
-  --build-arg EXPOSE_PORT_HTTPS=$API_HTTPS_RUNPORT_K8S_MIDDLEWARE\
+  --build-arg EXPOSE_PORT_HTTPS=$API_HTTPS_NODEPORT_K8S_MIDDLEWARE\
   middleware"\
   || return 1
 ###  --build-arg EXPOSE_PORT_HTTP=$API_HTTP_RUNPORT_K8S_MIDDLEWARE\
@@ -797,7 +799,7 @@ function k8s_secret_web {
 set -e
 FRONTEND_CERTIFICATE_FILE_NAME=cert.pem
 FRONTEND_CERTIFICATE_KEY_FILE_NAME=key.pem
-runit "kubectl create secret tls $FRONTEND_TLS_SECRET-tls\
+runit "kubectl create secret tls $FRONTEND_TLS_SECRET\
     --cert=./$CERTIFICATE_BUILD_DIRECTORY/$FRONTEND_SELECTOR_NAME/$FRONTEND_CERTIFICATE_FILE_NAME\
     --key=./$CERTIFICATE_BUILD_DIRECTORY/$FRONTEND_SELECTOR_NAME/$FRONTEND_CERTIFICATE_KEY_FILE_NAME
 "

@@ -36,10 +36,11 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - $INGRESS
+        - $INGRESS_PRODUCTS
+        - $INGRESS_API
       secretName: $TLS_SECRET
   rules:
-    - host: $INGRESS
+    - host: $INGRESS_PRODUCTS
       http:
         paths:
           - path: /products
@@ -48,8 +49,16 @@ spec:
               service:
                 name: $SERVICE
                 port:
-                  # number: $SSL_PORT
-                  # number: $HTTP_PORT
+                  number: $INGRESS_PORT
+    - host: $INGRESS_API
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: $SERVICE
+                port:
                   number: $INGRESS_PORT
 ---
 apiVersion: apps/v1
@@ -131,7 +140,7 @@ spec:
             - name: LOGLEVEL
               value: $LOGLEVEL
           ports:
-            - containerPort: $SSL_NODE_PORT
+            - containerPort: $SSL_TARGET_PORT
             - containerPort: $HTTP_NODE_PORT
           # readinessProbe:
           #   httpGet:
