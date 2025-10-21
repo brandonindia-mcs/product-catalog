@@ -113,7 +113,7 @@
 40) install_postgres\t              \t                \t43) image_backend    \t44) configure_postgres\t45) k8s_postgres
 71) reg_local_front \t72) reg_local_middle\t73) reg_local_back                      \tweb 1000/1001) info 1002) secrets
 80) webapi YAML\t81) web YAML \t82) api YAML\t75) validate_endpoints\t\t            \tapi 2000/2001) info 2002) secrets
-90) clear web, api, ingress\t91) api\t92) web                                                     \tpg  3000/3002) pg
+90) clear web, api, ingress\t91) api\t92) web                                       \t\tpg  3000/3002) info
 \t\t                                                                                \t 0000) all secrets
 "
     read -p "Enter choice or exit: " choice
