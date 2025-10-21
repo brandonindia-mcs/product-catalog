@@ -47,7 +47,7 @@ export API_HTTPS_SSLPORT_K8S_MIDDLEWARE=443
 export API_HTTPS_RUNPORT_K8S_MIDDLEWARE=2443
 export API_HTTPS_NODEPORT_K8S_MIDDLEWARE=32443
 export API_INGRESS_PORT_K8S_MIDDLEWARE=$API_HTTPS_SSLPORT_K8S_MIDDLEWARE
-export CERTIFICATE_BUILD_DIRECTORY=build_cert
+export CERTIFICATE_BUILD_DIRECTORY=cert
 
 export NODE_ENV=development
 export PG_HOST=$BACKEND_DATABASE_SERVICE_NAME
@@ -658,17 +658,7 @@ function middleware {
 node_version=20
 working_directory=middleware
 banner2 working_directory $working_directory, node_version $node_version
-build_cert_directory=$CERTIFICATE_BUILD_DIRECTORY/api
-(
-  shopt -s nullglob dotglob
-  files=($build_cert_directory/*.pem)
-  [ ${#files[@]} -eq 0 ]\
-    && generate_selfsignedcert_cnf $build_cert_directory\
-    || warn $build_cert_directory not generating certs
-)
-
-mkdir -p ./$working_directory/src/$node_version/etc/certs
-cp ./$build_cert_directory/*.pem ./$working_directory/src/$node_version/etc/certs/
+middleware_certificates
 
 set_keyvalue KEY_NAME certs/key.pem ./middleware/k8s/$sdenv.env
 set_keyvalue CERT_NAME certs/cert.pem ./middleware/k8s/$sdenv.env
@@ -700,6 +690,54 @@ npm install
 popd
 )
 }
+
+
+function middleware_certificates {
+##########  RUN COMMAND  ##########
+# middleware_certificates
+###################################
+(
+  set -u
+  echo looking for certificates: ./$CERTIFICATE_BUILD_DIRECTORY
+  shopt -s nullglob dotglob
+  files=(./$CERTIFICATE_BUILD_DIRECTORY/*.pem)
+  [ ${#files[@]} -eq 0 ]\
+    && generate_selfsignedcert_cnf .\
+    && middleware_src_certificates\
+    || warn middleware not generating certs
+
+)
+}
+
+
+function middleware_src_certificates {
+##########  RUN COMMAND  ##########
+# middleware_src_certificates
+###################################
+(
+  set -u
+  DESTINATION=$working_directory/src/$node_version/etc/certs
+  ls -l $DESTINATION
+  if yesno "Replace certs @ ./$DESTINATION, then replace k8s secrets?";then
+  mkdir -p ./$working_directory/src/$node_version/etc/certs\
+    && cp -p ./$CERTIFICATE_BUILD_DIRECTORY/*.pem ./$working_directory/src/$node_version/etc/certs/\
+    && ls -l $DESTINATION\
+    && middleware_secrets
+  fi
+)
+}
+
+function middleware_secrets {
+##########  RUN COMMAND  ##########
+# middleware_secrets
+###################################
+(
+set -u
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secrets_delete
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secrets
+)
+}
+
 
 function default_build_image_middleware {
 ##########  RUN COMMAND  ##########
@@ -760,14 +798,42 @@ runit "kubectl apply -f ./middleware/k8s/api.yaml\
 )
 }
 
+function k8s_secrets_delete {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace k8s_secrets_delete
+###################################
+(
+kubectl delete secret $MIDDLEWARE_SECRET
+kubectl delete secret $MIDDLEWARE_TLS_SECRET
+kubectl delete secret $FRONTEND_TLS_SECRET
+
+)
+}
+
 function k8s_secrets {
 ##########  RUN COMMAND  ##########
 # GLOBAL_NAMESPACE=$namespace k8s_secrets
 ###################################
 (
-set -u
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secret_api
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secret_web
+set -ue
+### REUSE THE SAME CERT FOR DEVELOPMENT
+# GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secret_api
+# GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secret_web
+
+CERTIFICATE_FILE_NAME=cert.pem
+CERTIFICATE_KEY_FILE_NAME=key.pem
+runit "kubectl create secret generic $MIDDLEWARE_SECRET\
+    --from-file=$CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$CERTIFICATE_FILE_NAME\
+    --from-file=$CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$CERTIFICATE_KEY_FILE_NAME
+"
+runit "kubectl create secret tls $MIDDLEWARE_TLS_SECRET\
+    --cert=./$CERTIFICATE_BUILD_DIRECTORY/$CERTIFICATE_FILE_NAME\
+    --key=./$CERTIFICATE_BUILD_DIRECTORY/$CERTIFICATE_KEY_FILE_NAME
+"
+runit "kubectl create secret tls $FRONTEND_TLS_SECRET\
+    --cert=./$CERTIFICATE_BUILD_DIRECTORY/$CERTIFICATE_FILE_NAME\
+    --key=./$CERTIFICATE_BUILD_DIRECTORY/$CERTIFICATE_KEY_FILE_NAME
+"
 )
 }
 
@@ -1017,16 +1083,25 @@ ls $dir
 
 function generate_selfsignedcert_cnf {
 (
-set -u
+set -ue
 dir=$1
 blue "------------------ GENERATING SELF-SIGNED CERTIFICATE $dir ------------------"
-CMD="openssl req -x509 -newkey rsa:4096 -nodes -keyout ./build/key-$dir.pem \
-    -out ./build/cert-$dir.pem -days 365\
+CMD="openssl req -x509 -newkey rsa:4096 -nodes -keyout ./$CERTIFICATE_BUILD_DIRECTORY/$dir/key.pem \
+    -out ./$CERTIFICATE_BUILD_DIRECTORY/$dir/cert.pem -days 365\
     -config ./$CERTIFICATE_BUILD_DIRECTORY/$dir/openssl.cnf"
-echo $CMD
-mkdir -p ./$dir\
+mkdir -p ./$CERTIFICATE_BUILD_DIRECTORY/$dir\
+  && echo $CMD\
   && eval $CMD
-ls $dir
+# working_directory=middleware
+# node_version=20
+# DESTINATION=$working_directory/src/$node_version/etc/certs
+# ls -l $DESTINATION
+# if yesno "Replace certs @ ./$DESTINATION, then replace k8s secrets?";then
+# cp -p ./$CERTIFICATE_BUILD_DIRECTORY/$dir/*.pem ./$working_directory/src/$node_version/etc/certs/
+# GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secrets_delete
+# ls -l $DESTINATION
+# GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secrets
+# fi
 )
 }
 
@@ -1034,14 +1109,12 @@ function generate_selfsignedcert {
 (
 set -u
 blue "------------------ GENERATING SELF-SIGNED CERTIFICATE ------------------"
-dir=$1
 canonical_name=localhost
-CMD="openssl req -x509 -newkey rsa:4096 -nodes -keyout ./$dir/key.pem \
-    -out ./$dir/cert.pem -days 365 \
+CMD="openssl req -x509 -newkey rsa:4096 -nodes -keyout ./key.pem \
+    -out ./cert.pem -days 365 \
     -subj \"/CN=$canonical_name\""
 echo $CMD
-mkdir -p ./$dir\
-  && eval $CMD
-ls $dir
+eval $CMD
+ls *.pem
 )
 }
