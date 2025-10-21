@@ -16,5 +16,5 @@ This is a 3-tiered web application: frontend, middleware, & backend, all served 
 ```base
 git clone git@github.com:<YOUR-SSH-USER>/product-catalog
 cd ./product-catalog
-. ./menu.sh
+. ./menu.sh <<<3
 ```
