@@ -171,8 +171,8 @@ registerRoutes(fastifyHttps);
 // Start both servers
 const start = async () => {
   try {
-    await fastifyHttp.listen({ port: Number(process.env.API_LISTEN_PORT_HTTP || 80), host: '0.0.0.0' });
-    fastifyHttp.log.info(`HTTP middleware listening on port ${process.env.API_LISTEN_PORT_HTTP}`);
+    // await fastifyHttp.listen({ port: Number(process.env.API_LISTEN_PORT_HTTP || 80), host: '0.0.0.0' });
+    // fastifyHttp.log.info(`HTTP middleware listening on port ${process.env.API_LISTEN_PORT_HTTP}`);
 
     await fastifyHttps.listen({ port: Number(process.env.API_LISTEN_PORT_HTTPS || 443), host: '0.0.0.0' });
     fastifyHttps.log.info(`HTTPS middleware listening on port ${process.env.API_LISTEN_PORT_HTTPS}`);

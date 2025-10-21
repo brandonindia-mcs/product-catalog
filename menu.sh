@@ -104,7 +104,7 @@
     namespace=default && image_version="$namespace-$(version)"
     echo -e "
     Select an option (namespace: $namespace, tag: $image_version):
- 0) sys_check\t3) Build & Deploy\t5) deploy\t7) secrets\t8) certs web\t9) certs api\t11) k8s_nginx\t12) configure\t*) Exit
+ 0) sys_check\t3) Build & Deploy\t5) deploy\t7) secrets\t8) certs web\t9) certs api\t11) configure\t12) k8s_nginx\t*) Exit
 20) frontend_update\t21) update_webservice\t          \t23) image_frontend  \t24) configure_webservice\t25) k8s_webservice
 30) middleware     \t31) install_api\t50) validate_api\t33) image_middleware\t34) configure_api       \t35) k8s_api
                    \t2131)          \t51) validate_api_web_https\t53) validate_web
@@ -125,8 +125,8 @@
        7) system_check && run_k8s_secrets $namespace $image_version ;;
        8) system_check && run_generate_selfsignedcert_cnf web && ls ./build/*web.pem ;;
        9) system_check && run_generate_selfsignedcert_cnf api && ls ./build/*api.pem ;;
-      11) system_check && run_k8s_nginx ;;
-      12) system_check && run_configure $namespace $image_version ;;
+      12) system_check && run_k8s_nginx ;;
+      11) system_check && run_configure $namespace $image_version ;;
       20) system_check && run_frontend_update $namespace $image_version ;;
       21) system_check && run_update_webservice $namespace $image_version ;;
       24) system_check && run_configure_webservice $namespace $image_version ;;
