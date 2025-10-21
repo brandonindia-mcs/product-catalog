@@ -255,21 +255,37 @@ kubectl get ingress web-service-ingress -n $namespace -o yaml
 function validate_service_endpoints {
 >./build/validate_service_endpoints.out
 (
-date
-echo \*\*\*\*\* Describing $MIDDLEWARE_API_SERVICE_NAME
-kubectl describe svc $MIDDLEWARE_API_SERVICE_NAME
-echo \*\*\*\*\* Netstat $MIDDLEWARE_DEPLOYMENT_NAME
-kubectl exec -it deploy/$MIDDLEWARE_DEPLOYMENT_NAME -- netstat -tlnp
+echo \*\*\*\*\* $FRONTEND_DEPLOYMENT_NAME netstat -tulnp
+kubectl exec -it deploy/$FRONTEND_DEPLOYMENT_NAME -- netstat -tulnp
 
+echo \*\*\*\*\* $MIDDLEWARE_DEPLOYMENT_NAME netstat -tulnp
+kubectl exec -it deploy/$MIDDLEWARE_DEPLOYMENT_NAME -- netstat -tulnp
+
+echo \*\*\*\*\* $BACKEND_DEPLOYMENT_NAME netstat -tulnp
+kubectl exec -it deploy/$BACKEND_DEPLOYMENT_NAME -- netstat -tulnp
+)
+}
+
+
+
+function describe_service_endpoints {
+>./build/describe_service_endpoints.out
+(
+date
 echo \*\*\*\*\* Describing $FRONTEND_WEBSERVICE_NAME
 kubectl describe svc $FRONTEND_WEBSERVICE_NAME
-echo \*\*\*\*\* Netstat $FRONTEND_DEPLOYMENT_NAME
-kubectl exec -it deploy/$FRONTEND_DEPLOYMENT_NAME -- netstat -tlnp
+echo \*\*\*\*\* $FRONTEND_DEPLOYMENT_NAME netstat -tulnp
+kubectl exec -it deploy/$FRONTEND_DEPLOYMENT_NAME -- netstat -tulnp
+
+echo \*\*\*\*\* Describing $MIDDLEWARE_API_SERVICE_NAME
+kubectl describe svc $MIDDLEWARE_API_SERVICE_NAME
+echo \*\*\*\*\* $MIDDLEWARE_DEPLOYMENT_NAME netstat -tulnp
+kubectl exec -it deploy/$MIDDLEWARE_DEPLOYMENT_NAME -- netstat -tulnp
 
 echo \*\*\*\*\* Describing $BACKEND_DATABASE_SERVICE_NAME
 kubectl describe svc $BACKEND_DATABASE_SERVICE_NAME
-echo \*\*\*\*\* Netstat $BACKEND_DEPLOYMENT_NAME
-kubectl exec -it deploy/$BACKEND_DEPLOYMENT_NAME -- netstat -tlnp
+echo \*\*\*\*\* $BACKEND_DEPLOYMENT_NAME netstat -tulnp
+kubectl exec -it deploy/$BACKEND_DEPLOYMENT_NAME -- netstat -tulnp
 ) 2>&1 | tee ./build/validate_service_endpoints.out
 }
 
@@ -284,25 +300,33 @@ get_postgres_out
 function get_web_out {
 (
 date
-kubectl get deployment web -o yaml
-kubectl get svc web-service -o yaml
-kubectl get ingress web-service-ingress -o yaml
+  echo get deployment web:
+  kubectl get deployment web -o yaml
+  echo get svc web-service:
+  kubectl get svc web-service -o yaml
+  echo get ingress web-service-ingress:
+  kubectl get ingress web-service-ingress -o yaml
 ) 2>&1 | tee ./build/web.out
 }
 
 function get_api_out {
 (
 date
-kubectl get deployment api -o yaml
-kubectl get svc api-service -o yaml
-kubectl get ingress api-service-ingress -o yaml
+  echo get deployment api:
+  kubectl get deployment api -o yaml
+  echo get svc api-service:
+  kubectl get svc api-service -o yaml
+  echo get ingress api-service-ingress:
+  kubectl get ingress api-service-ingress -o yaml
 ) 2>&1 | tee ./build/api.out
 }
 
 function get_postgres_out {
 (
 date
-kubectl get deployment postgre -o yaml
-kubectl get svc pg-service -o yaml
+  echo get deployment postgre:
+  kubectl get deployment postgre -o yaml
+  echo  get svc pg-service:
+  kubectl get svc pg-service -o yaml
 ) 2>&1 | tee ./build/postgres.out
 }
