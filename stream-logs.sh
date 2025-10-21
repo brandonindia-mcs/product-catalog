@@ -1,11 +1,23 @@
 #!/bin/bash
+(
+for i in "$@"; do
+case $i in
+-n)
+shift && NAMESPACE=$1 && shift
+;;
+-*)
+echo $(basename $0) illegal argument: $1 && exit
+;;
+esac
+done
+echo $1
+if [ -n "$1" ];then DEPLOYMENT="-l app=$1" && shift;fi
+NAMESPACE="${ns:-default}"
+echo $1
 
-# Namespace to query (defaults to 'default')
-NAMESPACE="${1:-default}"
-
-# Get pod names
-PODS=$(kubectl get pods -n "$NAMESPACE" --no-headers -o custom-columns=":metadata.name")
-
+# Get pod names from the 'api' deployment
+PODS=$(kubectl get pods -n "$NAMESPACE" $DEPLOYMENT --no-headers -o custom-columns=":metadata.name")
+echo $PODS
 # Check for pods
 if [ -z "$PODS" ]; then
   echo "No pods found in namespace '$NAMESPACE'"
@@ -35,3 +47,4 @@ tell application "Terminal"
 end tell
 EOF
 done
+)
