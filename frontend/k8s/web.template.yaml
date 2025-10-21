@@ -72,7 +72,7 @@ spec:
         - name: $CONTAINER
           image: $HUB/$REPOSITORY:$TAG
           ports:
-            - containerPort: $RUNPORT_HTTP
+            # - containerPort: $RUNPORT_HTTP
             - containerPort: $RUNPORT_HTTPS
           ##### readinessProbe → Ensures traffic only goes to healthy pods
           # readinessProbe:

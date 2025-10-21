@@ -16,10 +16,10 @@ export POSTGRE_SQL_RUNPORT=5432
 
 export FRONTEND_APPNAME=product-catalog-frontend
 export FRONTEND_WEBSERVICE_NAME=web-service
-export FRONTEND_SELECTOR_NAME=web
+export FRONTEND_SELECTOR=web
 export FRONTEND_DEPLOYMENT_NAME=web
 export FRONTEND_PODTEMPLATE_NAME=web
-export FRONTEND_CONTAINER_NAME=web
+export FRONTEND_CONTAINER=web
 export WEB_HTTP_RUNPORT_PUBLIC_FRONTEND=80
 export WEB_HTTPS_RUNPORT_PUBLIC_FRONTEND=443
 export FRONTEND_WEBSERVICE_INGRESS_HOSTNAME=product-catalog.progress.me
@@ -31,10 +31,10 @@ export MIDDLEWARE_API_SERVICE_NAME=api-service
 export MIDDLEWARE_API_INGRESS_HOSTNAME=product-catalog.progress.me
 export MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME=api-ingress.progress.me
 export MIDDLEWARE_API_SERVICE_LOCALCLUSTER_NAME=https://api-service.default.svc.cluster.local
-export MIDDLEWARE_SELECTOR_NAME=api
+export MIDDLEWARE_SELECTOR=api
 export MIDDLEWARE_DEPLOYMENT_NAME=api
 export MIDDLEWARE_PODTEMPLATE_NAME=api
-export MIDDLEWARE_CONTAINER_NAME=api
+export MIDDLEWARE_CONTAINER=api
 export MIDDLEWARE_TLS_MOUNT=certs
 export MIDDLEWARE_TLS_MOUNT_PATH=/$MIDDLEWARE_TLS_MOUNT
 export MIDDLEWARE_TLS_CERT_VOLUME=tls-certs
@@ -313,10 +313,10 @@ set_keyvalue REPLICAS $FRONTEND_WEBSERVICE_REPLICAS ./frontend/k8s/$sdenv.env
 set_keyvalue INGRESS_PORT $WEBSERVICE_INGRESS_PORT_K8S_FRONTEND ./frontend/k8s/$sdenv.env
 set_keyvalue SERVICE $FRONTEND_WEBSERVICE_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue INGRESS $FRONTEND_WEBSERVICE_INGRESS_HOSTNAME ./frontend/k8s/$sdenv.env
-set_keyvalue SELECTOR $FRONTEND_SELECTOR_NAME ./frontend/k8s/$sdenv.env
+set_keyvalue SELECTOR $FRONTEND_SELECTOR ./frontend/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue PODTEMPLATE $FRONTEND_PODTEMPLATE_NAME ./frontend/k8s/$sdenv.env
-set_keyvalue CONTAINER $FRONTEND_CONTAINER_NAME ./frontend/k8s/$sdenv.env
+set_keyvalue CONTAINER $FRONTEND_CONTAINER ./frontend/k8s/$sdenv.env
 set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET ./frontend/k8s/$sdenv.env
 set -a
 source ./frontend/k8s/$sdenv.env || exit 1
@@ -354,10 +354,10 @@ set_keyvalue API_LISTEN_PORT_HTTPS $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middlewar
 set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue INGRESS_API $MIDDLEWARE_API_INGRESS_HOSTNAME ./middleware/k8s/$sdenv.env
 set_keyvalue INGRESS_PRODUCTS $MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME ./middleware/k8s/$sdenv.env
-set_keyvalue SELECTOR $MIDDLEWARE_SELECTOR_NAME ./middleware/k8s/$sdenv.env
+set_keyvalue SELECTOR $MIDDLEWARE_SELECTOR ./middleware/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $MIDDLEWARE_DEPLOYMENT_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue PODTEMPLATE $MIDDLEWARE_PODTEMPLATE_NAME ./middleware/k8s/$sdenv.env
-set_keyvalue CONTAINER $MIDDLEWARE_CONTAINER_NAME ./middleware/k8s/$sdenv.env
+set_keyvalue CONTAINER $MIDDLEWARE_CONTAINER ./middleware/k8s/$sdenv.env
 set_keyvalue LOGLEVEL $MIDDLEWARE_LOGLEVEL ./middleware/k8s/$sdenv.env
 
 set_keyvalue CORS_ORIGIN $CORS_ORIGIN ./middleware/k8s/$sdenv.env
@@ -621,7 +621,7 @@ set -a
 source ./frontend/k8s/$sdenv.env || exit 1
 set +a
 runit "kubectl apply -f ./frontend/k8s/web.yaml\
-  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=$FRONTEND_SELECTOR_NAME --timeout=60s
+  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=$FRONTEND_SELECTOR --timeout=60s
 "
 
 )
@@ -753,7 +753,7 @@ source ./middleware/k8s/$sdenv.env || exit 1
 set +a
 runit "kubectl apply -f ./middleware/k8s/api.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
-    --for=condition=Ready pod -l app=$MIDDLEWARE_SELECTOR_NAME --timeout=60s
+    --for=condition=Ready pod -l app=$MIDDLEWARE_SELECTOR --timeout=60s
 "
 
 # kubectl rollout restart deployment api
@@ -780,12 +780,12 @@ set -e
 MIDDLEWARE_CERTIFICATE_FILE_NAME=cert.pem
 MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=key.pem
 runit "kubectl create secret generic $MIDDLEWARE_SECRET\
-    --from-file=$MIDDLEWARE_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR_NAME/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
-    --from-file=$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR_NAME/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
+    --from-file=$MIDDLEWARE_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
+    --from-file=$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
 "
 runit "kubectl create secret tls $MIDDLEWARE_TLS_SECRET\
-    --cert=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR_NAME/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
-    --key=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR_NAME/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
+    --cert=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
+    --key=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
 "
 )
 }
@@ -800,8 +800,8 @@ set -e
 FRONTEND_CERTIFICATE_FILE_NAME=cert.pem
 FRONTEND_CERTIFICATE_KEY_FILE_NAME=key.pem
 runit "kubectl create secret tls $FRONTEND_TLS_SECRET\
-    --cert=./$CERTIFICATE_BUILD_DIRECTORY/$FRONTEND_SELECTOR_NAME/$FRONTEND_CERTIFICATE_FILE_NAME\
-    --key=./$CERTIFICATE_BUILD_DIRECTORY/$FRONTEND_SELECTOR_NAME/$FRONTEND_CERTIFICATE_KEY_FILE_NAME
+    --cert=./$CERTIFICATE_BUILD_DIRECTORY/$FRONTEND_SELECTOR/$FRONTEND_CERTIFICATE_FILE_NAME\
+    --key=./$CERTIFICATE_BUILD_DIRECTORY/$FRONTEND_SELECTOR/$FRONTEND_CERTIFICATE_KEY_FILE_NAME
 "
 )
 }

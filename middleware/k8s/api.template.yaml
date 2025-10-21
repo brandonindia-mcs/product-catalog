@@ -15,10 +15,10 @@ spec:
   selector:
     app: $SELECTOR
   ports:
-    - name: http
-      port: $HTTP_PORT
-      targetPort: $HTTP_TARGET_PORT
-      nodePort: $HTTP_NODE_PORT
+    # - name: http
+    #   port: $HTTP_PORT
+    #   targetPort: $HTTP_TARGET_PORT
+    #   nodePort: $HTTP_NODE_PORT
     - name: https
       port: $SSL_PORT
       targetPort: $SSL_TARGET_PORT
@@ -141,7 +141,7 @@ spec:
               value: $LOGLEVEL
           ports:
             - containerPort: $SSL_TARGET_PORT
-            - containerPort: $HTTP_NODE_PORT
+            # - containerPort: $HTTP_NODE_PORT
           # readinessProbe:
           #   httpGet:
           #     path: /health    # Adjust to your API's health endpoint
