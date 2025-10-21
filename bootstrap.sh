@@ -37,6 +37,7 @@ export MIDDLEWARE_CONTAINER_NAME=api
 export MIDDLEWARE_TLS_MOUNT=certs
 export MIDDLEWARE_TLS_MOUNT_PATH=/$MIDDLEWARE_TLS_MOUNT
 export MIDDLEWARE_TLS_CERT_VOLUME=tls-certs
+export MIDDLEWARE_LOGLEVEL=debug
 export CORS_ORIGIN=https://product-catalog.progress.me
 export API_HTTP_PORT_K8S_MIDDLEWARE=80
 export API_HTTP_RUNPORT_K8S_MIDDLEWARE=3000
@@ -57,8 +58,9 @@ export PG_PORT=$POSTGRE_SQL_RUNPORT
 STAMP=`stamp`
 # export MIDDLEWARE_TLS_SECRET=middleware-tls-$STAMP
 # export FRONTEND_TLS_SECRET=frontend-tls-$STAMP
-export MIDDLEWARE_TLS_SECRET=middleware-secret-static
-export FRONTEND_TLS_SECRET=frontend-secret-static
+export MIDDLEWARE_SECRET=middleware-secret-static
+export MIDDLEWARE_TLS_SECRET=$MIDDLEWARE_SECRET-tls
+export FRONTEND_TLS_SECRET=frontend-secret-static-tls
 
 function product_catalog {
 ##########  RUN COMMAND  ##########
@@ -298,6 +300,7 @@ function configure_webservice {
 set -u
 image_version=$1
 FRONTEND_WEBSERVICE_REPLICAS=2
+>./frontend/k8s/$sdenv.env && warn ./frontend/k8s/$sdenv.env reset
 set_keyvalue REPOSITORY $FRONTEND_APPNAME ./frontend/k8s/$sdenv.env
 set_keyvalue RUNPORT_HTTP $WEB_HTTP_RUNPORT_PUBLIC_FRONTEND ./frontend/k8s/$sdenv.env
 set_keyvalue RUNPORT_HTTPS $WEB_HTTPS_RUNPORT_PUBLIC_FRONTEND ./frontend/k8s/$sdenv.env
@@ -313,7 +316,7 @@ set_keyvalue SELECTOR $FRONTEND_SELECTOR_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue PODTEMPLATE $FRONTEND_PODTEMPLATE_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue CONTAINER $FRONTEND_CONTAINER_NAME ./frontend/k8s/$sdenv.env
-set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET-tls ./frontend/k8s/$sdenv.env
+set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET ./frontend/k8s/$sdenv.env
 set -a
 source ./frontend/k8s/$sdenv.env || exit 1
 set +a
@@ -331,6 +334,7 @@ function configure_api {
 set -u
 image_version=$1
 MIDDLEWARE_API_REPLICAS=2
+>./middleware/k8s/$sdenv.env && warn ./middleware/k8s/$sdenv.env reset
 set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME ./middleware/k8s/$sdenv.env
 set_keyvalue TAG $image_version ./middleware/k8s/$sdenv.env
 # set_keyvalue HUB $DOCKERHUB ./middleware/k8s/$sdenv.env
@@ -352,11 +356,12 @@ set_keyvalue SELECTOR $MIDDLEWARE_SELECTOR_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $MIDDLEWARE_DEPLOYMENT_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue PODTEMPLATE $MIDDLEWARE_PODTEMPLATE_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue CONTAINER $MIDDLEWARE_CONTAINER_NAME ./middleware/k8s/$sdenv.env
+set_keyvalue LOGLEVEL $MIDDLEWARE_LOGLEVEL ./middleware/k8s/$sdenv.env
 
 set_keyvalue CORS_ORIGIN $CORS_ORIGIN ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_MOUNT_PATH $MIDDLEWARE_TLS_MOUNT_PATH ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_CERT_VOLUME $MIDDLEWARE_TLS_CERT_VOLUME ./middleware/k8s/$sdenv.env
-set_keyvalue SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv.env
+set_keyvalue SECRET $MIDDLEWARE_SECRET ./middleware/k8s/$sdenv.env
 set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET-tls ./middleware/k8s/$sdenv.env
 set_keyvalue CERTIFICATE cert.pem ./middleware/k8s/$sdenv.env
 set_keyvalue CERTIFICATE_KEY key.pem ./middleware/k8s/$sdenv.env
@@ -384,6 +389,7 @@ function configure_postgres {
 (
 set -u
 image_version=$1
+>./backend/k8s/$sdenv.env && warn ./backend/k8s/$sdenv.env reset
 set_keyvalue REPOSITORY $BACKEND_APPNAME ./backend/k8s/$sdenv.env
 set_keyvalue TAG $image_version ./backend/k8s/$sdenv.env
 # set_keyvalue HUB $DOCKERHUB ./backend/k8s/$sdenv.env
@@ -771,11 +777,11 @@ function k8s_secret_api {
 set -e
 MIDDLEWARE_CERTIFICATE_FILE_NAME=cert.pem
 MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=key.pem
-runit "kubectl create secret generic $MIDDLEWARE_TLS_SECRET\
+runit "kubectl create secret generic $MIDDLEWARE_SECRET\
     --from-file=$MIDDLEWARE_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR_NAME/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
     --from-file=$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR_NAME/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
 "
-runit "kubectl create secret tls $MIDDLEWARE_TLS_SECRET-tls\
+runit "kubectl create secret tls $MIDDLEWARE_TLS_SECRET\
     --cert=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR_NAME/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
     --key=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_SELECTOR_NAME/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
 "

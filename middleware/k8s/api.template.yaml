@@ -30,6 +30,7 @@ metadata:
   name: $SERVICE-ingress
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   #### BIND TO NGINX FROM: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
   ingressClassName: nginx
@@ -127,6 +128,8 @@ spec:
             #     secretKeyRef:
             #       name: postgres-secret
             #       key: password
+            - name: LOGLEVEL
+              value: $LOGLEVEL
           ports:
             - containerPort: $SSL_NODE_PORT
             - containerPort: $HTTP_NODE_PORT

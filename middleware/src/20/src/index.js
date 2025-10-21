@@ -12,7 +12,7 @@ const keyPath = path.resolve(`${process.env.CERTIFICATE_KEY_PATH}`);
 
 // Shared logger config
 const loggerConfig = {
-  level: 'info',
+  level: `${process.env.LOGLEVEL}`,
   transport: {
     target: 'pino-pretty',
     options: { translateTime: 'SYS:standard' }
@@ -26,6 +26,22 @@ const fastifyHttps = fastifyFactory({
   https: {
     key: fs.existsSync(keyPath) ? fs.readFileSync(keyPath) : undefined,
     cert: fs.existsSync(certPath) ? fs.readFileSync(certPath) : undefined
+  }
+});
+fastifyHttps.log.trace('Sample trace message: HTTPS server initialized');
+fastifyHttps.log.debug('Sample debug message: HTTPS server initialized');
+fastifyHttps.log.warn('Sample warn message: HTTPS server initialized');
+fastifyHttps.log.info('Sample info message: HTTPS server initialized');
+fastifyHttps.log.error('Sample error message: HTTPS server initialized');
+fastifyHttp.all('*', async (req, reply) => {
+  const host = req.headers.host;
+  const url = req.raw.url;
+  fastifyHttp.log.info(`Redirecting HTTP request to https://${host}${url}`);
+  reply.redirect(`https://${host}${url}`);
+});
+fastifyHttp.addHook('onRequest', async (req, reply) => {
+  if (!req.raw.socket.encrypted) {
+    reply.code(403).send({ error: 'TLS required' });
   }
 });
 
@@ -149,16 +165,16 @@ const registerRoutes = (app) => {
 };
 
 // Register routes on both servers
-registerRoutes(fastifyHttp);
+// registerRoutes(fastifyHttp);
 registerRoutes(fastifyHttps);
 
 // Start both servers
 const start = async () => {
   try {
-    await fastifyHttp.listen({ port: Number(process.env.API_LISTEN_PORT_HTTP), host: '0.0.0.0' });
+    await fastifyHttp.listen({ port: Number(process.env.API_LISTEN_PORT_HTTP || 80), host: '0.0.0.0' });
     fastifyHttp.log.info(`HTTP middleware listening on port ${process.env.API_LISTEN_PORT_HTTP}`);
 
-    await fastifyHttps.listen({ port: Number(process.env.API_LISTEN_PORT_HTTPS), host: '0.0.0.0' });
+    await fastifyHttps.listen({ port: Number(process.env.API_LISTEN_PORT_HTTPS || 443), host: '0.0.0.0' });
     fastifyHttps.log.info(`HTTPS middleware listening on port ${process.env.API_LISTEN_PORT_HTTPS}`);
   } catch (err) {
     console.error('Startup error:', err);
