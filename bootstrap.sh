@@ -5,10 +5,10 @@ GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 alias stamp="echo \$(date +%Y%m%d%H%M%S)"
 
 export BACKEND_APPNAME=product-catalog-backend
-export BACKEND_DATABASE_SERVICE_NAME=pg-service
-export BACKEND_SELECTOR_NAME=postgres
-export BACKEND_DEPLOYMENT_NAME=postgres
-export BACKEND_PODTEMPLATE_NAME=postgres
+export BACKEND_DATABASE_SERVICE_NAME=db-service
+export BACKEND_SELECTOR=postgres
+export BACKEND_DEPLOYMENT=postgres
+export BACKEND_POD_TEMPLATE=postgres
 export POSTGRES_USER=catalog
 export POSTGRES_DB=catalog
 export POSTGRES_PASSWORD=catalog
@@ -17,8 +17,8 @@ export POSTGRE_SQL_RUNPORT=5432
 export FRONTEND_APPNAME=product-catalog-frontend
 export FRONTEND_WEBSERVICE_NAME=web-service
 export FRONTEND_SELECTOR=web
-export FRONTEND_DEPLOYMENT_NAME=web
-export FRONTEND_PODTEMPLATE_NAME=web
+export FRONTEND_DEPLOYMENT=web
+export FRONTEND_POD_TEMPLATE=web
 export FRONTEND_CONTAINER=web
 export WEB_HTTP_RUNPORT_PUBLIC_FRONTEND=80
 export WEB_HTTPS_RUNPORT_PUBLIC_FRONTEND=443
@@ -32,8 +32,8 @@ export MIDDLEWARE_API_INGRESS_HOSTNAME=product-catalog.progress.me
 export MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME=api-ingress.progress.me
 export MIDDLEWARE_API_SERVICE_LOCALCLUSTER_NAME=https://api-service.default.svc.cluster.local
 export MIDDLEWARE_SELECTOR=api
-export MIDDLEWARE_DEPLOYMENT_NAME=api
-export MIDDLEWARE_PODTEMPLATE_NAME=api
+export MIDDLEWARE_DEPLOYMENT=api
+export MIDDLEWARE_POD_TEMPLATE=api
 export MIDDLEWARE_CONTAINER=api
 export MIDDLEWARE_TLS_MOUNT=certs
 export MIDDLEWARE_TLS_MOUNT_PATH=/$MIDDLEWARE_TLS_MOUNT
@@ -314,8 +314,8 @@ set_keyvalue INGRESS_PORT $WEBSERVICE_INGRESS_PORT_K8S_FRONTEND ./frontend/k8s/$
 set_keyvalue SERVICE $FRONTEND_WEBSERVICE_NAME ./frontend/k8s/$sdenv.env
 set_keyvalue INGRESS $FRONTEND_WEBSERVICE_INGRESS_HOSTNAME ./frontend/k8s/$sdenv.env
 set_keyvalue SELECTOR $FRONTEND_SELECTOR ./frontend/k8s/$sdenv.env
-set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT_NAME ./frontend/k8s/$sdenv.env
-set_keyvalue PODTEMPLATE $FRONTEND_PODTEMPLATE_NAME ./frontend/k8s/$sdenv.env
+set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT ./frontend/k8s/$sdenv.env
+set_keyvalue POD_TEMPLATE $FRONTEND_POD_TEMPLATE ./frontend/k8s/$sdenv.env
 set_keyvalue CONTAINER $FRONTEND_CONTAINER ./frontend/k8s/$sdenv.env
 set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET ./frontend/k8s/$sdenv.env
 set -a
@@ -355,8 +355,8 @@ set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE_NAME ./middleware/k8s/$sdenv.env
 set_keyvalue INGRESS_API $MIDDLEWARE_API_INGRESS_HOSTNAME ./middleware/k8s/$sdenv.env
 set_keyvalue INGRESS_PRODUCTS $MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME ./middleware/k8s/$sdenv.env
 set_keyvalue SELECTOR $MIDDLEWARE_SELECTOR ./middleware/k8s/$sdenv.env
-set_keyvalue DEPLOYMENT $MIDDLEWARE_DEPLOYMENT_NAME ./middleware/k8s/$sdenv.env
-set_keyvalue PODTEMPLATE $MIDDLEWARE_PODTEMPLATE_NAME ./middleware/k8s/$sdenv.env
+set_keyvalue DEPLOYMENT $MIDDLEWARE_DEPLOYMENT ./middleware/k8s/$sdenv.env
+set_keyvalue POD_TEMPLATE $MIDDLEWARE_POD_TEMPLATE ./middleware/k8s/$sdenv.env
 set_keyvalue CONTAINER $MIDDLEWARE_CONTAINER ./middleware/k8s/$sdenv.env
 set_keyvalue LOGLEVEL $MIDDLEWARE_LOGLEVEL ./middleware/k8s/$sdenv.env
 

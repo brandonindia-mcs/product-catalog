@@ -115,10 +115,10 @@
   function postgres_out {
   echo get deployment postgre:
   kubectl get deployment postgre -o yaml | yq
-  echo kubectl describe svc pg-service:
-  kubectl describe svc pg-service
-  echo  get svc pg-service:
-  kubectl get svc pg-service -o yaml | yq
+  echo kubectl describe svc db-service:
+  kubectl describe svc db-service
+  echo  get svc db-service:
+  kubectl get svc db-service -o yaml | yq
   }
   function poll_for_deleted() {
     for kind in "$@"; do
@@ -142,8 +142,8 @@
 64) valid api
 40) install_postgres\t              \t                \t43) image_backend    \t44) configure_postgres\t45) k8s_postgres
 71) reg_local_front \t72) reg_local_middle\t73) reg_local_back                      \tweb 1000/1001) info 1002) secrets
-80) web_out\t81) api_out\t82) postgres_out\t75) endpoints\t76) describe\t    \tapi 2000/2001) info 2002) secrets
-\tclear 90) web, api, ingress 91) web 92) api 93) ingress                                      \t\tpg  3000/3002) info
+80) web_out\t81) api_out\t82) postgres_out\t75) endpoints\t76) describe\t           \tapi 2000/2001) info 2002) secrets
+\tclear 90) web, api, ingress 91) web 92) api 93) ingress 94) postgres            \t\t pg 3000/3002) info
 \t\t                                                                                \t 0000) all secrets
 "
     read -p "Enter choice or exit: " choice
@@ -191,7 +191,8 @@
       90) system_check && kubectl delete deploy api web ; kubectl delete svc api-service web-service ; kubectl delete ingress api-service-ingress web-service-ingress ;;
       92) system_check && kubectl delete deploy api ; kubectl delete svc api-service ; kubectl delete ingress api-service-ingress ;;
       91) system_check && kubectl delete deploy web ; kubectl delete svc web-service ; kubectl delete ingress web-service-ingress ;;
-      91) system_check && kubectl delete ingress api-service-ingress web-service-ingress ;;
+      93) system_check && kubectl delete ingress api-service-ingress web-service-ingress ;;
+      94) system_check && kubectl delete deploy postgres ; kubectl delete svc db-service ;;
       2131) system_check && run_install_api $namespace $image_version && run_update_webservice $namespace $image_version ;;
       0000) system_check && kubectl describe secret ;;
       1000) system_check && kubectl logs -l app=web ;;
@@ -200,7 +201,7 @@
       2000) system_check && kubectl logs -l app=api ;;
       2001) system_check && kubectl describe svc api-service ;;
       2002) system_check && kubectl describe secret $MIDDLEWARE_TLS_SECRET $MIDDLEWARE_TLS_SECRET-tls ;;
-      3001) system_check && kubectl describe svc pg-service ;;
+      3001) system_check && kubectl describe svc db-service ;;
       3000) system_check && kubectl logs -l app=postgres ;;
       *) echo "invalid entry..."; exit 0 ;;
     esac

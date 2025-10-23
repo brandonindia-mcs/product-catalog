@@ -79,7 +79,7 @@ spec:
   template:
     metadata:
       labels:
-        app: $PODTEMPLATE
+        app: $POD_TEMPLATE
     spec:
       volumes:
         - name: $TLS_CERT_VOLUME

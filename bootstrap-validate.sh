@@ -255,14 +255,14 @@ kubectl get ingress web-service-ingress -n $namespace -o yaml
 function validate_service_endpoints {
 >./build/validate_service_endpoints.out
 (
-echo \*\*\*\*\* $FRONTEND_DEPLOYMENT_NAME netstat -tulnp
-kubectl exec -it deploy/$FRONTEND_DEPLOYMENT_NAME -- netstat -tulnp
+echo \*\*\*\*\* $FRONTEND_DEPLOYMENT netstat -tulnp
+kubectl exec -it deploy/$FRONTEND_DEPLOYMENT -- netstat -tulnp
 
-echo \*\*\*\*\* $MIDDLEWARE_DEPLOYMENT_NAME netstat -tulnp
-kubectl exec -it deploy/$MIDDLEWARE_DEPLOYMENT_NAME -- netstat -tulnp
+echo \*\*\*\*\* $MIDDLEWARE_DEPLOYMENT netstat -tulnp
+kubectl exec -it deploy/$MIDDLEWARE_DEPLOYMENT -- netstat -tulnp
 
-echo \*\*\*\*\* $BACKEND_DEPLOYMENT_NAME netstat -tulnp
-kubectl exec -it deploy/$BACKEND_DEPLOYMENT_NAME -- netstat -tulnp
+echo \*\*\*\*\* $BACKEND_DEPLOYMENT netstat -tulnp
+kubectl exec -it deploy/$BACKEND_DEPLOYMENT -- netstat -tulnp
 )
 }
 
@@ -274,18 +274,18 @@ function describe_service_endpoints {
 date
 echo \*\*\*\*\* Describing $FRONTEND_WEBSERVICE_NAME
 kubectl describe svc $FRONTEND_WEBSERVICE_NAME
-echo \*\*\*\*\* $FRONTEND_DEPLOYMENT_NAME netstat -tulnp
-kubectl exec -it deploy/$FRONTEND_DEPLOYMENT_NAME -- netstat -tulnp
+echo \*\*\*\*\* $FRONTEND_DEPLOYMENT netstat -tulnp
+kubectl exec -it deploy/$FRONTEND_DEPLOYMENT -- netstat -tulnp
 
 echo \*\*\*\*\* Describing $MIDDLEWARE_API_SERVICE_NAME
 kubectl describe svc $MIDDLEWARE_API_SERVICE_NAME
-echo \*\*\*\*\* $MIDDLEWARE_DEPLOYMENT_NAME netstat -tulnp
-kubectl exec -it deploy/$MIDDLEWARE_DEPLOYMENT_NAME -- netstat -tulnp
+echo \*\*\*\*\* $MIDDLEWARE_DEPLOYMENT netstat -tulnp
+kubectl exec -it deploy/$MIDDLEWARE_DEPLOYMENT -- netstat -tulnp
 
 echo \*\*\*\*\* Describing $BACKEND_DATABASE_SERVICE_NAME
 kubectl describe svc $BACKEND_DATABASE_SERVICE_NAME
-echo \*\*\*\*\* $BACKEND_DEPLOYMENT_NAME netstat -tulnp
-kubectl exec -it deploy/$BACKEND_DEPLOYMENT_NAME -- netstat -tulnp
+echo \*\*\*\*\* $BACKEND_DEPLOYMENT netstat -tulnp
+kubectl exec -it deploy/$BACKEND_DEPLOYMENT -- netstat -tulnp
 ) 2>&1 | tee ./build/validate_service_endpoints.out
 }
 
@@ -326,7 +326,7 @@ function get_postgres_out {
 date
   echo get deployment postgre:
   kubectl get deployment postgre -o yaml
-  echo  get svc pg-service:
-  kubectl get svc pg-service -o yaml
+  echo  get svc db-service:
+  kubectl get svc db-service -o yaml
 ) 2>&1 | tee ./build/postgres.out
 }
