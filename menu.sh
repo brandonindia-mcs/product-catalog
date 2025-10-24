@@ -60,6 +60,7 @@
   function run_configure_webservice() { parent && GLOBAL_NAMESPACE=$1 configure_webservice $2 ; }
   function run_configure_api() {        parent && GLOBAL_NAMESPACE=$1 configure_api $2 ; }
   function run_configure_postgres() {   parent && GLOBAL_NAMESPACE=$1 configure_postgres $2 ; }
+  function run_configure_ingress() {   parent && GLOBAL_NAMESPACE=$1 configure_ingress $2 ; }
   function run_configure() {        parent && GLOBAL_NAMESPACE=$1 configure $2 ; }
 
   function run_frontend_18() {  parent && echo menu disabled, manual run only: frontend_18 && return 1 ;}
@@ -70,11 +71,14 @@
   function run_image_middleware() { parent && build_image_middleware $1; }
   function run_image_backend() {    parent && build_image_backend $1; }
 
+  function run_redeploy_all() { run_k8s_webservice $1 $2 && run_k8s_api $1 $2 && run_k8s_postgres $1 $2; }
+  function run_k8s_ingress() {    parent &&                             run_configure_ingress $1 $2     && GLOBAL_NAMESPACE=$1 k8s_ingress ; }
   function run_k8s_webservice() { parent && run_image_frontend $2   &&  run_configure_webservice $1 $2  && GLOBAL_NAMESPACE=$1 k8s_webservice ; }
   function run_k8s_api() {        parent && run_image_middleware $2 &&  run_configure_api $1 $2         && GLOBAL_NAMESPACE=$1 k8s_api ; }
   function run_k8s_postgres() {   parent && run_image_backend $2    &&  run_configure_postgres $1 $2    && GLOBAL_NAMESPACE=$1 k8s_postgres ; }
-  function run_redeploy_all() { run_k8s_webservice $1 $2 && run_k8s_api $1 $2 && run_k8s_postgres $1 $2; }
+
   function run_generate_selfsignedcert_cnf() { GLOBAL_NAMESPACE=$1 generate_selfsignedcert_cnf $3 ; }
+  function run_k8s_secrets() {              parent && GLOBAL_NAMESPACE=$1 middleware_secrets; }
 
   function run_product_catalog() {          parent && GLOBAL_NAMESPACE=$1 product_catalog $2 ; }
   function run_install_webservice() {       parent && echo menu disabled, manual run only: GLOBAL_NAMESPACE=$1 install_webservice $2 && return 1 ; }
@@ -89,7 +93,6 @@
   function run_k8s_nginx() {                parent && k8s_nginx; }
   function run_validate_service_endpoints { parent && validate_service_endpoints ; }
   function run_describe_service_endpoints { parent && describe_service_endpoints ; }
-  function run_k8s_secrets() {              parent && GLOBAL_NAMESPACE=$1 middleware_secrets; }
   function web_out {
   echo get deployment web:
   kubectl get deployment web -o yaml | yq
@@ -137,9 +140,9 @@
  0) sys_check\t3) Build & Deploy\t5) Deploy All\t7) secrets\t9) certs\t11) configure\t12) k8s_nginx\t*) Exit
 20) frontend_update\t21) update_webservice\t          \t23) image_frontend  \t24) configure_webservice\t25) k8s_webservice
 30) middleware     \t31) install_api\t50) validate_api\t33) image_middleware\t34) configure_api       \t35) k8s_api
-                   \t2131)          \t51) validate_api_web_https\t53) validate_web
-                   \t               \t52) validate_api_k8s_https\t54) validate_ingress
-64) valid api
+                   \t2131)          \t51) validate_api_web_https\t53) validate_web \t61) configure ingress
+                   \t               \t52) validate_api_k8s_https\t54) validate_ingress\t62) k8s_ingress
+64.0) validate API w/ resolver 64.1) Trusted
 40) install_postgres\t              \t                \t43) image_backend    \t44) configure_postgres\t45) k8s_postgres
 71) reg_local_front \t72) reg_local_middle\t73) reg_local_back                      \tweb 1000/1001) info 1002) secrets
 80) web_out\t81) api_out\t82) postgres_out\t75) endpoints\t76) describe\t           \tapi 2000/2001) info 2002) secrets
@@ -165,11 +168,11 @@
       23) system_check && run_image_frontend $namespace $image_version ;;
       30) system_check && run_middleware $namespace $image_version ;;
       31) system_check && run_install_api $namespace $image_version ;;
+      50) system_check && run_validate_api ;;
       51) system_check && run_validate_api_web_https ;;
       52) system_check && run_validate_api_k8s_https ;;
       53) system_check && validate_web ;;
-      53) system_check && validate_ingress ;;
-      50) system_check && run_validate_api ;;
+      54) system_check && validate_ingress ;;
       34) system_check && run_configure_api $namespace $image_version ;;
       35) system_check && run_k8s_api $namespace $image_version ;;
       33) system_check && run_image_middleware $image_version ;;
@@ -178,7 +181,11 @@
       44) system_check && run_configure_postgres $namespace $image_version ;;
       45) system_check && run_k8s_postgres $namespace $image_version ;;
       43) system_check && run_image_backend $image_version ;;
-      64) system_check && curl -vk https://product-catalog.progress.me:32443/products \
+      61) system_check && run_configure_ingress $namespace $image_version ;;
+      62) system_check && run_k8s_ingress $namespace $image_version ;;
+      64.0) system_check && curl -vk https://product-catalog.progress.me:32443/products \
+                            --resolve product-catalog.progress.me:32443:127.0.0.1 | jq ;;
+      64.1) system_check && curl -v https://product-catalog.progress.me:32443/products \
                             --resolve product-catalog.progress.me:32443:127.0.0.1 | jq ;;
       71) system_check && registry_local_repository product-catalog-frontend ;;
       72) system_check && registry_local_repository product-catalog-middleware ;;
