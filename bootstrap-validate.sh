@@ -272,18 +272,18 @@ function describe_service_endpoints {
 >./build/describe_service_endpoints.out
 (
 date
-echo \*\*\*\*\* Describing $FRONTEND_WEBSERVICE_NAME
-kubectl describe svc $FRONTEND_WEBSERVICE_NAME
+echo \*\*\*\*\* Describing $FRONTEND_WEBSERVICE
+kubectl describe svc $FRONTEND_WEBSERVICE
 echo \*\*\*\*\* $FRONTEND_DEPLOYMENT netstat -tulnp
 kubectl exec -it deploy/$FRONTEND_DEPLOYMENT -- netstat -tulnp
 
-echo \*\*\*\*\* Describing $MIDDLEWARE_API_SERVICE_NAME
-kubectl describe svc $MIDDLEWARE_API_SERVICE_NAME
+echo \*\*\*\*\* Describing $MIDDLEWARE_API_SERVICE
+kubectl describe svc $MIDDLEWARE_API_SERVICE
 echo \*\*\*\*\* $MIDDLEWARE_DEPLOYMENT netstat -tulnp
 kubectl exec -it deploy/$MIDDLEWARE_DEPLOYMENT -- netstat -tulnp
 
-echo \*\*\*\*\* Describing $BACKEND_DATABASE_SERVICE_NAME
-kubectl describe svc $BACKEND_DATABASE_SERVICE_NAME
+echo \*\*\*\*\* Describing $BACKEND_DATABASE_SERVICE
+kubectl describe svc $BACKEND_DATABASE_SERVICE
 echo \*\*\*\*\* $BACKEND_DEPLOYMENT netstat -tulnp
 kubectl exec -it deploy/$BACKEND_DEPLOYMENT -- netstat -tulnp
 ) 2>&1 | tee ./build/validate_service_endpoints.out

@@ -5,17 +5,19 @@ GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 alias stamp="echo \$(date +%Y%m%d%H%M%S)"
 
 export BACKEND_APPNAME=product-catalog-backend
-export BACKEND_DATABASE_SERVICE_NAME=db-service
+export BACKEND_DATABASE_SERVICE=db-service
 export BACKEND_SELECTOR=postgres
 export BACKEND_DEPLOYMENT=postgres
 export BACKEND_POD_TEMPLATE=postgres
+export BACKEND_CONTAINER=postgres
 export POSTGRES_USER=catalog
 export POSTGRES_DB=catalog
 export POSTGRES_PASSWORD=catalog
 export POSTGRE_SQL_RUNPORT=5432
 
 export FRONTEND_APPNAME=product-catalog-frontend
-export FRONTEND_WEBSERVICE_NAME=web-service
+export FRONTEND_WEBSERVICE=web-service
+export FRONTEND_WEBSERVICE_INGRESS=$FRONTEND_WEBSERVICE-ingress
 export FRONTEND_SELECTOR=web
 export FRONTEND_DEPLOYMENT=web
 export FRONTEND_POD_TEMPLATE=web
@@ -27,7 +29,8 @@ export WEBSERVICE_INGRESS_PORT_K8S_FRONTEND=$WEB_HTTP_RUNPORT_PUBLIC_FRONTEND
 # export VITE_API_URL=https://localhost:8443
 
 export MIDDLEWARE_APPNAME=product-catalog-middleware
-export MIDDLEWARE_API_SERVICE_NAME=api-service
+export MIDDLEWARE_API_SERVICE=api-service
+export MIDDLEWARE_API_SERVICE_INGRESS=$MIDDLEWARE_API_SERVICE-ingress
 export MIDDLEWARE_API_INGRESS_HOSTNAME=product-catalog.progress.me
 export MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME=api-ingress.progress.me
 export MIDDLEWARE_API_SERVICE_LOCALCLUSTER_NAME=https://api-service.default.svc.cluster.local
@@ -50,7 +53,7 @@ export API_INGRESS_PORT_K8S_MIDDLEWARE=$API_HTTPS_SSLPORT_K8S_MIDDLEWARE
 export CERTIFICATE_BUILD_DIRECTORY=cert
 
 export NODE_ENV=development
-export PG_HOST=$BACKEND_DATABASE_SERVICE_NAME
+export PG_HOST=$BACKEND_DATABASE_SERVICE
 export PG_DATABASE=$POSTGRES_DB
 export PG_USER=$POSTGRES_USER
 export PG_PASSWORD=$POSTGRES_PASSWORD
@@ -69,12 +72,12 @@ function product_catalog {
 ###################################
 (
 info ${FUNCNAME[0]}\
-  && yellow ${FUNCNAME[0]}: callling install_postgres\
-  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE install_postgres $1\
-  && yellow ${FUNCNAME[0]}: callling install_api\
-  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE install_api $1\
-  && yellow ${FUNCNAME[0]}: callling update_webservice\
-  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE update_webservice $1
+  && function=install_postgres && yellow ${FUNCNAME[0]}: callling $function\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE $function $1\
+  && function=install_api && yellow ${FUNCNAME[0]}: callling $function\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE $function $1\
+  && function=update_webservice && yellow ${FUNCNAME[0]}: callling $function\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE $function $1
 )
 }
 
@@ -110,6 +113,18 @@ function frontend_convert_18_20 {
 ###################################
 (
 frontend_upgrade_20
+)
+}
+
+function install_ingress {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace install_ingress $image_version
+###################################
+(
+set -u\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_ingress $1\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_ingress
+
 )
 }
 
@@ -201,8 +216,29 @@ fi
 )
 }
 
+function watch_deployment {
+(
+  echo -e "DEPLOYMENT-TYPE\tNAME\tREADY\tUP-TO-DATE\tAVAILABLE\tAGE\tCONTAINERS\tSELECTOR"
+  kubectl get deployments -o json | jq -r '
+    .items[] |
+    . as $d |
+    ($d.metadata.creationTimestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime) as $created |
+    (now - $created) as $age_sec |
+    ($age_sec / 86400) as $age_days |
+    ($age_days >= 1
+      | if . then "\($age_days | floor)d"
+        else "\($age_sec / 3600 | floor)h"
+      end) as $age |
+    "\($d.kind).\($d.apiVersion)/\($d.metadata.name)\t\($d.metadata.name)\t\($d.status.readyReplicas)/\($d.spec.replicas)\t\($d.status.updatedReplicas)\t\($d.status.availableReplicas)\t\($age)\t\($d.spec.template.spec.containers[].name)\t\($d.spec.selector.matchLabels | to_entries[] | "\(.key)=\(.value)")"
+  '
+) | column -t
+}
 function watch_productcatelog {
-(namespace=${1:-default}; while true; do echo && blue $namespace $(date) && kubectl get deploy,pod,svc,ingress,rs --namespace $namespace -o wide && sleep 5;done)
+(namespace=${1:-default} &&
+ while true; do info "$(blue $namespace namespace)" && watch_deployment && echo
+# (echo "NAME READY UP-TO-DATE AVAILABLE AGE CONTAINERS SELECTOR"; kubectl get deployments --namespace $namespace -o wide --no-headers=true | awk '{print $1, $2, $3, $4, $5, $6, $8}') | column -t
+ kubectl get pod,svc,ingress --namespace $namespace -o wide && sleep 7;done
+)
 }
 function print_k8s_env {
 for dir in frontend backend middleware;do cat $dir/k8s/$sdenv.env;done
@@ -287,6 +323,7 @@ function configure {
 (
 set -u
 image_version=$1
+# GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_ingress $image_version
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_webservice $image_version
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_api $image_version
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_postgres $image_version
@@ -310,14 +347,21 @@ set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB:$HUBPORT ./frontend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
 set_keyvalue REPLICAS $FRONTEND_WEBSERVICE_REPLICAS ./frontend/k8s/$sdenv.env
-set_keyvalue INGRESS_PORT $WEBSERVICE_INGRESS_PORT_K8S_FRONTEND ./frontend/k8s/$sdenv.env
-set_keyvalue SERVICE $FRONTEND_WEBSERVICE_NAME ./frontend/k8s/$sdenv.env
-set_keyvalue INGRESS $FRONTEND_WEBSERVICE_INGRESS_HOSTNAME ./frontend/k8s/$sdenv.env
+# set_keyvalue INGRESS_PORT $WEBSERVICE_INGRESS_PORT_K8S_FRONTEND ./frontend/k8s/$sdenv.env
+set_keyvalue SERVICE $FRONTEND_WEBSERVICE ./frontend/k8s/$sdenv.env
+# set_keyvalue INGRESS $FRONTEND_WEBSERVICE_INGRESS_HOSTNAME ./frontend/k8s/$sdenv.env
 set_keyvalue SELECTOR $FRONTEND_SELECTOR ./frontend/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT ./frontend/k8s/$sdenv.env
 set_keyvalue POD_TEMPLATE $FRONTEND_POD_TEMPLATE ./frontend/k8s/$sdenv.env
 set_keyvalue CONTAINER $FRONTEND_CONTAINER ./frontend/k8s/$sdenv.env
 set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET ./frontend/k8s/$sdenv.env
+
+# set_keyvalue SERVICE $FRONTEND_WEBSERVICE ./frontend/k8s/$sdenv-ingress.env
+# set_keyvalue INGRESS $FRONTEND_WEBSERVICE_INGRESS ./frontend/k8s/$sdenv-ingress.env
+# set_keyvalue INGRESS_HOST $FRONTEND_WEBSERVICE_INGRESS_HOSTNAME ./frontend/k8s/$sdenv-ingress.env
+# set_keyvalue INGRESS_PORT $WEBSERVICE_INGRESS_PORT_K8S_FRONTEND ./frontend/k8s/$sdenv-ingress.env
+# set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET ./frontend/k8s/$sdenv-ingress.env
+
 set -a
 source ./frontend/k8s/$sdenv.env || exit 1
 set +a
@@ -348,12 +392,12 @@ set_keyvalue HTTP_NODE_PORT $API_HTTP_NODEPORT_K8S_MIDDLEWARE ./middleware/k8s/$
 set_keyvalue SSL_PORT $API_HTTPS_SSLPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SSL_TARGET_PORT $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue SSL_NODE_PORT $API_HTTPS_NODEPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
-set_keyvalue INGRESS_PORT $API_INGRESS_PORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
+# set_keyvalue INGRESS_PORT $API_INGRESS_PORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue API_LISTEN_PORT_HTTP $API_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
 set_keyvalue API_LISTEN_PORT_HTTPS $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv.env
-set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE_NAME ./middleware/k8s/$sdenv.env
-set_keyvalue INGRESS_API $MIDDLEWARE_API_INGRESS_HOSTNAME ./middleware/k8s/$sdenv.env
-set_keyvalue INGRESS_PRODUCTS $MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME ./middleware/k8s/$sdenv.env
+set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE ./middleware/k8s/$sdenv.env
+# set_keyvalue INGRESS_API $MIDDLEWARE_API_INGRESS_HOSTNAME ./middleware/k8s/$sdenv.env
+# set_keyvalue INGRESS_PRODUCTS $MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME ./middleware/k8s/$sdenv.env
 set_keyvalue SELECTOR $MIDDLEWARE_SELECTOR ./middleware/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $MIDDLEWARE_DEPLOYMENT ./middleware/k8s/$sdenv.env
 set_keyvalue POD_TEMPLATE $MIDDLEWARE_POD_TEMPLATE ./middleware/k8s/$sdenv.env
@@ -374,6 +418,13 @@ set_keyvalue PG_DATABASE $PG_DATABASE ./middleware/k8s/$sdenv.env
 set_keyvalue PG_USER $PG_USER ./middleware/k8s/$sdenv.env
 set_keyvalue PG_PASSWORD $PG_PASSWORD ./middleware/k8s/$sdenv.env
 set_keyvalue PG_PORT $PG_PORT ./middleware/k8s/$sdenv.env
+
+# set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE ./middleware/k8s/$sdenv-ingress.env
+# set_keyvalue INGRESS $MIDDLEWARE_API_SERVICE_INGRESS ./middleware/k8s/$sdenv-ingress.env
+# set_keyvalue INGRESS_API $MIDDLEWARE_API_INGRESS_HOSTNAME ./middleware/k8s/$sdenv-ingress.env
+# set_keyvalue INGRESS_PRODUCTS $MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME ./middleware/k8s/$sdenv-ingress.env
+# set_keyvalue INGRESS_PORT $API_INGRESS_PORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv-ingress.env
+# set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv-ingress.env
 
 set -a
 source ./middleware/k8s/$sdenv.env || exit 1
@@ -398,8 +449,12 @@ set_keyvalue TAG $image_version ./backend/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB:$HUBPORT ./backend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./backend/k8s/$sdenv.env
 set_keyvalue RUNPORT_POSTGRE $POSTGRE_SQL_RUNPORT ./backend/k8s/$sdenv.env
+set_keyvalue SELECTOR $BACKEND_SELECTOR ./backend/k8s/$sdenv.env
+set_keyvalue DEPLOYMENT $BACKEND_DEPLOYMENT ./backend/k8s/$sdenv.env
+set_keyvalue POD_TEMPLATE $BACKEND_POD_TEMPLATE ./backend/k8s/$sdenv.env
+set_keyvalue CONTAINER $BACKEND_CONTAINER ./backend/k8s/$sdenv.env
 
-set_keyvalue SERVICE $BACKEND_DATABASE_SERVICE_NAME ./backend/k8s/$sdenv.env
+set_keyvalue SERVICE $BACKEND_DATABASE_SERVICE ./backend/k8s/$sdenv.env
 set_keyvalue POSTGRES_DB $POSTGRES_DB ./backend/k8s/$sdenv.env
 set_keyvalue POSTGRES_USER $POSTGRES_USER ./backend/k8s/$sdenv.env
 set_keyvalue POSTGRES_PASSWORD $POSTGRES_PASSWORD ./backend/k8s/$sdenv.env
@@ -409,6 +464,69 @@ set +a
 # envsubst < ./backend/k8s/postgres.template.yaml | kubectl apply -f -
 envsubst >./backend/k8s/postgres.yaml <./backend/k8s/postgres.template.yaml
 sed -i '/^[[:space:]]*#/d' ./backend/k8s/postgres.yaml
+)
+}
+
+function configure_ingress {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace configure_ingress $image_version
+###################################
+(
+set -u
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_ingress_web $image_version
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_ingress_api $image_version
+)
+}
+
+function configure_ingress_web {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace configure_ingress_web $image_version
+###################################
+(
+set -u
+image_version=$1
+>./frontend/k8s/$sdenv-ingress.env && warn ./frontend/k8s/$sdenv-ingress.env reset
+#web
+set_keyvalue SERVICE $FRONTEND_WEBSERVICE ./frontend/k8s/$sdenv-ingress.env
+set_keyvalue INGRESS $FRONTEND_WEBSERVICE_INGRESS ./frontend/k8s/$sdenv-ingress.env
+set_keyvalue INGRESS_HOST $FRONTEND_WEBSERVICE_INGRESS_HOSTNAME ./frontend/k8s/$sdenv-ingress.env
+set_keyvalue INGRESS_PORT $WEBSERVICE_INGRESS_PORT_K8S_FRONTEND ./frontend/k8s/$sdenv-ingress.env
+set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET ./frontend/k8s/$sdenv-ingress.env
+
+set -a
+source ./frontend/k8s/$sdenv-ingress.env || exit 1
+set +a
+# envsubst < ./frontend/k8s/web.template.yaml | kubectl apply -f -
+envsubst >./frontend/k8s/web-ingress.yaml <./frontend/k8s/web-ingress.template.yaml
+sed -i '/^[[:space:]]*#/d' ./frontend/k8s/web-ingress.yaml
+
+)
+}
+
+
+
+function configure_ingress_api {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace configure_ingress_api $image_version
+###################################
+(
+set -u
+image_version=$1
+>./middleware/k8s/$sdenv-ingress.env && warn ./middleware/k8s/$sdenv-ingress.env reset
+#api
+set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE ./middleware/k8s/$sdenv-ingress.env
+set_keyvalue INGRESS $MIDDLEWARE_API_SERVICE_INGRESS ./middleware/k8s/$sdenv-ingress.env
+set_keyvalue INGRESS_API $MIDDLEWARE_API_INGRESS_HOSTNAME ./middleware/k8s/$sdenv-ingress.env
+set_keyvalue INGRESS_PRODUCTS $MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME ./middleware/k8s/$sdenv-ingress.env
+set_keyvalue INGRESS_PORT $API_INGRESS_PORT_K8S_MIDDLEWARE ./middleware/k8s/$sdenv-ingress.env
+set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$sdenv-ingress.env
+
+set -a
+source ./middleware/k8s/$sdenv-ingress.env || exit 1
+set +a
+# envsubst < ./middleware/k8s/api.template.yaml | kubectl apply -f -
+envsubst >./middleware/k8s/api-ingress.yaml <./middleware/k8s/api-ingress.template.yaml
+sed -i '/^[[:space:]]*#/d' ./middleware/k8s/api-ingress.yaml
 )
 }
 
@@ -618,9 +736,9 @@ function k8s_webservice {
 (
 set -e
 set -a
-source ./frontend/k8s/$sdenv.env || exit 1
+source ./frontend/k8s/$sdenv*.env || exit 1
 set +a
-runit "kubectl apply -f ./frontend/k8s/web.yaml\
+runit "kubectl apply -f ./frontend/k8s/web.yaml -f ./frontend/k8s/web-ingress.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=$FRONTEND_SELECTOR --timeout=60s
 "
 
@@ -787,11 +905,11 @@ function k8s_api {
 (
 set -e
 set -a
-source ./middleware/k8s/$sdenv.env || exit 1
+source ./middleware/k8s/$sdenv*.env || exit 1
 set +a
-runit "kubectl apply -f ./middleware/k8s/api.yaml\
+runit "kubectl apply -f ./middleware/k8s/api.yaml -f ./middleware/k8s/api-ingress.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
-    --for=condition=Ready pod -l app=$MIDDLEWARE_SELECTOR --timeout=60s
+    --for=condition=Ready pod -l app=$MIDDLEWARE_SELECTOR --timeout=120s
 "
 
 # kubectl rollout restart deployment api
@@ -873,6 +991,46 @@ runit "kubectl create secret tls $FRONTEND_TLS_SECRET\
 }
 
 
+function k8s_ingress {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace k8s_ingress
+###################################
+(
+set -u
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_ingress_web
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_ingress_api
+)
+}
+
+
+function k8s_ingress_api {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace k8s_ingress_api
+###################################
+(
+set -e
+set -a
+source ./middleware/k8s/$sdenv.env || exit 1
+set +a
+runit "kubectl apply -f ./middleware/k8s/api-ingress.yaml"
+)
+}
+
+
+function k8s_ingress_web {
+##########  RUN COMMAND  ##########
+# GLOBAL_NAMESPACE=$namespace k8s_ingress_web
+###################################
+(
+set -e
+set -a
+source ./frontend/k8s/$sdenv.env || exit 1
+set +a
+runit "kubectl apply -f ./frontend/k8s/web-ingress.yaml"
+)
+}
+
+
 . ./bootstrap-validate.sh 2>/dev/null || echo ./bootstrap-validate.sh not found... continuing
 
 
@@ -918,16 +1076,6 @@ function k8s_postgres {
 ###################################
 (
 set -ue
-
-# formatrun <<'EOF'
-# kubectl apply -f ./backend/k8s/postgres.yaml\
-#   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
-
-# EOF
-logit "kubectl apply -f ./backend/k8s/postgres.yaml\
-  && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
-"
-
 runit "kubectl apply -f ./backend/k8s/postgres.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=postgres --timeout=60s
 "
