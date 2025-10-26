@@ -1,0 +1,10 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY product-catalog-middleware/chat/package*.json ./
+RUN npm ci
+COPY product-catalog-middleware/chat/ ./
+ARG EXPOSE_PORT_HTTP
+EXPOSE $EXPOSE_PORT_HTTP
+ARG EXPOSE_PORT_HTTPS
+EXPOSE $EXPOSE_PORT_HTTPS
+CMD ["node", "server.js"]

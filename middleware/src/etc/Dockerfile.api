@@ -1,8 +1,8 @@
 FROM node:20-alpine
 WORKDIR /app
-COPY product-catalog-middleware/package*.json ./
+COPY product-catalog-middleware/api/package*.json ./
 RUN npm ci
-COPY product-catalog-middleware/ ./
+COPY product-catalog-middleware/api/ ./
 ARG EXPOSE_PORT_HTTP
 # EXPOSE $EXPOSE_PORT_HTTP
 ARG EXPOSE_PORT_HTTPS
