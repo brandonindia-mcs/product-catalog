@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import ProductList from './ProductList';
-import ProductDetail from './ProductDetail';
+import ProductList from './pages/api/ProductList';
+import ProductDetail from './pages/api/ProductDetail';
+import Chat from './pages/chat/Chat.jsx';
 import _debug from './_debug';
 import logo from './logo.svg';
 import './App.css';
