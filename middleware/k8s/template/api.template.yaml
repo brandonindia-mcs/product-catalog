@@ -3,6 +3,8 @@ kind: Service
 metadata:
   namespace: $NAMESPACE
   name: $SERVICE
+  labels:
+    app: $SELECTOR
 # spec:
 #   selector:
 #     app: $SELECTOR
@@ -15,51 +17,14 @@ spec:
   selector:
     app: $SELECTOR
   ports:
-    # - name: http
-    #   port: $HTTP_PORT
-    #   targetPort: $HTTP_TARGET_PORT
-    #   nodePort: $HTTP_NODE_PORT
+    - name: http
+      port: $HTTP_PORT
+      targetPort: $HTTP_TARGET_PORT
+      nodePort: $HTTP_NODE_PORT
     - name: https
       port: $SSL_PORT
       targetPort: $SSL_TARGET_PORT
       nodePort: $SSL_NODE_PORT
-# ---
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: $SERVICE-ingress
-#   annotations:
-#     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-#     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-# spec:
-#   #### BIND TO NGINX FROM: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
-#   ingressClassName: nginx
-#   tls:
-#     - hosts:
-#         - $INGRESS_PRODUCTS
-#         - $INGRESS_API
-#       secretName: $TLS_SECRET
-#   rules:
-#     - host: $INGRESS_PRODUCTS
-#       http:
-#         paths:
-#           - path: /products
-#             pathType: Prefix
-#             backend:
-#               service:
-#                 name: $SERVICE
-#                 port:
-#                   number: $INGRESS_PORT
-#     - host: $INGRESS_API
-#       http:
-#         paths:
-#           - path: /api
-#             pathType: Prefix
-#             backend:
-#               service:
-#                 name: $SERVICE
-#                 port:
-#                   number: $INGRESS_PORT
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -85,6 +50,8 @@ spec:
         - name: $TLS_CERT_VOLUME
           secret:
             secretName: $SECRET
+        - name: tmp
+          emptyDir: {}
       containers:
         - name: $CONTAINER
           image: $HUB/$REPOSITORY:$TAG
@@ -92,6 +59,9 @@ spec:
             - name: $TLS_CERT_VOLUME
               mountPath: $TLS_MOUNT_PATH
               readOnly: true
+            - name: tmp
+              mountPath: /tmp
+              readOnly: false
           env:
             - name: NODE_ENV
               value: $NODE_ENV
@@ -101,9 +71,9 @@ spec:
               #####***  AS-IN SELF-SIGNED OR OTHERWISE  ************####
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: "0"
-            - name: API_LISTEN_PORT_HTTP
+            - name: LISTEN_PORT_HTTP
               value: "$HTTP_TARGET_PORT"
-            - name: API_LISTEN_PORT_HTTPS
+            - name: LISTEN_PORT_HTTPS
               value: "$SSL_TARGET_PORT"
             - name: PG_HOST
               value: $PG_HOST
@@ -137,10 +107,10 @@ spec:
             #     secretKeyRef:
             #       name: postgres-secret
             #       key: password
-            - name: LOGLEVEL
-              value: $LOGLEVEL
+            - name: LOG_LEVEL
+              value: $LOG_LEVEL
           ports:
-            - containerPort: $SSL_TARGET_PORT
+            - containerPort: $CONTAINER_PORT
             # - containerPort: $HTTP_NODE_PORT
           # readinessProbe:
           #   httpGet:

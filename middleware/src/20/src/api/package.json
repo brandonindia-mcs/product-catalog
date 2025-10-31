@@ -1,8 +1,9 @@
 {
-  "name": "product-catalog-middleware",
+  "name": "product-catalog-middleware-api",
   "version": "1.0.0",
   "private": true,
   "main": "index.js",
+  "type":"module",
   "description": "Fastify middleware for product catalog",
   "author": "Brandon R. India",
   "license": "MIT",

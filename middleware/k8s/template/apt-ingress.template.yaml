@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: $INGRESS
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "$SSL_TRUEFALSE"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "$SSL_TRUEFALSE"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    # nginx.ingress.kubernetes.io/upstream-vhost: $HOSTNAME
+    # nginx.ingress.kubernetes.io/rewrite-target: /$1
+    # nginx.ingress.kubernetes.io/proxy-read-timeout: "15"
+    # nginx.ingress.kubernetes.io/proxy-send-timeout: "15"
+spec:
+  #### BIND TO NGINX FROM: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        # - $APT_HOSTNAME
+        - $HOSTNAME
+      secretName: $TLS_SECRET
+  rules:
+    - host: $HOSTNAME
+      http:
+        paths:
+          - path: $APT_PATH
+            pathType: Prefix
+            backend:
+              service:
+                name: $SERVICE
+                port:
+                  number: $APT_PORT
+    # - host: product-catalog.progress.me
+    #   http:
+    #     paths:
+    #       - path: /apt
+    #         pathType: Prefix
+    #         backend:
+    #           service:
+    #             name: apt-service
+    #             port:
+    #               number: 443

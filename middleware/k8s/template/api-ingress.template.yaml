@@ -3,18 +3,21 @@ kind: Ingress
 metadata:
   name: $INGRESS
   annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "$SSL_TRUEFALSE"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "$SSL_TRUEFALSE"
+    # nginx.ingress.kubernetes.io/rewrite-target: /$1
+    # nginx.ingress.kubernetes.io/proxy-read-timeout: "15"
+    # nginx.ingress.kubernetes.io/proxy-send-timeout: "15"
 spec:
   #### BIND TO NGINX FROM: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
   ingressClassName: nginx
   tls:
     - hosts:
-        - $INGRESS_PRODUCTS
-        - $INGRESS_API
+        - $PRODUCTS_HOSTNAME
+        - $API_HOSTNAME
       secretName: $TLS_SECRET
   rules:
-    - host: $INGRESS_PRODUCTS
+    - host: $PRODUCTS_HOSTNAME
       http:
         paths:
           - path: /products
@@ -23,8 +26,8 @@ spec:
               service:
                 name: $SERVICE
                 port:
-                  number: $INGRESS_PORT
-    - host: $INGRESS_API
+                  number: $PRODUCTS_PORT
+    - host: $API_HOSTNAME
       http:
         paths:
           - path: /api
@@ -33,4 +36,4 @@ spec:
               service:
                 name: $SERVICE
                 port:
-                  number: $INGRESS_PORT
+                  number: $API_PORT

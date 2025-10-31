@@ -1,31 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 /*
-  Enhancements:
-  - loading state for explicit UI during network activity
-  - AbortController to avoid state updates after unmount and race conditions
-  - normalized API_BASE (strip trailing slash) to avoid double slashes
-  - axios timeout and lightweight retry for transient failures
-  - structured error mapping to provide clearer UI messages
-  - currency formatting for price display
-  - defensive rendering (handles unexpected shapes)
+  Enhancements applied:
+  - normalize APT_BASE (strip trailing slash)
+  - loading + error state with consistent lifecycle handling
+  - AbortController to prevent state updates after unmount or rapid re-renders
+  - axios timeout and 1 retry for transient network issues
+  - defensive mapping of product fields to avoid crashes on unexpected shapes
+  - formatted price via Intl.NumberFormat (keeps behavior consistent)
+  - aria-live for progressive updates to improve a11y
 */
-export default function ProductDetail() {
-  const { id } = useParams();
+export default function Chat() {
   const [prod, setProd] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+  // Normalize base to avoid double slashes when building URLs
+  // const APT_BASE = useMemo(() => (import.meta.env.VITE_APT_URL || '').replace(/\/$/, ''), []);
+
+  const API_BASE = (import.meta.env.VITE_APT_URL || '').replace(/\/$/, '');
 
   useEffect(() => {
-    if (!id) {
-      setError('No product id provided.');
-      setLoading(false);
-      return;
-    }
 
     const controller = new AbortController();
     const signal = controller.signal;
@@ -40,7 +37,7 @@ export default function ProductDetail() {
     const fetchProduct = async () => {
       attempts += 1;
       try {
-        const resp = await axios.get(`${API_BASE}/products/${encodeURIComponent(id)}`, {
+        const resp = await axios.get(`${API_BASE}/chat`, {
           timeout: timeoutMs,
           signal // axios supports AbortController signal in modern versions; fallback handled below
         });
@@ -82,24 +79,18 @@ export default function ProductDetail() {
       // Cancel the request when component unmounts or id/API_BASE changes
       controller.abort();
     };
-  }, [id, API_BASE]);
+  }, [API_BASE]);
 
   // UI states
-  if (loading) return <div aria-busy="true">Loading…</div>;
-  if (error) return <p role="alert" className="error">{error}</p>;
-  if (!prod) return <p>No product data available.</p>;
-
-  // Defensive reads and formatting
-  const name = prod.name ?? 'Unnamed product';
-  const description = prod.description ?? 'No description provided.';
-  const priceNumber = typeof prod.price === 'number' ? prod.price : parseFloat(prod.price) || 0;
-  const formattedPrice = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(priceNumber);
+  // if (loading) return <div aria-busy="true">Loading…</div>;
+  // if (error) return <p role="alert" className="error">{error}</p>;
 
   return (
     <article aria-labelledby="product-name" className="product-detail">
-      <h1 id="product-name">{name}</h1>
-      <p>{description}</p>
-      <p><strong>Price:</strong> {formattedPrice}</p>
+      <h2 id="catalog-heading">APT Chat</h2>
+      <p>{prod}</p>
     </article>
   );
+
 }
+

@@ -1,4 +1,4 @@
 # !product-catalog-middleware/.env
-package-lock.json
+# package-lock.json
 Dockerfile
-package.json
+# package.json

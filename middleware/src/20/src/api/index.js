@@ -1,31 +1,53 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-const fastifyFactory = require('fastify');
-const fastifyCors = require('@fastify/cors');
-const { Pool } = require('pg');
+import { existsSync, readFileSync } from 'fs';
+import { resolve } from 'path';
+import fastifyFactory from 'fastify';
+import fastifyCors from '@fastify/cors';
+import { Pool } from 'pg';
+
+
+const httpPort = parseInt(process.env.LISTEN_PORT_HTTP || process.argv[2] || 80)
+const httpListenHost = '0.0.0.0'
+const httpsPort = parseInt(process.env.LISTEN_PORT_HTTPS || process.argv[2] || 443)
+const httpsListenHost = '0.0.0.0'
+const listenPort = httpsPort
+const listenHost = httpsListenHost
 
 // TLS certificate paths
-const certPath = path.resolve(`${process.env.CERTIFICATE_PATH}`);
-const keyPath = path.resolve(`${process.env.CERTIFICATE_KEY_PATH}`);
+const certPath = resolve(`${process.env.CERTIFICATE_PATH}`);
+const keyPath = resolve(`${process.env.CERTIFICATE_KEY_PATH}`);
 
-// Shared logger config
+// THIS FIXES PINO'S UNDEFINED LOG LEVEL ERROR
+const validLogLevels = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'];
+const resolvedLogLevel = validLogLevels.includes(process.env.LOG_LEVEL)
+  ? process.env.LOG_LEVEL
+  : 'debug';
+
+// // Shared logger config
 const loggerConfig = {
-  level: `${process.env.LOGLEVEL}`,
+level: resolvedLogLevel,
   transport: {
     target: 'pino-pretty',
-    options: { translateTime: 'SYS:standard' }
+    options: { 
+      translateTime: 'SYS:standard',
+      ignore: 'pid,hostname' // optional: cleaner output
+    }
   }
 };
 
 // Create HTTP and HTTPS Fastify instances
 const fastifyHttp = fastifyFactory({ logger: loggerConfig });
+// fastifyHttp.log.trace('Sample trace message: HTTPS server initialized');
+// fastifyHttp.log.debug('Sample debug message: HTTPS server initialized');
+// fastifyHttp.log.warn('Sample warn message: HTTPS server initialized');
+// fastifyHttp.log.info('Sample info message: HTTPS server initialized');
+// fastifyHttp.log.error('Sample error message: HTTPS server initialized');
 const fastifyHttps = fastifyFactory({
   logger: loggerConfig,
   https: {
-    key: fs.existsSync(keyPath) ? fs.readFileSync(keyPath) : undefined,
-    cert: fs.existsSync(certPath) ? fs.readFileSync(certPath) : undefined
+    key: existsSync(keyPath) ? readFileSync(keyPath) : undefined,
+    cert: existsSync(certPath) ? readFileSync(certPath) : undefined
   }
 });
 fastifyHttps.log.trace('Sample trace message: HTTPS server initialized');
@@ -171,11 +193,11 @@ registerRoutes(fastifyHttps);
 // Start both servers
 const start = async () => {
   try {
-    // await fastifyHttp.listen({ port: Number(process.env.API_LISTEN_PORT_HTTP || 80), host: '0.0.0.0' });
-    // fastifyHttp.log.info(`HTTP middleware listening on port ${process.env.API_LISTEN_PORT_HTTP}`);
+    // await fastifyHttp.listen({ port: listenPort, host: listenHost });
+    // fastifyHttp.log.info(`HTTP middleware listening on port ${listenPort}`);
 
-    await fastifyHttps.listen({ port: Number(process.env.API_LISTEN_PORT_HTTPS || 443), host: '0.0.0.0' });
-    fastifyHttps.log.info(`HTTPS middleware listening on port ${process.env.API_LISTEN_PORT_HTTPS}`);
+    await fastifyHttps.listen({ port: listenPort, host: listenHost });
+    fastifyHttps.log.info(`HTTPS middleware listening on port ${listenPort}`);
   } catch (err) {
     console.error('Startup error:', err);
     process.exit(1);

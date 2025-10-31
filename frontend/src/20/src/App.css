@@ -1,9 +1,9 @@
 .App {
-  text-align: center;
+  text-align: left;
 }
 
 .App-logo {
-  height: 40vmin;
+  height: 20vmin;
   pointer-events: none;
 }
 
@@ -39,4 +39,5 @@
 
 ._debug-green {
   color: green;
+  font-size: smaller;
 }
