@@ -5,7 +5,8 @@ GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 KUBECTL_TIMEOUT=15s
 alias stamp="echo \$(date +%Y%m%d%H%M%S)"
 
-export BACKEND_APPNAME=product-catalog-backend
+export APPNAME=algorithmic-hue
+export BACKEND_APPNAME=${APPNAME}-backend
 export BACKEND_DATABASE_SERVICE=db-service
 export BACKEND_SELECTOR=postgres
 export BACKEND_DEPLOYMENT=postgres
@@ -16,7 +17,7 @@ export POSTGRES_DB=catalog
 export POSTGRES_PASSWORD=catalog
 export POSTGRE_SQL_RUNPORT=5432
 
-export FRONTEND_APPNAME=product-catalog-frontend
+export FRONTEND_APPNAME=${APPNAME}-frontend
 export FRONTEND_WEBSERVICE=web-service
 export FRONTEND_WEBSERVICE_INGRESS=$FRONTEND_WEBSERVICE-ingress
 export FRONTEND_SELECTOR=web
@@ -25,24 +26,22 @@ export FRONTEND__WEB_DEPLOYMENT=web
 export FRONTEND_POD_TEMPLATE=web
 export WEB_HTTP_RUNPORT_PUBLIC_FRONTEND=80
 export WEB_HTTPS_RUNPORT_PUBLIC_FRONTEND=443
-export FRONTEND_WEBSERVICE_INGRESS_HOSTNAME=product-catalog.progress.me
+export FRONTEND_WEBSERVICE_INGRESS_HOSTNAME=${APPNAME}.progress.me
 export WEBSERVICE_INGRESS_PORT_K8S_FRONTEND=$WEB_HTTP_RUNPORT_PUBLIC_FRONTEND
-# export VITE_API_URL=https://localhost:8443
 
-export MIDDLEWARE_APPNAME=product-catalog-middleware
+export MIDDLEWARE_APPNAME=${APPNAME}-middleware
 export MIDDLEWARE_CHAT_SERVICE=chat-service
 export MIDDLEWARE_CHAT_SERVICE_INGRESS=$MIDDLEWARE_CHAT_SERVICE-ingress
 export MIDDLEWARE_CHAT_INGRESS_HOSTNAME=chat-ingress.progress.me
-# export MIDDLEWARE_API_SERVICE_LOCALCLUSTER_NAME=https://api-service.default.svc.cluster.local
 export MIDDLEWARE_CHAT_SELECTOR=chat
 export MIDDLEWARE_chat_SELECTOR=chat
 export MIDDLEWARE_CHAT_DEPLOYMENT=chat
 export MIDDLEWARE_CHAT_POD_TEMPLATE=chat
 #
-export DOMAIN_HOSTNAME=product-catalog.progress.me
+export DOMAIN_HOSTNAME=${APPNAME}.progress.me
 
 export MIDDLEWARE_API_SERVICE=api-service
-export MIDDLEWARE_API_INGRESS_HOSTNAME=product-catalog.progress.me
+export MIDDLEWARE_API_INGRESS_HOSTNAME=${APPNAME}.progress.me
 export MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME=api-ingress.progress.me
 export MIDDLEWARE_API_SERVICE_INGRESS=$MIDDLEWARE_API_SERVICE-ingress
 export MIDDLEWARE_API_SELECTOR=api
@@ -82,8 +81,8 @@ export MIDDLEWARE_TLS_MOUNT=certs
 export MIDDLEWARE_TLS_MOUNT_PATH=/$MIDDLEWARE_TLS_MOUNT
 export MIDDLEWARE_TLS_CERT_VOLUME=tls-certs
 export MIDDLEWARE_LOGLEVEL=debug
-export CORS_ORIGIN_HTTPS=https://product-catalog.progress.me
-export CORS_ORIGIN_HTTP=http://product-catalog.progress.me
+export CORS_ORIGIN_HTTPS=https://${APPNAME}.progress.me
+export CORS_ORIGIN_HTTP=http://${APPNAME}.progress.me
 export NODE_TESTING_PORT=3333
 export CERTIFICATE_BUILD_DIRECTORY=cert
 
@@ -860,24 +859,6 @@ fi
 )
 }
 
-function node_refresh {
-# (
-# warn node refresh disabled; return 1
-node_version=${1:-20}
-export NVM_HOME=$(pwd)/.nvm
-export NVM_DIR=$(pwd)/.nvm
-banner3 node_version $node_version, component: $(basename $(dirname $(pwd)))/$(basename $(pwd))
-
-if [ ! -d $NVM_DIR ];then
-    install_nvm;
-fi
-if [ -d $NVM_DIR ];then
-    installnode;
-    nodever $node_version;
-fi
-# )
-}
-
 function frontend_update {
 ##########  RUN COMMAND  ##########
 # frontend_update
@@ -1610,41 +1591,7 @@ kubectl apply -f ./opt/pgadmin/k8s/pgamin.yaml -n $GLOBAL_NAMESPACE\\\\\n\
 )
 }
 
-function install_nvm() {
-  NVM_DIR="${NVM_DIR:-$(pwd)/.nvm}"
-  echo && blue "------------------ INSTALL NVM ------------------" && echo
-  git clone https://github.com/nvm-sh/nvm.git $NVM_DIR
-  echo installing nvm @ $NVM_DIR
-  # echo $([ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && [ -s $NVM_DIR/bash_completion ] && . $NVM_DIR/bash_completion && nvm install --lts)
-  echo $([ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && [ -s $NVM_DIR/bash_completion ] && . $NVM_DIR/bash_completion && nvm install-latest-npm)
-}
-
-function installnode() {
-  if [ ! -d $NVM_DIR ];then echo no NVM_DIR: $NVM_DIR && return 1;fi
-  echo && blue "------------------ NODE VIA NVM ------------------" && echo
-  green "Updating nvm:" && echo $(pushd $NVM_DIR && git pull && popd || popd)
-  if  ! command -v nvm >/dev/null; then
-  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
-  [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-  fi
-  nodever
-}
-
-function nodever() {
-  if [ ! -z "$1" ]; then
-    nvm install ${1} >/dev/null 2>&1 && nvm use ${_} > /dev/null 2>&1\
-      && nvm alias default ${_} > /dev/null 2>&1; nodever; else
-    yellow "INFORMATIONAL: Use nodever to install or switch node versions:" && echo -e "\tusage: nodever [ver]"
-    blue "node: $(node -v)"
-    blue "npm: $(npm -v)"
-    blue "nvm: $(nvm -v)"
-  fi
-}
-
-function getyarn() {
-  echo && blue "------------------ YARN - NEEDS NVM ------------------" && echo
-  if ! command -v yarn >/dev/null 2>&1; then grey "Getting yarn: " && npm install --global yarn >/dev/null; fi
-}
+. ./npm-config-include.sh
 
 function green { println '\e[32m%s\e[0m' "$*"; }
 function yellow { println '\e[33m%s\e[0m' "$*"; }
@@ -1713,8 +1660,8 @@ function generate_selfsignedcert_cnf_new {
 set -u
 blue "------------------ GENERATING SELF-SIGNED CERTIFICATE ------------------"
 dir=$1
-CMD="openssl req -x509 -newkey rsa:4096 -nodes -keyout ./$dir/product-catalog-selfsigned-key-$STAMP.pem \
-    -out ./$dir/product-catalog-selfsigned-cert-$STAMP.pem -days 365\
+CMD="openssl req -x509 -newkey rsa:4096 -nodes -keyout ./$dir/${APPNAME}-selfsigned-key-$STAMP.pem \
+    -out ./$dir/${APPNAME}-selfsigned-cert-$STAMP.pem -days 365\
     -config ./$CERTIFICATE_BUILD_DIRECTORY/openssl.cnf"
 echo $CMD
 mkdir -p ./$dir\
