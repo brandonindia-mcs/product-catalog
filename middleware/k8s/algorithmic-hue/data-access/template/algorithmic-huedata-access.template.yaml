@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-access
+  namespace: algorithmic-hue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-access
+  template:
+    metadata:
+      labels:
+        app: data-access
+    spec:
+      containers:
+        - name: data-access
+          image: $HUB/$REPOSITORY:$TAG
+          ports:
+            - containerPort: 3001
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "128Mi"
+            limits:
+              cpu: "400m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: data-access-service
+  namespace: algorithmic-hue
+spec:
+  selector:
+    app: data-access
+  ports:
+    - port: 3001
+      targetPort: 3001
