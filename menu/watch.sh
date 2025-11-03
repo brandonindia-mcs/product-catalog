@@ -1,27 +1,33 @@
 
 function watch_ingress {
 (namespace=${1:-default} &&
-  info_ingress &&
+  info_ingress $namespace &&
   kubectl get ingress --namespace $namespace -o wide
 )
 }
 function watch_pod {
 (namespace=${1:-default} &&
-  info_pod &&
+  info_pod $namespace &&
   kubectl get pod --namespace $namespace -o wide|awk '{print $1" "$2" "$3" "$4" "$5" "$6" "$7}'|column -t
 )
 }
 function watch_service {
 (namespace=${1:-default} &&
-  info_service &&
+  info_service $namespace &&
   kubectl get svc --namespace $namespace -o wide
+)
+}
+function watch_ingress_nginx {
+(namespace=${1:-ingress-nginx} &&
+  echo -e "\n$(blue Service in $namespace)"
+  kubectl get svc -n $namespace
 )
 }
 function watch_deployment {
 (namespace=${1:-default} &&
- info_deployment &&
+ info_deployment $namespace &&
   (echo -e "NAME\tREADY\tAGE\tCONTAINERS\tSELECTOR"
-  kubectl get deployments -o json | jq -r '
+  kubectl get deployments --namespace $namespace -o json | jq -r '
     .items[] |
     . as $d |
     ($d.metadata.creationTimestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime) as $created |
@@ -32,38 +38,43 @@ function watch_deployment {
         else "\($age_sec / 3600 | floor)h"
       end) as $age |
     "\($d.kind).\($d.apiVersion)/\($d.metadata.name)\t\($d.status.readyReplicas)/\($d.spec.replicas)\t\($age)\t\($d.spec.template.spec.containers[].name)\t\($d.spec.selector.matchLabels | to_entries[] | "\(.key)=\(.value)")"
-  '
+  ' 
 ) | column -t)
 }
-
+function banner_alt { echo; echo -n "$(tput setaf 0;tput setab 6)$(date "+%Y-%m-%d %H:%M:%S") BANNER ${FUNCNAME[2]}::${FUNCNAME[1]} ${*}$(tput sgr 0)"; }
 function watch_product_catalog {
 (namespace=${1:-default} &&
- while true; do banner_alt && watch_pod && watch_service && watch_deployment && watch_ingress
+ while true; do banner_alt\
+                && watch_pod $namespace\
+                && watch_service $namespace\
+                && watch_deployment $namespace\
+                && watch_ingress $namespace\
+                && watch_ingress_nginx
  sleep 7
  done
 )
 }
 function info_ingress {
 (namespace=${1:-default} &&
-  echo && blue "Ingress on $namespace namespace"
+  echo -e "\n$(blue Ingress in $namespace)"
 )
 }
 
 function info_pod {
 (namespace=${1:-default} &&
-  echo && blue "Pods on $namespace namespace"
+  echo -e "\n$(blue Pods in $namespace)"
 )
 }
 
 function info_service {
 (namespace=${1:-default} &&
-  echo && blue "Service on $namespace namespace"
+  echo -e "\n$(blue Service in $namespace)"
 )
 }
 
 function info_deployment {
 (namespace=${1:-default} &&
-   echo && blue "Deployment on blue $namespace namespace"
+  echo -e "\n$(blue Deployments in $namespace)"
 )
 }
 
