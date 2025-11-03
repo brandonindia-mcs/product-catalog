@@ -14,7 +14,11 @@ export function sendChatMessage(message: string): Promise<ChatResponse> {
 }
 
 export async function getWelcome(): Promise<string> {
-  const res = await fetch('/api/welcome')
-  const text = await res.text() // ← parse as plain text
-  return text
+  const res = await fetch('/api/welcome');
+  if (!res.ok) {
+    throw new Error(`HTTP error! status: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.message; // Extract the message field from JSON
 }

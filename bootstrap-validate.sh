@@ -1,7 +1,7 @@
 # (
 # function blue { println '\e[34m%s\e[m' "$*"; }
 
-. ./watch.sh
+if [ -r ./watch ];then . ./watch.sh;else . ./menu/watch.sh;fi
 
 function print_validate_api {
 banner1 printit
@@ -271,6 +271,7 @@ function escape {
 
   function get_pod { kubectl get pod -n $NS -l app=$1 -o jsonpath='{.items[0].metadata.name}' ; }
   function getpod { NS=$NS get_pod $1 ; }
+  function getlabels { kubectl get deployment -n $NS $1 -o jsonpath="{.spec.selector.matchLabels}" ; }
   function get_last_pod { kubectl get pods -n $NS -l app=$1 --sort-by=.metadata.creationTimestamp -o jsonpath="{.items[-1].metadata.name}" ; }
   function get_last_pod_ip { kubectl get pod -n $NS $(get_last_pod $1) -o jsonpath='{.status.podIP}' ; }
   # function get_last_nginx_ip { $(NS=ingress-nginx get_last_pod ingress-nginx-controller)   --sort-by=.metadata.creationTimestamp   -o jsonpath='{.items[-1].status.podIP}' ; }
