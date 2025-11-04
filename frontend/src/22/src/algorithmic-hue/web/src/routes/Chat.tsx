@@ -16,6 +16,7 @@ export default function Chat() {
   const [history, setHistory] = useState<ChatEntry[]>([])
   const [status, setStatus] = useState<string>('Checking backend...')
   const [welcome, setWelcome] = useState<string>('Getting Welcoming...')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     getHealth()
@@ -31,12 +32,15 @@ export default function Chat() {
 
   const onSend = async () => {
     if (!prompt.trim()) return
+    setLoading(true)
     try {
       const res = await sendChatPrompt(prompt)
       setHistory(prev => [...prev, { prompt, reply: res.message }])
       setPrompt('')
     } catch (err: any) {
       setHistory(prev => [...prev, { prompt, reply: `Error: ${err.message}` }])
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -50,6 +54,11 @@ export default function Chat() {
           <p>{welcome}</p>
         </div>
 
+        {loading && (
+          <Typography variant="body2" color="text.secondary">
+            Waiting for response...
+          </Typography>
+        )}
         {/* Display Area */}
         <div className="space-y-2">
           {history.map((entry, index) => (
@@ -70,7 +79,7 @@ export default function Chat() {
           fullWidth
         />
         <div className="flex gap-2">
-          <Button variant="contained" onClick={onSend}>Send</Button>
+          <Button variant="contained" onClick={onSend} disabled={loading}>Send</Button>
           <Button variant="outlined" onClick={() => setPrompt('')}>Clear</Button>
         </div>
       </CardContent>

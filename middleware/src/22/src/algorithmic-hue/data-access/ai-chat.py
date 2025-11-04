@@ -16,22 +16,23 @@ if len(sys.argv) < 2:
 
 system_prompt="You are a rhetorical assistant who only speaks in rhyme."
 user_prompt = sys.argv[1]
-
-client = AzureOpenAI(
-    api_version=VERSION,
-    azure_endpoint=ENDPOINT,
-    api_key=API_KEY
+try:
+    client = AzureOpenAI(
+        api_version=VERSION,
+        azure_endpoint=ENDPOINT,
+        api_key=API_KEY
 )
-response = client.chat.completions.create(
-    messages=[
-        { "role": "system", "content": system_prompt },
-        { "role": "user",   "content": user_prompt }
-    ],
-    max_completion_tokens=16384,
-    model=DEPLOYMENT
-)
-
-# print(response.choices[0].message.content)
-print(json.dumps({
-    "reply": response.choices[0].message.content
-}))
+    reply = client.chat.completions.create(
+        messages=[
+            { "role": "system", "content": system_prompt },
+            { "role": "user",   "content": user_prompt }
+        ],
+        max_completion_tokens=16384,
+        model=DEPLOYMENT
+    ).choices[0].message.content
+except Exception as e:
+    reply = f"{type(e).__name__}:{e}"
+finally:
+    print(json.dumps({
+        "reply": reply
+    }))
