@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import fastifyFactory from 'fastify';
 import fastifyCors from '@fastify/cors';
+import { log } from 'console';
 
 // Port and host configuration
 const httpPort = parseInt(process.env.LISTEN_PORT_HTTP || process.argv[2] || 3001);
@@ -85,6 +86,12 @@ const registerRoutes = (app) => {
   app.get('/api/welcome', async (req, reply) => {
     try {
       req.log.info({ tlsEnabled: !!req.server?.setSecureContext }, 'TLS capability check');
+      req.log.info({
+        method:   req.method,
+        url:      req.url,
+        headers:  req.headers,
+        body:     req.body
+      }, 'Full request context');
       reply.send({
         status: 'ok',
         env: process.env.NODE_ENV || 'default',
@@ -131,22 +138,35 @@ const registerRoutes = (app) => {
   // })
   app.post('/api/chat', async (req, reply) => {
     try {
-      req.log.info({ tlsEnabled: !!req.server?.setSecureContext }, 'TLS capability check');
+      req.log.info({
+        method:   req.method,
+        url:      req.url,
+        headers:  req.headers,
+        body:     req.body
+      }, 'Incoming /api/chat request');
       const { prompt } = req.body || {};
-      reply.send({
-        status: 'ok',
-        env: process.env.NODE_ENV || 'default',
+      req.log.info({
+        status:     'ok',
+        env:        process.env.NODE_ENV || 'default',
         tlsEnabled: !!req.server?.setSecureContext,
-        message: `You sent ${prompt}`
+        message:    `You sent ${prompt}`
+      })
+      reply.send({
+        status:     'ok',
+        env:        process.env.NODE_ENV || 'default',
+        tlsEnabled: !!req.server?.setSecureContext,
+        message:    `You sent ${prompt}`
       });
     } catch (err) {
-      app.log.error(err);
+      req.log.error(err, 'Error handling /api/chat');
       reply.code(500).send({
-        timestamp: new Date().toISOString(),
-        status: 'error',
-        error: err.message,
-        message: 'Failed to generate debug info'
+        timestamp:  new Date().toISOString(),
+        status:     'error',
+        error:      err.message,
+        message:    'Failed to generate debug info'
       });
+    } finally {
+      // Intentionally left blank for future cleanup logic
     }
   });
 
@@ -167,6 +187,10 @@ const registerRoutes = (app) => {
         message: 'Failed to generate debug info'
       });
     }
+  });
+  app.post('/debugit', async (req, reply) => {
+    req.log.info({ debugPayload: req.body }, 'Debug route hit');
+    reply.send({ received: req.body });
   });
 };
 

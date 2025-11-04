@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react'
-import Card from '@mui/material/Card'                // MUI component
-import CardContent from '@mui/material/CardContent'  // MUI component
-import Typography from '@mui/material/Typography'    // MUI component
-import TextField from '@mui/material/TextField'      // MUI component
-import Button from '@mui/material/Button'            // MUI component
-import { sendChatMessage, getHealth, getWelcome } from '../api/chat'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import Typography from '@mui/material/Typography'
+import TextField from '@mui/material/TextField'
+import Button from '@mui/material/Button'
+import { sendChatPrompt, getHealth, getWelcome } from '../api/chat'
+
+type ChatEntry = {
+  prompt: string
+  reply: string
+}
 
 export default function Chat() {
-  const [message, setMessage] = useState('')
-  const [reply, setReply] = useState<string | null>(null)
+  const [prompt, setPrompt] = useState('')
+  const [history, setHistory] = useState<ChatEntry[]>([])
   const [status, setStatus] = useState<string>('Checking backend...')
   const [welcome, setWelcome] = useState<string>('Getting Welcoming...')
 
   useEffect(() => {
-    // Health check: should return HTTP 200 from backend (no TLS required in dev)
     getHealth()
       .then(() => setStatus('Backend: OK'))
       .catch(err => setStatus(`Backend error: ${err.message}`))
@@ -26,40 +30,49 @@ export default function Chat() {
   }, [])
 
   const onSend = async () => {
-    setReply(null)
+    if (!prompt.trim()) return
     try {
-      const res = await sendChatMessage(message)
-      setReply(res.reply)
+      const res = await sendChatPrompt(prompt)
+      setHistory(prev => [...prev, { prompt, reply: res.message }])
+      setPrompt('')
     } catch (err: any) {
-      setReply(`Error: ${err.message}`)
+      setHistory(prev => [...prev, { prompt, reply: `Error: ${err.message}` }])
     }
   }
 
   return (
-    // MUI Card + Tailwind utilities for spacing and layout
     <Card className="mt-6 shadow-md">
-      <CardContent className="space-y-4">{/* Tailwind spacing */}
+      <CardContent className="space-y-4">
         <Typography variant="h5">Chat</Typography>
         <Typography variant="body2" color="text.secondary">{status}</Typography>
         <div className="p-4">
-        <h1 className="text-xl font-bold">Welcome</h1>
-        <p>{welcome}</p>
+          <h1 className="text-xl font-bold">Welcome</h1>
+          <p>{welcome}</p>
         </div>
+
+        {/* Display Area */}
+        <div className="space-y-2">
+          {history.map((entry, index) => (
+            <div key={index} className="border p-2 rounded bg-gray-50">
+              <Typography variant="subtitle2" className="text-blue-700">Prompt:</Typography>
+              <Typography variant="body2">{entry.prompt}</Typography>
+              <Typography variant="subtitle2" className="text-green-700 mt-2">Reply:</Typography>
+              <Typography variant="body2">{entry.reply}</Typography>
+            </div>
+          ))}
+        </div>
+
+        {/* Input Area */}
         <TextField
-          label="Message"
-          value={message}
-          onChange={e => setMessage(e.target.value)}
+          label="Prompt"
+          value={prompt}
+          onChange={e => setPrompt(e.target.value)}
           fullWidth
         />
-        <div className="flex gap-2"> {/* Tailwind utilities */}
+        <div className="flex gap-2">
           <Button variant="contained" onClick={onSend}>Send</Button>
-          <Button variant="outlined" onClick={() => setMessage('')}>Clear</Button>
+          <Button variant="outlined" onClick={() => setPrompt('')}>Clear</Button>
         </div>
-        {reply && (
-          <Typography variant="body1" className="text-gray-800">
-            {reply}
-          </Typography>
-        )}
       </CardContent>
     </Card>
   )

@@ -3,14 +3,19 @@
 
 import { apiClient } from './client'
 
-export type ChatResponse = { reply: string }
+export type ChatResponse = {
+  message: string
+  status: string
+  env: string
+  tlsEnabled: boolean
+}
 
 export function getHealth(): Promise<{ status: string }> {
   return apiClient.get('/health')
 }
 
-export function sendChatMessage(message: string): Promise<ChatResponse> {
-  return apiClient.post('/chat', { message })
+export function sendChatPrompt(prompt: string): Promise<ChatResponse> {
+  return apiClient.post('/chat', { prompt })
 }
 
 export async function getWelcome(): Promise<string> {
