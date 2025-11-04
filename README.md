@@ -1,4 +1,7 @@
 ## React 18 frontend (node 22) + vite
+<img width="860" height="953" alt="Screenshot 2025-11-04 at 5 24 58 PM" src="https://github.com/user-attachments/assets/4892f082-a259-4ec3-b117-992b48942dd8" />
+
+<img width="860" height="953" alt="Screenshot 2025-11-04 at 5 25 18 PM" src="https://github.com/user-attachments/assets/ba014ce3-6cd1-45e4-9985-56a4040f2b5f" />
 
 ### Backend LLM interrogtion (chat)
 <img width="1898" height="1672" alt="Screenshot 2025-11-04 at 8 47 24 AM" src="https://github.com/user-attachments/assets/c75b0086-c083-4f0c-b683-9acf5fbb38f1" />
