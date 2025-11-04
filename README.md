@@ -1,11 +1,11 @@
 ## React 18 frontend (node 22) + vite
-<img width="860" height="953" alt="Screenshot 2025-11-04 at 5 24 58 PM" src="https://github.com/user-attachments/assets/4892f082-a259-4ec3-b117-992b48942dd8" />
-
-<img width="860" height="953" alt="Screenshot 2025-11-04 at 5 25 18 PM" src="https://github.com/user-attachments/assets/ba014ce3-6cd1-45e4-9985-56a4040f2b5f" />
+<img width="1482" height="987" alt="Screenshot 2025-11-04 at 5 32 34 PM" src="https://github.com/user-attachments/assets/f3cbdd71-fc28-48ac-822a-4c0a55990f59" />
+<img width="1463" height="1203" alt="Screenshot 2025-11-04 at 5 28 18 PM" src="https://github.com/user-attachments/assets/be642a1a-7b41-496d-8d2d-da12b4201aea" />
 
 ### Backend LLM interrogtion (chat)
+This requires an explanation.  The prompt sent to Azure OpenAI was canned, the reply from the LLM was captured and displayed in realtime.
+In the 12 hours post this screenshot, the funding for my MSDN License evaporated.  No more freebies for 'ol brando -- WOAH!
 <img width="1874" height="1427" alt="Screenshot 2025-11-04 at 5 27 18 PM" src="https://github.com/user-attachments/assets/d2f99c4c-d0b2-4d19-a7c2-727dc02f09c8" />
-
 
 ## Architecture
 This is a 3-tiered web application: frontend, middleware, & backend, all served under Kubernetes.  It comes with a menu driver that cleanly performs the labeled action.
