@@ -4,7 +4,7 @@
 <img width="860" height="953" alt="Screenshot 2025-11-04 at 5 25 18 PM" src="https://github.com/user-attachments/assets/ba014ce3-6cd1-45e4-9985-56a4040f2b5f" />
 
 ### Backend LLM interrogtion (chat)
-<img width="1898" height="1672" alt="Screenshot 2025-11-04 at 8 47 24 AM" src="https://github.com/user-attachments/assets/c75b0086-c083-4f0c-b683-9acf5fbb38f1" />
+<img width="1874" height="1427" alt="Screenshot 2025-11-04 at 5 27 18 PM" src="https://github.com/user-attachments/assets/d2f99c4c-d0b2-4d19-a7c2-727dc02f09c8" />
 
 
 ## Architecture
