@@ -4,6 +4,7 @@ import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
 import { sendChatPrompt, getHealth, getWelcome } from '../api/chat'
 
 type ChatEntry = {
@@ -55,9 +56,10 @@ export default function Chat() {
         </div>
 
         {loading && (
-          <Typography variant="body2" color="text.secondary">
-            Waiting for response...
-          </Typography>
+          <div className="flex items-center gap-2 text-gray-600">
+            <CircularProgress size={20} />
+            <Typography variant="body2">Waiting for response...</Typography>
+          </div>
         )}
         {/* Display Area */}
         <div className="space-y-2">
