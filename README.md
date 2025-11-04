@@ -4,7 +4,8 @@
 
 ### Backend LLM interrogtion (chat)
 This requires an explanation.  The prompt sent to Azure OpenAI was canned, the reply from the LLM was captured and displayed in realtime.
-In the 12 hours post this screenshot, the funding for my MSDN License evaporated.  No more freebies for 'ol brando -- WOAH!
+In the 12 hours post this screenshot, my Azure credits expired so access to the LLM backend is revoked.
+
 <img width="1874" height="1427" alt="Screenshot 2025-11-04 at 5 27 18 PM" src="https://github.com/user-attachments/assets/d2f99c4c-d0b2-4d19-a7c2-727dc02f09c8" />
 
 ## Architecture
