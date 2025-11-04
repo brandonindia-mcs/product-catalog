@@ -1,3 +1,9 @@
+## React 18 frontend (node 22) + vite
+
+### Backend LLM interrogtion (chat)
+<img width="1898" height="1672" alt="Screenshot 2025-11-04 at 8 47 24 AM" src="https://github.com/user-attachments/assets/c75b0086-c083-4f0c-b683-9acf5fbb38f1" />
+
+
 ## Architecture
 This is a 3-tiered web application: frontend, middleware, & backend, all served under Kubernetes.  It comes with a menu driver that cleanly performs the labeled action.
 1. The frontend is a React web application.
