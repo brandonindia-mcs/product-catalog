@@ -5,6 +5,11 @@ import { resolve } from 'path';
 import fastifyFactory from 'fastify';
 import fastifyCors from '@fastify/cors';
 import { log } from 'console';
+import { execFile } from 'child_process'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { promisify } from 'util';
+import { execFile as execFileCallback } from 'child_process';
 
 // Port and host configuration
 const httpPort = parseInt(process.env.LISTEN_PORT_HTTP || process.argv[2] || 3001);
@@ -87,10 +92,10 @@ const registerRoutes = (app) => {
     try {
       req.log.info({ tlsEnabled: !!req.server?.setSecureContext }, 'TLS capability check');
       req.log.info({
-        method:   req.method,
-        url:      req.url,
-        headers:  req.headers,
-        body:     req.body
+        method: req.method,
+        url: req.url,
+        headers: req.headers,
+        body: req.body
       }, 'Full request context');
       reply.send({
         status: 'ok',
@@ -133,17 +138,15 @@ const registerRoutes = (app) => {
     }
   });
 
-  // server.post('/', async (request) => {
-  //   return { reply: message ? `Echo: ${message}` : 'Please provide a message.' }
-  // })
-  app.post('/api/chat', async (req, reply) => {
+
+  app.post('/api/chatstatic', async (req, reply) => {
     try {
       req.log.info({
         method:   req.method,
         url:      req.url,
         headers:  req.headers,
         body:     req.body
-      }, 'Incoming /api/chat request');
+      }, 'Incoming /api/staticchat request');
       const { prompt } = req.body || {};
       req.log.info({
         status:     'ok',
@@ -158,7 +161,7 @@ const registerRoutes = (app) => {
         message:    `You sent ${prompt}`
       });
     } catch (err) {
-      req.log.error(err, 'Error handling /api/chat');
+      req.log.error(err, 'Error handling /api/staticchat');
       reply.code(500).send({
         timestamp:  new Date().toISOString(),
         status:     'error',
@@ -169,6 +172,46 @@ const registerRoutes = (app) => {
       // Intentionally left blank for future cleanup logic
     }
   });
+
+
+  const execFileAsync = promisify(execFileCallback);
+  app.post('/api/chat', async (req, reply) => {
+    const { prompt } = req.body || {};
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const scriptPath = path.join(__dirname, 'ai-chat.py');
+
+    try {
+      const { stdout } = await execFileAsync('python3', [scriptPath, prompt]);
+
+      if (!stdout || stdout.trim() === '') {
+        req.log.error('Python returned empty output');
+        return reply.code(500).send({
+          status: 'error',
+          message: 'Python returned no data'
+        });
+      }
+
+      const parsed = JSON.parse(stdout);
+      req.log.info({ prompt, reply: parsed.reply }, 'AI response received');
+
+      return reply.send({
+        status: 'ok',
+        env: process.env.NODE_ENV || 'default',
+        tlsEnabled: !!req.server?.setSecureContext,
+        message: parsed.reply
+      });
+    } catch (err) {
+      req.log.error(err);
+      return reply.code(500).send({
+        status: 'error',
+        message: 'Python execution failed or output was invalid',
+        error: err.message
+      });
+    }
+  });
+
+
 
   app.get('/debug', async (req, reply) => {
     try {
