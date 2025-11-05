@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $DEPLOYMENT
+  namespace: $NAMESPACE
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: $SELECTOR
+  template:
+    metadata:
+      labels:
+        app: $SELECTOR
+    spec:
+      containers:
+        - name: $CONTAINER
+          image: $HUB/$REPOSITORY:$TAG
+          ports:
+            - containerPort: $RUNPORT
+          resources:
+            requests:
+              cpu: "250m"       # 0.25 CPU core reserved
+              memory: "256Mi"   # 256 MB reserved
+            limits:
+              cpu: "500m"       # max 0.5 CPU core
+              memory: "512Mi"   # max 512 MB
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: $SERVICE
+  namespace: $NAMESPACE
+spec:
+  selector:
+    app: $SELECTOR
+  ports:
+    - port: $RUNPORT
+      targetPort: $RUNPORT

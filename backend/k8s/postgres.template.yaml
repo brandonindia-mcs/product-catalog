@@ -7,13 +7,13 @@ spec:
   ports:
     - port: $RUNPORT_POSTGRE
   selector:
-    app: postgres
+    app: $SELECTOR
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: $NAMESPACE
-  name: postgres
+  name: $DEPLOYMENT
 spec:
   replicas: 1
   # strategy:
@@ -23,14 +23,14 @@ spec:
   #     maxSurge: 1         # Add at most one extra pod during update
   selector:
     matchLabels:
-      app: postgres
+      app: $SELECTOR
   template:
     metadata:
       labels:
-        app: postgres
+        app: $POD_TEMPLATE
     spec:
       containers:
-        - name: postgres
+        - name: $CONTAINER
           image: $HUB/$REPOSITORY:$TAG
           env:
             - name: POSTGRES_DB

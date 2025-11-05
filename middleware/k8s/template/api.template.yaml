@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: $NAMESPACE
+  name: $SERVICE
+  labels:
+    app: $SELECTOR
+# spec:
+#   selector:
+#     app: $SELECTOR
+#   ports:
+#     - name: https
+#       port: $SSL_PORT
+#       targetPort: $SSL_TARGET_PORT
+spec:
+  type: NodePort
+  selector:
+    app: $SELECTOR
+  ports:
+    - name: http
+      port: $HTTP_PORT
+      targetPort: $HTTP_TARGET_PORT
+      nodePort: $HTTP_NODE_PORT
+    - name: https
+      port: $SSL_PORT
+      targetPort: $SSL_TARGET_PORT
+      nodePort: $SSL_NODE_PORT
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: $NAMESPACE
+  name: $DEPLOYMENT
+spec:
+  replicas: $REPLICAS
+  # strategy:
+  #   type: RollingUpdate
+  #   rollingUpdate:
+  #     maxUnavailable: 0   # Never take a pod down until a new one is ready
+  #     maxSurge: 1         # Add at most one extra pod during update
+  selector:
+    matchLabels:
+      app: $SELECTOR
+  template:
+    metadata:
+      labels:
+        app: $POD_TEMPLATE
+    spec:
+      volumes:
+        - name: $TLS_CERT_VOLUME
+          secret:
+            secretName: $SECRET
+        - name: tmp
+          emptyDir: {}
+      containers:
+        - name: $CONTAINER
+          image: $HUB/$REPOSITORY:$TAG
+          volumeMounts:
+            - name: $TLS_CERT_VOLUME
+              mountPath: $TLS_MOUNT_PATH
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+              readOnly: false
+          env:
+            - name: NODE_ENV
+              value: $NODE_ENV
+            - name: CORS_ORIGIN
+              value: $CORS_ORIGIN
+              #####***  ALLOW SKETCHY CERTS, NOT FOR PRODUCTION  ***####
+              #####***  AS-IN SELF-SIGNED OR OTHERWISE  ************####
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: "0"
+            - name: LISTEN_PORT_HTTP
+              value: "$HTTP_TARGET_PORT"
+            - name: LISTEN_PORT_HTTPS
+              value: "$SSL_TARGET_PORT"
+            - name: PG_HOST
+              value: $PG_HOST
+            - name: PG_DATABASE
+              value: $PG_DATABASE
+            - name: PG_USER
+              value: $PG_DATABASE
+            - name: PG_PASSWORD
+              value: $PG_DATABASE
+            - name: PG_PORT
+              value: "$PG_PORT"
+            - name: CERTIFICATE_PATH
+              value: $TLS_MOUNT_PATH/$CERTIFICATE
+            - name: CERTIFICATE_KEY_PATH
+              value: $TLS_MOUNT_PATH/$CERTIFICATE_KEY
+            # - name: DB_HOST
+            #   value: postgres
+            # - name: DB_PORT
+            #   value: "5432"
+            # - name: DB_USER
+            # - name: DB_NAME
+            #   value: product_catalog
+            # - name: DB_SSL
+            #   value: "false"
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: postgres-secret
+            #       key: username
+            # - name: DB_PASSWORD
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: postgres-secret
+            #       key: password
+            - name: LOG_LEVEL
+              value: $LOG_LEVEL
+          ports:
+            - containerPort: $CONTAINER_PORT
+            # - containerPort: $HTTP_NODE_PORT
+          # readinessProbe:
+          #   httpGet:
+          #     path: /health    # Adjust to your API's health endpoint
+          #     port: 3000
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 5
+          #   failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"

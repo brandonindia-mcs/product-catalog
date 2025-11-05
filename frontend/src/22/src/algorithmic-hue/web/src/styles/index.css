@@ -1,0 +1,9 @@
+/* Tailwind CSS: utility-first styling */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom app-level styles */
+html, body, #root {
+  height: 100%;
+}

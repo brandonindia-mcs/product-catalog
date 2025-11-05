@@ -14,33 +14,33 @@ spec:
     targetPort: $RUNPORT_HTTPS
   selector:
     app: $SELECTOR
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: $SERVICE-ingress
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-spec:
-  #### BIND TO NGINX FROM: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
-  ingressClassName: nginx
-  tls:
-    - hosts:
-        - $INGRESS
-      secretName: $TLS_SECRET
-  rules:
-    - host: $INGRESS
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: $SERVICE
-                port:
-                  # number: $SSL_PORT
-                  # number: $HTTP_PORT
-                  number: $INGRESS_PORT
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: $SERVICE-ingress
+#   annotations:
+#     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+# spec:
+#   #### BIND TO NGINX FROM: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
+#   ingressClassName: nginx
+#   tls:
+#     - hosts:
+#         - $INGRESS
+#       secretName: $TLS_SECRET
+#   rules:
+#     - host: $INGRESS
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: $SERVICE
+#                 port:
+#                   # number: $SSL_PORT
+#                   # number: $HTTP_PORT
+#                   number: $INGRESS_PORT
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -66,13 +66,13 @@ spec:
     metadata:
       labels:
         # TELLS KUBERNETES HOW TO IDENTIFY THIS POD
-        app: $PODTEMPLATE
+        app: $POD_TEMPLATE
     spec:
       containers:
         - name: $CONTAINER
           image: $HUB/$REPOSITORY:$TAG
           ports:
-            - containerPort: $RUNPORT_HTTP
+            # - containerPort: $RUNPORT_HTTP
             - containerPort: $RUNPORT_HTTPS
           ##### readinessProbe → Ensures traffic only goes to healthy pods
           # readinessProbe:

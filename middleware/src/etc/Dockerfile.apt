@@ -1,0 +1,8 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY product-catalog-middleware/apt/package*.json ./
+RUN npm ci
+COPY product-catalog-middleware/apt/ ./
+ARG EXPOSE_PORT_HTTP
+EXPOSE $EXPOSE_PORT_HTTP
+CMD ["node", "index.js"]

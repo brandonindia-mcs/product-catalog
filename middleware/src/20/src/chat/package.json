@@ -1,0 +1,21 @@
+{
+  "name": "chat-service",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "mocha",
+    "curl": "curl -s -X POST http://localhost:3001/chat  -H \"Content-Type: application/json\" -d '{\"message\":\"Hello from curl test\"}' | jq"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "axios": "^1.6.0",
+    "chai": "^4.3.7",
+    "esm": "^3.2.25",
+    "mocha": "^10.2.0"
+  }
+}

@@ -5,6 +5,8 @@ export default function _debug() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [apiUrl, setApiUrl] = useState('');
+  // const [chatUrl, setChatUrl] = useState('');
+  const [aptUrl, setAptUrl] = useState('');
 
   useEffect(() => {
     const url = import.meta.env.VITE_API_URL || '';
@@ -12,6 +14,24 @@ export default function _debug() {
       setError('VITE_API_URL is not defined');
     } else {
       setApiUrl(url);
+    }
+    setLoading(false);
+  }, []);
+  // useEffect(() => {
+  //   const url = import.meta.env.VITE_CHAT_URL || '';
+  //   if (!url) {
+  //     setError('VITE_CHAT_URL is not defined');
+  //   } else {
+  //     setChatUrl(url);
+  //   }
+  //   setLoading(false);
+  // }, []);
+  useEffect(() => {
+    const url = import.meta.env.VITE_APT_URL || '';
+    if (!url) {
+      setError('VITE_APT_URL is not defined');
+    } else {
+      setAptUrl(url);
     }
     setLoading(false);
   }, []);
@@ -24,6 +44,8 @@ export default function _debug() {
       <h2>Debugging Information</h2>
       <div>
         <p className="_debug-green">import.meta.env.VITE_API_URL: {apiUrl}</p>
+        {/* <p className="_debug-green">import.meta.env.VITE_CHAT_URL: {chatUrl}</p> */}
+        <p className="_debug-green">import.meta.env.VITE_APT_URL: {aptUrl}</p>
       </div>
     </section>
   );

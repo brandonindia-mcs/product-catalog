@@ -1,0 +1,28 @@
+{
+  "name": "product-catalog-middleware-apt",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "type":"module",
+  "description": "Fastify middleware for product catalog",
+  "author": "Brandon R. India",
+  "license": "MIT",
+  "keywords": ["fastify", "middleware", "postgres", "api"],
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "fastify": "^5.6.1",
+    "pg": "^8.16.3",
+    "nodemon": "^3.0.1",
+    "pino-pretty": "^9.4.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
