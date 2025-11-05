@@ -1,5 +1,6 @@
 ## React 18 frontend (node 22) + vite
-This requires an explanation.  In the 12 hours post this screenshot, my Azure credits expired so access to the LLM backend is revoked. 
+### Screenshot of /chat page for Gpt interrogation.
+In the 12 hours post screenshot, my Azure credits expired so access to the LLM backend is revoked. 
 
 <img width="1482" height="987" alt="Screenshot 2025-11-04 at 5 32 34 PM" src="https://github.com/user-attachments/assets/f3cbdd71-fc28-48ac-822a-4c0a55990f59" />
 <img width="1463" height="1203" alt="Screenshot 2025-11-04 at 5 28 18 PM" src="https://github.com/user-attachments/assets/be642a1a-7b41-496d-8d2d-da12b4201aea" />
