@@ -6,7 +6,7 @@ In the 12 hours post screenshot, my Azure credits expired so access to the LLM b
 <img width="1463" height="1203" alt="Screenshot 2025-11-04 at 5 28 18 PM" src="https://github.com/user-attachments/assets/be642a1a-7b41-496d-8d2d-da12b4201aea" />
 
 ### Backend LLM interrogtion (chat)
-Demonstrates prompt into a React chat component that triggeres a canned prompt to be sent to Azure OpenAI. The reply from the LLM backend was captured and displayed in realtime.
+Demonstrates a prompt entered into a React chat component, hitting I middleware node.js/Fastify server, using a python AI client to send a canned prompt, then chat completions to triggeres a canned prompt to be sent to Azure OpenAI. The reply from the LLM backend was captured and displayed in realtime.
 
 <img width="1874" height="1427" alt="Screenshot 2025-11-04 at 5 27 18 PM" src="https://github.com/user-attachments/assets/d2f99c4c-d0b2-4d19-a7c2-727dc02f09c8" />
 
