@@ -1,7 +1,8 @@
 ### Middleware LLM interrogtion (chat)
 Demonstrates a prompt entered into a React frontend component and a middleware node.js/Fastify server calling python script.  Python constructs an AI client, uses chat completions to send a canned prompt to Azure OpenAI, then sends what it gets from the LLM back to the server.
 
-The reply from the LLM was captured and displayed in realtime.
+The prompt sent to the LLM is canned.
+The reply from the LLM is captured and displayed in realtime.
 
 <img width="1874" height="1427" alt="Screenshot 2025-11-04 at 5 27 18 PM" src="https://github.com/user-attachments/assets/d2f99c4c-d0b2-4d19-a7c2-727dc02f09c8" />
 
