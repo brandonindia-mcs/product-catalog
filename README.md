@@ -1,16 +1,16 @@
-## React frontend + vite
-### Screenshot of Gpt Interrogation.
-In the 12 hours post screenshot, my Azure credits expired so access to the LLM backend is revoked. 
-
-<img width="1482" height="987" alt="Screenshot 2025-11-04 at 5 32 34 PM" src="https://github.com/user-attachments/assets/f3cbdd71-fc28-48ac-822a-4c0a55990f59" />
-<img width="1463" height="1203" alt="Screenshot 2025-11-04 at 5 28 18 PM" src="https://github.com/user-attachments/assets/be642a1a-7b41-496d-8d2d-da12b4201aea" />
-
 ### Middleware LLM interrogtion (chat)
-Demonstrates a prompt entered into a React chat component and a middleware node.js/Fastify server calling python script.  Python constructs an AI client, uses chat completions to send a canned prompt to Azure OpenAI, then sends what it gets from the LLM back to the server.
+Demonstrates a prompt entered into a React frontend component and a middleware node.js/Fastify server calling python script.  Python constructs an AI client, uses chat completions to send a canned prompt to Azure OpenAI, then sends what it gets from the LLM back to the server.
 
 The reply from the LLM was captured and displayed in realtime.
 
 <img width="1874" height="1427" alt="Screenshot 2025-11-04 at 5 27 18 PM" src="https://github.com/user-attachments/assets/d2f99c4c-d0b2-4d19-a7c2-727dc02f09c8" />
+
+## React frontend + vite
+### Screenshot of Gpt Interrogation.
+Demonstrates a prompt entered into a React frontend component, then a middleware node.js/Fastify server calling python script and returning with an error.  In the 12 hours post screenshot (above), my Azure credits expired so access to the LLM backend is revoked. 
+
+<img width="1482" height="987" alt="Screenshot 2025-11-04 at 5 32 34 PM" src="https://github.com/user-attachments/assets/f3cbdd71-fc28-48ac-822a-4c0a55990f59" />
+<img width="1463" height="1203" alt="Screenshot 2025-11-04 at 5 28 18 PM" src="https://github.com/user-attachments/assets/be642a1a-7b41-496d-8d2d-da12b4201aea" />
 
 ## Architecture
 This is a 3-tiered web application: frontend, middleware & backend, all served under Kubernetes.  It comes with a menu driver that cleanly performs the labeled action.
