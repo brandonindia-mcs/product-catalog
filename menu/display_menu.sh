@@ -29,11 +29,13 @@ $(cyan NPM \& Install)            $(cyan Build \(npm\))         $(cyan Ingress) 
 97.1)web                                                              52)api_https  76)describe
 97.2)api                                                              64.1)validate API w/ Trusted 
 97.3)chat                                                             64.2)validate API w/ resolver
+
+$(cyan Registry): 71.1)front    71.2)middle    71.3)back  71.4)get images  tag)repo *  99)clear images
 "
 #       98)postgres
 # web 1000/1001)info 1002)secrets
                                                                                 # api 2000/2001)info 2002)secrets
-# 71)reg_local_front     72)reg_local_middle 73)reg_local_back  74)get images  99)clear images
+# 
 #  40)install_postgres   43)image_backend 44)configure_postgres  45)k8s_postgres   pg 3000/3002)info
 # "
 )
