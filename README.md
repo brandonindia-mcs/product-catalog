@@ -1,4 +1,4 @@
-## React 18 frontend (node 22) + vite
+## React frontend + vite
 ### Screenshot of Gpt Interrogation.
 In the 12 hours post screenshot, my Azure credits expired so access to the LLM backend is revoked. 
 
