@@ -171,7 +171,7 @@
   function run_install_webservice() {       parent && echo menu disabled, manual run only: GLOBAL_NAMESPACE=$1 install_webservice $2 && return 1 ; }
   function run_update_webservice() {        parent && GLOBAL_NAMESPACE=$1 update_webservice $2 ; }
   function run_install_middleware() {       parent && GLOBAL_NAMESPACE=$1 install_middleware $2; }
-  function run_install_postgres() {         parent && echo before3 && GLOBAL_NAMESPACE=$1 install_postgres $2 && echo echo after3; }
+  function run_install_postgres() {         parent && GLOBAL_NAMESPACE=$1 install_postgres $2 ; }
   function run_validate_api_k8s_http() {    parent && validate_api_k8s_http ; pause; }
   function run_validate_middleware_k8s_https() {   parent && validate_middleware_k8s_https ; pause; }
   function run_validate_api_web_https() {   parent && validate_api_web_https ; pause; }
