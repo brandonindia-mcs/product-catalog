@@ -1,6 +1,13 @@
 ####################  LOCAL REGISTRY  ##################
   function registry_local_images { curl -s http://localhost:5001/v2/_catalog | jq; }
+  function registry_local_images { curl -s http://localhost:5001/v2/_catalog | jq; }
   function registry_local_tags {
+    REGISTRY_URL="http://localhost:5001"
+    # Get list of repositories
+    REPOS=$(curl -s ${REGISTRY_URL}/v2/_catalog | jq -r '.repositories[]')
+   curl -s ${REGISTRY_URL}/v2/${1}/tags/list | jq
+  }
+  function registry_local_tags_all {
     REGISTRY_URL="http://localhost:5001"
     # Get list of repositories
     REPOS=$(curl -s ${REGISTRY_URL}/v2/_catalog | jq -r '.repositories[]')

@@ -68,10 +68,11 @@
       69.1) system_check && k8s_ingress_web $namespace $image_version ;;
       69.2) system_check && k8s_ingress_api $namespace $image_version ;;
       69.3) system_check && k8s_ingress_apt $namespace $image_version ;;
-      71)   system_check && registry_local_repository product-catalog-frontend ;;
-      72)   system_check && registry_local_repository product-catalog-middleware ;;
-      73)   system_check && registry_local_repository product-catalog-backend ;;
-      74)   system_check && registry_local_images ;;
+      71.1) system_check && registry_local_repository product-catalog-frontend; pause ;;
+      71.2) system_check && registry_local_repository product-catalog-middleware; pause ;;
+      71.3) system_check && registry_local_repository product-catalog-backend; pause ;;
+      71.4) system_check && registry_local_images; pause ;;
+      tag*) system_check && repo="$(echo "$choice" | awk '{for (i=2; i<=NF; i++) print $i}')" && registry_local_tags $repo; pause ;;
       75)   system_check && run_validate_service_endpoints; pause ;;
       76)   system_check && run_describe_service_endpoints; pause ;;
       77.1) system_check && pod="$(get_last_pod web)" && kubectl describe pod $pod; pause ;;
