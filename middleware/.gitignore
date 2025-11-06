@@ -1,7 +1,6 @@
 # !product-catalog-middleware/.env
+/product-catalog-middleware
 # package-lock.json
 Dockerfile
 # package.json
 /algorithmic-hue
-/algorithmic-hue/
-/algorithmic-hue/*

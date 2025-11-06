@@ -1,10 +1,8 @@
-!product-catalog-frontend/.env
+/product-catalog-frontend
 package-lock.json
 Dockerfile
 package.json
 *.env*
 !src/**/Dockerfile
 /algorithmic-hue
-/algorithmic-hue/
-/algorithmic-hue/*
 dist

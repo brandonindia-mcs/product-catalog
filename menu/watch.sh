@@ -42,7 +42,7 @@ function watch_deployment {
 ) | column -t)
 }
 function banner_alt { echo; echo -n "$(tput setaf 0;tput setab 6)$(date "+%Y-%m-%d %H:%M:%S") BANNER ${FUNCNAME[2]}::${FUNCNAME[1]} ${*}$(tput sgr 0)"; }
-function watch_product_catalog {
+function watch_namespace {
 (namespace=${1:-default} &&
  while true; do banner_alt\
                 && watch_pod $namespace\
