@@ -5,7 +5,7 @@ GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 KUBECTL_TIMEOUT=15s
 alias stamp="echo \$(date +%Y%m%d%H%M%S)"
 
-export APPNAME=algorithmic-hue
+export APPNAME=product-catalog
 export BACKEND_APPNAME=${APPNAME}-backend
 export BACKEND_DATABASE_SERVICE=db-service
 export BACKEND_SELECTOR=postgres
