@@ -140,14 +140,16 @@
   function run_configure_ingress() {    parent && GLOBAL_NAMESPACE=$1 configure_ingress $2 ; }
   function run_configure() {            parent && GLOBAL_NAMESPACE=$1 configure $2 ; }
 
-  function run_frontend_18() {  parent && echo menu disabled, manual run only: frontend_18 && return 1 ;}
-  function run_middleware() {   parent && GLOBAL_NAMESPACE=$1 middleware ;}
-  function run_middleware_c() { parent && GLOBAL_MIDDLEWARE_COMPONENT_LIST=$list middleware ;}
-  function run_backend() {      parent && backend; }
+  function run_frontend_18() {          parent && echo menu disabled, manual run only: frontend_18 && return 1 ;}
+  function run_middleware() {           parent && GLOBAL_NAMESPACE=$1 middleware ;}
+  function run_middleware_c() {         parent && GLOBAL_MIDDLEWARE_COMPONENT_LIST=$list middleware ;}
+  function run_frontend_update() {      parent && frontend_update ; }
+  function run_frontend_update_c() {    parent && GLOBAL_FRONTEND_COMPONENT_LIST=$list frontend_update ;}
+  function run_backend() {              parent && backend; }
 
-  function run_image_frontend() {   parent && build_image_frontend $2   && run_configure_webservice $1 $2 ; }
-  function run_image_middleware() { parent && build_image_middleware $2 && run_configure_middleware $1 $2 ; }
-  function run_image_backend() {    parent && build_image_backend $2  && run_configure_postgres $1 $2 ; }
+  function run_image_frontend() {       parent && build_image_frontend $2   && run_configure_webservice $1 $2 ; }
+  function run_image_middleware() {     parent && build_image_middleware $2 && run_configure_middleware $1 $2 ; }
+  function run_image_backend() {        parent && build_image_backend $2  && run_configure_postgres $1 $2 ; }
 
   function run_k8s_all() { run_k8s_webservice $1 $2 && run_k8s_api && run_configure_api $1 $2 && run_k8s_apt && run_configure_apt $1 $2 && run_k8s_postgres $1 $2; }
   function run_k8s_ingress() {    parent &&                             run_configure_ingress $1 $2     && GLOBAL_NAMESPACE=$1 k8s_ingress ; }
@@ -175,7 +177,6 @@
   function run_validate_api_k8s_http() {    parent && validate_api_k8s_http ; pause; }
   function run_validate_middleware_k8s_https() {   parent && validate_middleware_k8s_https ; pause; }
   function run_validate_api_web_https() {   parent && validate_api_web_https ; pause; }
-  function run_frontend_update() {          parent && frontend_update ; }
   function run_k8s_nginx() {                parent && k8s_nginx; }
   function run_validate_service_endpoints { parent && validate_service_endpoints ; }
   function run_describe_service_endpoints { parent && describe_service_endpoints ; }

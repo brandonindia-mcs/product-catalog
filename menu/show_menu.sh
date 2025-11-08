@@ -6,9 +6,10 @@
     namespace=default && image_version="$namespace-$(version)"
     banner "choice #$choice (namespace: $namespace, tag: $image_version)"
     case $choice in
-       middleware*)system_check && list="$(echo "$choice" | awk '{for (i=2; i<=NF; i++) print $i}')" run_middleware_c $namespace $image_version ;;
+       frontend*)system_check && list="$(echo "$choice" | awk '{for (i=2; i<=NF; i++) print $i}')" run_frontend_update_c $namespace $image_version ;;
+     middleware*)system_check && list="$(echo "$choice" | awk '{for (i=2; i<=NF; i++) print $i}')" run_middleware_c $namespace $image_version ;;
        mdw*)system_check && list="$(echo "$choice" | awk '{for (i=2; i<=NF; i++) print $i}')" && run_configure_${list} $namespace $image_version && run_configure_ingress $namespace $image_version && list=${list} run_middleware_c $namespace $image_version && build_image_middleware_${list} $image_version && run_k8s_${list} $namespace $image_version ;;
-       dep*)system_check && list="$(echo "$choice" | awk '{for (i=2; i<=NF; i++) print $i}')" && list=${list} && run_configure_${list} $namespace $image_version && run_k8s_${list} $namespace $image_version ;;
+    deploy*)system_check && list="$(echo "$choice" | awk '{for (i=2; i<=NF; i++) print $i}')" && list=${list} && run_configure_${list} $namespace $image_version && run_k8s_${list} $namespace $image_version ;;
        0)   run_system_check ;;
        1)   system_check && run_install_all $namespace $image_version ;;
        3)   system_check && run_product_catalog $namespace $image_version ;;

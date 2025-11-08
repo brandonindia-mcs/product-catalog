@@ -160,12 +160,12 @@ function install_middleware {
 >./middleware/k8s/properties/$sdenv.env && warn ./middleware/k8s/properties/$sdenv.env reset
 >./middleware/k8s/${sdenv}api.env && warn ./middleware/k8s/${sdenv}api.env reset
 >./middleware/k8s/${sdenv}api-ingress.env && warn ./middleware/k8s/${sdenv}api-ingress.env reset
-middleware
-set -ue
-build_image_middleware $1
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_ingress_middleware $1
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_middleware $1
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_api
+middleware\
+  && set -ue\
+  && build_image_middleware $1\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_ingress_middleware $1\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_middleware $1\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_api\
 
 )
 }
@@ -814,7 +814,7 @@ fi
 )
 }
 
-function frontend_update {
+function frontend_update_20 {
 ##########  RUN COMMAND  ##########
 # frontend_update
 ###################################
@@ -850,6 +850,48 @@ cp ../../src/$node_version/etc/* ../../src/$node_version/etc/.* .
 cp -r ../../src/$node_version/src/. ./src/
 cp -r ../../src/$node_version/public/. ./public/
 cp ../../src/$node_version/.env.$sdenv ./.env || exit 1
+npm install
+npm run build
+
+)
+}
+
+function frontend_update {
+##########  RUN COMMAND  ##########
+# frontend_update
+###################################
+(
+node_version=${1:-22}
+working_directory=frontend
+banner2 working_directory $working_directory, node_version $node_version
+dependency_list=(
+  ./$working_directory/src/$node_version/etc\
+  ./$working_directory/src/$node_version/src\
+  ./$working_directory/src/$node_version/Dockerfile\
+  ./$working_directory/src/$node_version/.env.$sdenv\
+)
+for dep in ${dependency_list[@]}; do
+  expanded_path=$(eval echo "$dep")
+  if [ -e "$expanded_path" ]; then
+    echo "[✔] Found: $expanded_path"
+  else
+    fail "[✘] Missing: $expanded_path"
+    exit 1
+  fi
+done
+
+# pushd ./$working_directory
+project_build=./$working_directory/build
+mkdir -p ./$working_directory/build && pushd ./$project_build
+node_refresh $node_version
+
+cp ../src/$node_version/* ../src/$node_version/.* .
+mkdir -p $FRONTEND_APPNAME && cd $_
+rm -rf ./node_modules ./package-lock.json
+cp ../../src/$node_version/etc/* ../../src/$node_version/etc/.* .
+cp -r ../../src/$node_version/public/. ./public/
+cp ../../src/$node_version/.env.$sdenv ./.env || exit 1
+cp -r ../../src/$node_version/src/web/. ./src/
 npm install
 npm run build
 
@@ -937,7 +979,6 @@ function middleware {
 # middleware
 ###################################
 (
-# node_version=20
 node_version=${1:-22}
 working_directory=middleware
 banner2 working_directory $working_directory, node_version $node_version
