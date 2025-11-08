@@ -30,13 +30,6 @@ export FRONTEND_WEBSERVICE_INGRESS_HOSTNAME=${APPNAME}.progress.me
 export WEBSERVICE_INGRESS_PORT_K8S_FRONTEND=$WEB_HTTP_RUNPORT_PUBLIC_FRONTEND
 
 export MIDDLEWARE_APPNAME=${APPNAME}-middleware
-export MIDDLEWARE_CHAT_SERVICE=chat-service
-export MIDDLEWARE_CHAT_SERVICE_INGRESS=$MIDDLEWARE_CHAT_SERVICE-ingress
-export MIDDLEWARE_CHAT_INGRESS_HOSTNAME=chat-ingress.progress.me
-export MIDDLEWARE_CHAT_SELECTOR=chat
-export MIDDLEWARE_chat_SELECTOR=chat
-export MIDDLEWARE_CHAT_DEPLOYMENT=chat
-export MIDDLEWARE_CHAT_POD_TEMPLATE=chat
 #
 export DOMAIN_HOSTNAME=${APPNAME}.progress.me
 
@@ -55,27 +48,6 @@ export API_HTTPS_RUNPORT_K8S_MIDDLEWARE=2443
 export API_HTTP_NODEPORT_K8S_MIDDLEWARE=32180
 export API_HTTPS_NODEPORT_K8S_MIDDLEWARE=32443
 # export API_INGRESS_PORT_K8S_MIDDLEWARE=$API_HTTPS_PORT_K8S_MIDDLEWARE
-
-export MIDDLEWARE_APT_SERVICE=apt-service
-# export MIDDLEWARE_APT_INGRESS_HOSTNAME=localhost
-export MIDDLEWARE_APT_INGRESS_HOSTNAME=apt-ingress.progress.me
-export MIDDLEWARE_APT_SERVICE_INGRESS=$MIDDLEWARE_APT_SERVICE-ingress
-export MIDDLEWARE_APT_SELECTOR=apt
-export MIDDLEWARE_apt_SELECTOR=apt
-export MIDDLEWARE_APT_DEPLOYMENT=apt
-export MIDDLEWARE_APT_POD_TEMPLATE=apt
-export MIDDLEWARE_APT_PATH=/chat
-export APT_HTTP_PORT_K8S_MIDDLEWARE=80
-export APT_HTTP_RUNPORT_K8S_MIDDLEWARE=2000
-export APT_HTTP_NODEPORT_K8S_MIDDLEWARE=32000
-#
-export CHAT_HTTP_PORT_K8S_MIDDLEWARE=80
-export CHAT_HTTPS_PORT_K8S_MIDDLEWARE=443
-export CHAT_HTTP_RUNPORT_K8S_MIDDLEWARE=3001
-export CHAT_HTTPS_RUNPORT_K8S_MIDDLEWARE=2444
-export CHAT_HTTP_NODEPORT_K8S_MIDDLEWARE=32181
-export CHAT_HTTPS_NODEPORT_K8S_MIDDLEWARE=32444
-# export CHAT_INGRESS_PORT_K8S_MIDDLEWARE=$CHAT_HTTP_PORT_K8S_MIDDLEWARE
 
 export MIDDLEWARE_TLS_MOUNT=certs
 export MIDDLEWARE_TLS_MOUNT_PATH=/$MIDDLEWARE_TLS_MOUNT
@@ -187,19 +159,13 @@ function install_middleware {
 (
 >./middleware/k8s/properties/$sdenv.env && warn ./middleware/k8s/properties/$sdenv.env reset
 >./middleware/k8s/${sdenv}api.env && warn ./middleware/k8s/${sdenv}api.env reset
-# >./middleware/k8s/${sdenv}chat.env && warn ./middleware/k8s/${sdenv}chat.env reset
 >./middleware/k8s/${sdenv}api-ingress.env && warn ./middleware/k8s/${sdenv}api-ingress.env reset
-# >./middleware/k8s/${sdenv}chat-ingress.env && warn ./middleware/k8s/${sdenv}chat-ingress.env reset
->./middleware/k8s/${sdenv}apt.env && warn ./middleware/k8s/${sdenv}apt.env reset
->./middleware/k8s/${sdenv}apt-ingress.env && warn ./middleware/k8s/${sdenv}apt-ingress.env reset
 middleware
 set -ue
 build_image_middleware $1
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_ingress_middleware $1
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_middleware $1
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_api
-# GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_chat
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_apt
 
 )
 }
@@ -369,13 +335,10 @@ set_keyvalue REPOSITORY $FRONTEND_APPNAME ./frontend/k8s/$sdenv.env
 set_keyvalue RUNPORT_HTTP $WEB_HTTP_RUNPORT_PUBLIC_FRONTEND ./frontend/k8s/$sdenv.env
 set_keyvalue RUNPORT_HTTPS $WEB_HTTPS_RUNPORT_PUBLIC_FRONTEND ./frontend/k8s/$sdenv.env
 set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
-# set_keyvalue HUB $DOCKERHUB ./frontend/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB:$HUBPORT ./frontend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
 set_keyvalue REPLICAS $FRONTEND_WEBSERVICE_REPLICAS ./frontend/k8s/$sdenv.env
-# set_keyvalue INGRESS_PORT $WEBSERVICE_INGRESS_PORT_K8S_FRONTEND ./frontend/k8s/$sdenv.env
 set_keyvalue SERVICE $FRONTEND_WEBSERVICE ./frontend/k8s/$sdenv.env
-# set_keyvalue INGRESS $FRONTEND_WEBSERVICE_INGRESS_HOSTNAME ./frontend/k8s/$sdenv.env
 set_keyvalue SELECTOR $FRONTEND_SELECTOR ./frontend/k8s/$sdenv.env
 set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT ./frontend/k8s/$sdenv.env
 set_keyvalue POD_TEMPLATE $FRONTEND_POD_TEMPLATE ./frontend/k8s/$sdenv.env
@@ -400,8 +363,6 @@ function configure_middleware {
 ###################################
 (
 GLOBAL_NAMESPACE=$namespace configure_middleware_api $image_version
-# GLOBAL_NAMESPACE=$namespace configure_middleware_chat $image_version
-GLOBAL_NAMESPACE=$namespace configure_middleware_apt $image_version
 GLOBAL_NAMESPACE=$namespace configure_ingress_middleware $image_version
 )
 }
@@ -416,7 +377,6 @@ set -u
 component=api
 image_version=$1
 MIDDLEWARE_API_REPLICAS=1
-# set_keyvalue HUB $DOCKERHUB ./middleware/k8s/properties/$sdenv$component.env
 set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME-$component ./middleware/k8s/properties/$sdenv$component.env
 set_keyvalue TAG $image_version ./middleware/k8s/properties/$sdenv$component.env
 set_keyvalue HUB $DOCKERHUB:$HUBPORT ./middleware/k8s/properties/$sdenv$component.env
@@ -480,7 +440,6 @@ set -u
 component=apt
 image_version=$1
 MIDDLEWARE_APT_REPLICAS=1
-# set_keyvalue HUB $DOCKERHUB ./middleware/k8s/properties/$sdenv$component.env
 set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME-$component ./middleware/k8s/properties/$sdenv$component.env
 set_keyvalue TAG $image_version ./middleware/k8s/properties/$sdenv$component.env
 set_keyvalue HUB $DOCKERHUB:$HUBPORT ./middleware/k8s/properties/$sdenv$component.env
@@ -656,10 +615,7 @@ function configure_ingress_middleware {
 # read -p "at ${FUNCNAME[0]}"
 (
 set -u
-# image_version=$1
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_ingress_middleware_api $image_version
-# GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_ingress_middleware_chat $image_version
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_ingress_middleware_apt $image_version
 )
 }
 
@@ -672,7 +628,6 @@ function configure_ingress_middleware_api {
 (
 set -u
 component=api
-# image_version=$1
 set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE ./middleware/k8s/properties/$sdenv$component-ingress.env
 set_keyvalue INGRESS $MIDDLEWARE_API_SERVICE_INGRESS ./middleware/k8s/properties/$sdenv$component-ingress.env
 
@@ -883,17 +838,18 @@ for dep in ${dependency_list[@]}; do
   fi
 done
 
-pushd ./$working_directory
+# pushd ./$working_directory
+project_build=./$working_directory/build
+mkdir -p ./$working_directory/build && pushd ./$project_build
 node_refresh $node_version
 
-node_version=${1:-20}
-cp ./src/$node_version/* ./src/$node_version/.* .
+cp ../src/$node_version/* ../src/$node_version/.* .
 mkdir -p $FRONTEND_APPNAME && cd $_
 rm -rf ./node_modules ./package-lock.json
-cp ../src/$node_version/etc/* ../src/$node_version/etc/.* .
-cp -r ../src/$node_version/src/. ./src/
-cp -r ../src/$node_version/public/. ./public/
-cp ../src/$node_version/.env.$sdenv ./.env || exit 1
+cp ../../src/$node_version/etc/* ../../src/$node_version/etc/.* .
+cp -r ../../src/$node_version/src/. ./src/
+cp -r ../../src/$node_version/public/. ./public/
+cp ../../src/$node_version/.env.$sdenv ./.env || exit 1
 npm install
 npm run build
 
@@ -915,6 +871,7 @@ image_version=$1
 set -u
 if [ -z "$image_version" ];then image_version=latest;fi
 if [ ! -d ./frontend ];then echo must be at project root: $(pwd) && return 1;fi
+build_directory=frontend/build
 NOCACHE=
 if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 appname=$FRONTEND_APPNAME
@@ -923,7 +880,7 @@ echo -e \\nBuilding $appname:$image_version
 set_registry
 runit "docker build $NOCACHE\
   -t $appname:$image_version\
-  frontend"\
+  $build_directory"\
   || return 1
 # runit "docker image ls $appname"
 runit "docker tag $appname:$image_version $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1
@@ -965,11 +922,6 @@ function k8s_webservice_update {
 export $(grep -v '^#' ./frontend/k8s/$sdenv.env | xargs)
 set -ue
 configure_webservice $TAG
-# formatrun <<'EOF'
-# kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
-#   && kubectl rollout status deployment/web
-
-# EOF
 banner1 logit
 logit "kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
   && kubectl rollout status deployment/web
@@ -979,13 +931,14 @@ logit "kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
 }
 
 
-GLOBAL_MIDDLEWARE_COMPONENT_LIST=(api apt)
+GLOBAL_MIDDLEWARE_COMPONENT_LIST=( api )
 function middleware {
 ##########  RUN COMMAND  ##########
 # middleware
 ###################################
 (
-node_version=20
+# node_version=20
+node_version=${1:-22}
 working_directory=middleware
 banner2 working_directory $working_directory, node_version $node_version
 middleware_certificate
@@ -1010,12 +963,14 @@ for dep in ${dependency_list[@]}; do
   fi
 done
 
-pushd ./$working_directory
-# node_refresh $node_version
+
+project_build=./$working_directory/build
+mkdir -p ./$working_directory/build && pushd ./$project_build
+
 mkdir -p $MIDDLEWARE_APPNAME && cd $_
-cp ../src/$node_version/* ../src/$node_version/.* .
-cp -r ../src/$node_version/etc/* .
-cp -r ../src/$node_version/src/* .
+cp ../../src/$node_version/* ../../src/$node_version/.* .
+cp -r ../../src/$node_version/etc/* .
+cp -r ../../src/$node_version/src/* .
 
 is_array GLOBAL_MIDDLEWARE_COMPONENT_LIST && echo GLOBAL_MIDDLEWARE_COMPONENT_LIST is an array
 is_array GLOBAL_MIDDLEWARE_COMPONENT_LIST || echo GLOBAL_MIDDLEWARE_COMPONENT_LIST IS NOT an array
@@ -1058,8 +1013,6 @@ function middleware_component_certificates {
 ##########  RUN COMMAND  ##########
 # middleware_component_certificates
 ###################################
-  generate_selfsignedcert_cnf $MIDDLEWARE_APPNAME/chat
-  generate_selfsignedcert_cnf $MIDDLEWARE_APPNAME/apt
   generate_selfsignedcert_cnf $MIDDLEWARE_APPNAME/api
 }
 function middleware_certificate {
@@ -1107,7 +1060,6 @@ function middleware_secrets {
 set -u
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secrets_delete
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secrets # TLS
-chat_secrets # AZURE
 )
 }
 
@@ -1151,8 +1103,6 @@ function build_image_middleware {
 image_version=$1
 set -u
 build_image_middleware_api $image_version
-# build_image_middleware_chat $image_version
-build_image_middleware_apt $image_version
 )
 }
 
@@ -1164,14 +1114,15 @@ function build_image_middleware_api {
 (
 image_version=$1
 component=api
+banner2 building image_version: $image_version image: $component
 set -u
 if [ -z "$image_version" ];then image_version=latest;fi
 if [ ! -d ./middleware ];then echo must be at project root && return 1;fi
-build_directory=middleware
+build_directory=middleware/build
 NOCACHE=
 if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 appname=$MIDDLEWARE_APPNAME
-cp ./$build_directory/src/etc/Dockerfile.$component ./$build_directory/Dockerfile
+cp ./middleware/src/etc/Dockerfile.$component ./$build_directory/Dockerfile
 image=$appname-$component
 echo -e \\nBuilding $image:$image_version
 
@@ -1205,7 +1156,7 @@ component=apt
 set -u
 if [ -z "$image_version" ];then image_version=latest;fi
 if [ ! -d ./middleware ];then echo must be at project root && return 1;fi
-build_directory=middleware
+build_directory=middleware/build
 NOCACHE=
 if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 appname=$MIDDLEWARE_APPNAME
@@ -1242,7 +1193,7 @@ component=chat
 set -u
 if [ -z "$image_version" ];then image_version=latest;fi
 if [ ! -d ./middleware ];then echo must be at project root && return 1;fi
-build_directory=middleware
+build_directory=middleware/build
 NOCACHE=
 if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 appname=$MIDDLEWARE_APPNAME
@@ -1440,8 +1391,6 @@ function k8s_ingress {
 set -u
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_ingress_web
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_ingress_api
-# GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_ingress_chat
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_ingress_apt
 )
 }
 
@@ -1520,6 +1469,7 @@ image_version=$1
 set -u
 if [ -z "$image_version" ];then image_version=latest;fi
 if [ ! -d ./backend ];then echo must be at project root && return 1;fi
+build_directory=backend
 NOCACHE=
 if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
 appname=$BACKEND_APPNAME
@@ -1528,7 +1478,7 @@ echo -e \\nBuilding $appname:$image_version
 set_registry
 runit "docker build $NOCACHE\
   -t $appname:$image_version\
-  backend"\
+  $build_directory"\
   || return 1
 # runit "docker image ls $appname"
 runit "docker tag $appname:$image_version $DOCKERHUB:$HUBPORT/$appname:$image_version" || return 1

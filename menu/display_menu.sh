@@ -10,22 +10,21 @@ function menutop_2 {
   
 
 echo -e "
-$(cyan NPM \& Install)            $(cyan Build \(npm\))         $(cyan Ingress)        $(cyan Configure)           $(cyan k8s)            $(cyan sys)
-  21)webservice_update  20)frontend_update  69)deploy all    24)webservice      5)all          0)sys_check      
-  31)middleweare        30)middleware       64)configure     34)middleware     25)webservice   3)Build+Deploy 
-                   middleware)build *      504)nginx         64)ingress        35)middleware   6)chat secrets
- mdw)install *                             514)logs         34.1)api         35.1)api          7)secrets              
-                          $(cyan Install)          524)follow logs  34.2)chat        35.2)chat         8)generate_selfsignedcert_cnf product-catalog-frontend
- 40)postgres            33)middleware      69.1)web         34.3)apt         35.3)apt          649)middleware_certificate 
-40.0)delete_postgres                       69.2)api                                          11)configure
-                                           69.3)apt                                        0000)show all secrets
-
-  $(cyan Clear)       $(cyan frontend web)   $(cyan api)            $(cyan "chat/apt")      $(cyan ingress)        $(cyan backend)
-  90)all      77.1)desc      78.1)desc      79.1)desc     76.1)logs      82)postgres_out
-  91)web      77.2)deploy    78.2)deploy    79.2)deploy   76.3)logs
-  92)api      77.3)logs      78.3)logs      79.3)logs       75)endpoints
-  93)chat     77.4)out       78.4)out       79.4)out              $(cyan "           Validation           ")
-  97)ingress                                79.5)mock                 51)web_https  53)web  
+$(cyan NPM \& Install)         $(cyan Build \(npm\))         $(cyan Ingress)        $(cyan Configure)           $(cyan k8s)            $(cyan sys)
+21)webservice     20)frontend_update  69)deploy all    24)webservice      5)all          0)sys_check      
+31)middleweare    30)middleware       64)configure     34)middleware     25)webservice   3)Build+Deploy 
+                middleware)build *    504)nginx        64)ingress        35)middleware   6)chat secrets
+mdw)install *                         514)logs         34.1)api          35.1)api        7)secrets              
+                       $(cyan Install)        524)follow logs  34.2)chat         35.2)chat       8)generate_selfsignedcert_cnf product-catalog-frontend
+ 40)postgres          33)middleware   69.1)web         34.3)apt        35.3)apt          649)middleware_certificate 
+40.0)delete_postgres                  69.2)api                                         11)configure
+                                      69.3)apt                                        0000)show all secrets
+$(cyan Clear)         $(cyan frontend web)   $(cyan api)            $(cyan "chat/apt")      $(cyan ingress)        $(cyan backend)
+90)all        77.1)desc      78.1)desc      79.1)desc     76.1)logs      82)postgres_out
+91)web        77.2)deploy    78.2)deploy    79.2)deploy   76.3)logs
+92)api        77.3)logs      78.3)logs      79.3)logs     75)endpoints
+93)chat       77.4)out       78.4)out       79.4)out              $(cyan "           Validation           ")
+97)ingress                                  79.5)mock                 51)web_https  53)web  
 97.1)web                                                              52)api_https  76)describe
 97.2)api                                                              64.1)validate API w/ Trusted 
 97.3)chat                                                             64.2)validate API w/ resolver
