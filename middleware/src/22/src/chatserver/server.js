@@ -138,42 +138,6 @@ const registerRoutes = (app) => {
     }
   });
 
-
-  app.post('/api/chatstatic', async (req, reply) => {
-    try {
-      req.log.info({
-        method:   req.method,
-        url:      req.url,
-        headers:  req.headers,
-        body:     req.body
-      }, 'Incoming /api/staticchat request');
-      const { prompt } = req.body || {};
-      req.log.info({
-        status:     'ok',
-        env:        process.env.NODE_ENV || 'default',
-        tlsEnabled: !!req.server?.setSecureContext,
-        message:    `You sent ${prompt}`
-      })
-      reply.send({
-        status:     'ok',
-        env:        process.env.NODE_ENV || 'default',
-        tlsEnabled: !!req.server?.setSecureContext,
-        message:    `You sent ${prompt}`
-      });
-    } catch (err) {
-      req.log.error(err, 'Error handling /api/staticchat');
-      reply.code(500).send({
-        timestamp:  new Date().toISOString(),
-        status:     'error',
-        error:      err.message,
-        message:    'Failed to generate debug info'
-      });
-    } finally {
-      // Intentionally left blank for future cleanup logic
-    }
-  });
-
-
   const execFileAsync = promisify(execFileCallback);
   app.post('/api/chat', async (req, reply) => {
     const { prompt } = req.body || {};

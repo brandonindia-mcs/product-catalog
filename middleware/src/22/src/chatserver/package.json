@@ -1,0 +1,20 @@
+{
+  "name": "synthetic-spectrum-chatserver",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "type":"module",
+  "description": "Fastify middleware for product catalog",
+  "author": "Brandon R. India",
+  "license": "MIT",
+  "keywords": ["fastify", "middleware", "chatserver"],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+  }
+}
