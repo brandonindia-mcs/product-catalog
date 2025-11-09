@@ -9,9 +9,6 @@ spec:
   - name: http
     port: $RUNPORT_HTTP
     targetPort: $RUNPORT_HTTP
-  - name: https
-    port: $RUNPORT_HTTPS
-    targetPort: $RUNPORT_HTTPS
   selector:
     app: $SELECTOR
 # ---
@@ -72,8 +69,7 @@ spec:
         - name: $CONTAINER
           image: $HUB/$REPOSITORY:$TAG
           ports:
-            # - containerPort: $RUNPORT_HTTP
-            - containerPort: $RUNPORT_HTTPS
+            - containerPort: $RUNPORT_HTTP
           ##### readinessProbe → Ensures traffic only goes to healthy pods
           # readinessProbe:
           #   httpGet:

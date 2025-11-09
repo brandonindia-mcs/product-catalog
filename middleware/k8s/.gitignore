@@ -1,9 +1,2 @@
-api.yaml
-api-ingress.yaml
-chat.yaml
-chat-ingress.yaml
-*secrets*
-!*template*
-apt.yaml
-apt-ingress.yaml
-./*.yaml
+*.yaml
+!*.template.yaml

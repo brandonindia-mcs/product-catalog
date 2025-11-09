@@ -7,16 +7,10 @@ import fastifyCors from '@fastify/cors';
 import { Pool } from 'pg';
 
 
-const httpPort = parseInt(process.env.LISTEN_PORT_HTTP || process.argv[2] || 80)
+const httpPort = parseInt(process.env.LISTEN_PORT_HTTP || process.argv[2] || 80 || 443)
 const httpListenHost = '0.0.0.0'
-const httpsPort = parseInt(process.env.LISTEN_PORT_HTTPS || process.argv[2] || 443)
-const httpsListenHost = '0.0.0.0'
-const listenPort = httpsPort
-const listenHost = httpsListenHost
-
-// TLS certificate paths
-const certPath = resolve(`${process.env.CERTIFICATE_PATH}`);
-const keyPath = resolve(`${process.env.CERTIFICATE_KEY_PATH}`);
+const listenPort = httpPort
+const listenHost = httpListenHost
 
 // THIS FIXES PINO'S UNDEFINED LOG LEVEL ERROR
 const validLogLevels = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'];
@@ -37,35 +31,34 @@ level: resolvedLogLevel,
 };
 
 // Create HTTP and HTTPS Fastify instances
-const fastifyHttp = fastifyFactory({ logger: loggerConfig });
-// fastifyHttp.log.trace('Sample trace message: HTTPS server initialized');
-// fastifyHttp.log.debug('Sample debug message: HTTPS server initialized');
-// fastifyHttp.log.warn('Sample warn message: HTTPS server initialized');
-// fastifyHttp.log.info('Sample info message: HTTPS server initialized');
-// fastifyHttp.log.error('Sample error message: HTTPS server initialized');
-const fastifyHttps = fastifyFactory({
-  logger: loggerConfig,
-  https: {
-    key: existsSync(keyPath) ? readFileSync(keyPath) : undefined,
-    cert: existsSync(certPath) ? readFileSync(certPath) : undefined
-  }
-});
-fastifyHttps.log.trace('Sample trace message: HTTPS server initialized');
-fastifyHttps.log.debug('Sample debug message: HTTPS server initialized');
-fastifyHttps.log.warn('Sample warn message: HTTPS server initialized');
-fastifyHttps.log.info('Sample info message: HTTPS server initialized');
-fastifyHttps.log.error('Sample error message: HTTPS server initialized');
-fastifyHttp.all('*', async (req, reply) => {
-  const host = req.headers.host;
-  const url = req.raw.url;
-  fastifyHttp.log.info(`Redirecting HTTP request to https://${host}${url}`);
-  reply.redirect(`https://${host}${url}`);
-});
-fastifyHttp.addHook('onRequest', async (req, reply) => {
-  if (!req.raw.socket.encrypted) {
-    reply.code(403).send({ error: 'TLS required' });
-  }
-});
+const fastify = fastifyFactory({ logger: loggerConfig });
+
+// TLS certificate paths
+// const certPath = resolve(`${process.env.CERTIFICATE_PATH}`);
+// const keyPath = resolve(`${process.env.CERTIFICATE_KEY_PATH}`);
+// const fastify = fastifyFactory({
+//   logger: loggerConfig,
+//   https: {
+//     key: existsSync(keyPath) ? readFileSync(keyPath) : undefined,
+//     cert: existsSync(certPath) ? readFileSync(certPath) : undefined
+//   }
+// });
+fastify.log.trace('Sample trace message: HTTPS server initialized');
+fastify.log.debug('Sample debug message: HTTPS server initialized');
+fastify.log.warn('Sample warn message: HTTPS server initialized');
+fastify.log.info('Sample info message: HTTPS server initialized');
+fastify.log.error('Sample error message: HTTPS server initialized');
+// fastify.all('*', async (req, reply) => {
+//   const host = req.headers.host;
+//   const url = req.raw.url;
+//   fastify.log.info(`Redirecting HTTP request to https://${host}${url}`);
+//   reply.redirect(`https://${host}${url}`);
+// });
+// fastify.addHook('onRequest', async (req, reply) => {
+//   if (!req.raw.socket.encrypted) {
+//     reply.code(403).send({ error: 'TLS required' });
+//   }
+// });
 
 // PostgreSQL connection pool (Kubernetes service)
 const pool = new Pool({
@@ -186,18 +179,13 @@ const registerRoutes = (app) => {
   });
 };
 
-// Register routes on both servers
-// registerRoutes(fastifyHttp);
-registerRoutes(fastifyHttps);
+registerRoutes(fastify);
 
 // Start both servers
 const start = async () => {
   try {
-    // await fastifyHttp.listen({ port: listenPort, host: listenHost });
-    // fastifyHttp.log.info(`HTTP middleware listening on port ${listenPort}`);
-
-    await fastifyHttps.listen({ port: listenPort, host: listenHost });
-    fastifyHttps.log.info(`HTTPS middleware listening on port ${listenPort}`);
+    await fastify.listen({ port: listenPort, host: listenHost });
+    fastify.log.info(`HTTP middleware listening on port ${listenPort}`);
   } catch (err) {
     console.error('Startup error:', err);
     process.exit(1);

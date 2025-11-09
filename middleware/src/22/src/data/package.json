@@ -1,5 +1,5 @@
 {
-  "name": "product-catalog-middleware-api",
+  "name": "product-catalog-middleware-data",
   "version": "1.0.0",
   "private": true,
   "main": "index.js",
@@ -7,7 +7,6 @@
   "description": "Fastify middleware for product catalog",
   "author": "Brandon R. India",
   "license": "MIT",
-  "keywords": ["fastify", "middleware", "postgres", "api"],
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"

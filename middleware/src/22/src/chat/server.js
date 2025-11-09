@@ -12,7 +12,7 @@ import { promisify } from 'util';
 import { execFile as execFileCallback } from 'child_process';
 
 // Port and host configuration
-const httpPort = parseInt(process.env.LISTEN_PORT_HTTP || process.argv[2] || 3001);
+const httpPort = parseInt(process.env.LISTEN_PORT_HTTP || process.argv[2] || 2001);
 const httpListenHost = '0.0.0.0';
 const listenPort = httpPort;
 const listenHost = httpListenHost;
@@ -77,7 +77,7 @@ fastifyHttp.setErrorHandler((error, req, reply) => {
 
 // Shared route registration
 const registerRoutes = (app) => {
-  const resolvedCorsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3001';
+  const resolvedCorsOrigin = process.env.CORS_ORIGIN || 'http://localhost:2001';
   app.log.info({ origin: resolvedCorsOrigin }, 'CORS origin configured');
 
   app.register(fastifyCors, {

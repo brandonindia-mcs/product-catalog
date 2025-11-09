@@ -6,6 +6,8 @@ KUBECTL_TIMEOUT=15s
 alias stamp="echo \$(date +%Y%m%d%H%M%S)"
 
 export APPNAME=product-catalog
+export DOMAIN_HOSTNAME=${APPNAME}.progress.notls
+
 export BACKEND_APPNAME=${APPNAME}-backend
 export BACKEND_DATABASE_SERVICE=db-service
 export BACKEND_SELECTOR=postgres
@@ -25,38 +27,27 @@ export FRONTEND_DEPLOYMENT=web
 export FRONTEND__WEB_DEPLOYMENT=web
 export FRONTEND_POD_TEMPLATE=web
 export WEB_HTTP_RUNPORT_PUBLIC_FRONTEND=80
-export WEB_HTTPS_RUNPORT_PUBLIC_FRONTEND=443
-export FRONTEND_WEBSERVICE_INGRESS_HOSTNAME=${APPNAME}.progress.me
-export WEBSERVICE_INGRESS_PORT_K8S_FRONTEND=$WEB_HTTP_RUNPORT_PUBLIC_FRONTEND
+export FRONTEND_WEBSERVICE_INGRESS_HOSTNAME=$DOMAIN_HOSTNAME
 
 export MIDDLEWARE_APPNAME=${APPNAME}-middleware
-#
-export DOMAIN_HOSTNAME=${APPNAME}.progress.me
+export MIDDLEWARE_DATA_SERVICE=data-service
+export MIDDLEWARE_DATA_INGRESS_HOSTNAME=$DOMAIN_HOSTNAME
+export MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME=data-ingress.progress.notls
+export MIDDLEWARE_DATA_SERVICE_INGRESS=data-ingress-ingress
+export MIDDLEWARE_DATA_SELECTOR=data
+export MIDDLEWARE_data_SELECTOR=data
+export MIDDLEWARE_DATA_DEPLOYMENT=data
+export MIDDLEWARE_DATA_POD_TEMPLATE=data
+export DATA_HTTP_PORTNAME_K8S_MIDDLEWARE=http
+export DATA_HTTP_PORT_K8S_MIDDLEWARE=80
+export DATA_HTTP_RUNPORT_K8S_MIDDLEWARE=2080
+export DATA_HTTP_NODEPORT_K8S_MIDDLEWARE=32080
+export PRODUCTS_HTTP_PORT_K8S_MIDDLEWARE=80
+# export DATA_INGRESS_PORT_K8S_MIDDLEWARE=$DATA_HTTPS_PORT_K8S_MIDDLEWARE
 
-export MIDDLEWARE_API_SERVICE=api-service
-export MIDDLEWARE_API_INGRESS_HOSTNAME=${APPNAME}.progress.me
-export MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME=api-ingress.progress.me
-export MIDDLEWARE_API_SERVICE_INGRESS=$MIDDLEWARE_API_SERVICE-ingress
-export MIDDLEWARE_API_SELECTOR=api
-export MIDDLEWARE_api_SELECTOR=api
-export MIDDLEWARE_API_DEPLOYMENT=api
-export MIDDLEWARE_API_POD_TEMPLATE=api
-export API_HTTP_PORT_K8S_MIDDLEWARE=80
-export API_HTTPS_PORT_K8S_MIDDLEWARE=443
-export API_HTTP_RUNPORT_K8S_MIDDLEWARE=3000
-export API_HTTPS_RUNPORT_K8S_MIDDLEWARE=2443
-export API_HTTP_NODEPORT_K8S_MIDDLEWARE=32180
-export API_HTTPS_NODEPORT_K8S_MIDDLEWARE=32443
-# export API_INGRESS_PORT_K8S_MIDDLEWARE=$API_HTTPS_PORT_K8S_MIDDLEWARE
-
-export MIDDLEWARE_TLS_MOUNT=certs
-export MIDDLEWARE_TLS_MOUNT_PATH=/$MIDDLEWARE_TLS_MOUNT
-export MIDDLEWARE_TLS_CERT_VOLUME=tls-certs
 export MIDDLEWARE_LOGLEVEL=debug
-export CORS_ORIGIN_HTTPS=https://${APPNAME}.progress.me
-export CORS_ORIGIN_HTTP=http://${APPNAME}.progress.me
+export CORS_ORIGIN_HTTP=http://$DOMAIN_HOSTNAME
 export NODE_TESTING_PORT=3333
-export CERTIFICATE_BUILD_DIRECTORY=cert
 
 export NODE_ENV=development
 export PG_HOST=$BACKEND_DATABASE_SERVICE
@@ -66,6 +57,9 @@ export PG_PASSWORD=$POSTGRES_PASSWORD
 export PG_PORT=$POSTGRE_SQL_RUNPORT
 
 STAMP=`stamp`
+export MIDDLEWARE_TLS_MOUNT=certs
+export MIDDLEWARE_TLS_MOUNT_PATH=/$MIDDLEWARE_TLS_MOUNT
+export MIDDLEWARE_TLS_CERT_VOLUME=tls-certs
 # export MIDDLEWARE_TLS_SECRET=middleware-tls-$STAMP
 # export FRONTEND_TLS_SECRET=frontend-tls-$STAMP
 export MIDDLEWARE_SECRET=middleware-secret-static
@@ -141,8 +135,8 @@ function update_webservice {
 # GLOBAL_NAMESPACE=$namespace update_webservice $image_version
 ###################################
 (
->./frontend/k8s/$sdenv.env && warn ./frontend/k8s/$sdenv.env reset
->./frontend/k8s/$sdenv-ingress.env && warn ./frontend/k8s/$sdenv-ingress.env reset
+# >./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env && warn ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env reset
+# >./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env && warn ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env reset
 frontend_update\
   && set -u\
   && build_image_frontend $1\
@@ -157,15 +151,15 @@ function install_middleware {
 # GLOBAL_NAMESPACE=$namespace install_middleware $image_version
 ###################################
 (
->./middleware/k8s/properties/$sdenv.env && warn ./middleware/k8s/properties/$sdenv.env reset
->./middleware/k8s/${sdenv}api.env && warn ./middleware/k8s/${sdenv}api.env reset
->./middleware/k8s/${sdenv}api-ingress.env && warn ./middleware/k8s/${sdenv}api-ingress.env reset
+# >./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv.env && warn ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv.env reset
+# >./middleware/k8s/$GLOBAL_NAMESPACE/${sdenv}data.env && warn ./middleware/k8s/$GLOBAL_NAMESPACE/${sdenv}data.env reset
+# >./middleware/k8s/$GLOBAL_NAMESPACE/${sdenv}data-ingress.env && warn ./middleware/k8s/$GLOBAL_NAMESPACE/${sdenv}data-ingress.env reset
 middleware\
   && set -ue\
   && build_image_middleware $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_ingress_middleware $1\
   && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_middleware $1\
-  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_api\
+  && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_data\
 
 )
 }
@@ -175,7 +169,7 @@ function install_postgres {
 # GLOBAL_NAMESPACE=$namespace install_postgres $image_version
 ###################################
 (
->./backend/k8s/$sdenv.env && warn ./backend/k8s/$sdenv.env reset
+# >./backend/k8s/$sdenv.env && warn ./backend/k8s/$sdenv.env reset
 backend\
   && set -u\
   && build_image_backend $1\
@@ -190,7 +184,7 @@ function k8s {
 ###################################
 (
 set_registry\
-  && k8s_api\
+  && k8s_data\
   && k8s_webservice
 )
 }
@@ -201,7 +195,7 @@ function k8s_update {
 ###################################
 (
 set_registry\
-  && k8s_api\
+  && k8s_data\
   && k8s_webservice_update
 )
 }
@@ -292,8 +286,8 @@ kubectl get svc registry
 function set_registry {
 (
 set -u
-set_keyvalue HUB $DOCKERHUB:$HUBPORT ./frontend/k8s/$sdenv.env
-set_keyvalue HUB $DOCKERHUB:$HUBPORT ./middleware/k8s/properties/$sdenv.env
+set_keyvalue HUB $DOCKERHUB:$HUBPORT ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
+set_keyvalue HUB $DOCKERHUB:$HUBPORT ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv.env
 set_keyvalue HUB $DOCKERHUB:$HUBPORT ./backend/k8s/$sdenv.env
 registry_local
 )
@@ -331,28 +325,27 @@ set -u
 component=web
 image_version=$1
 FRONTEND_WEBSERVICE_REPLICAS=1
-set_keyvalue REPOSITORY $FRONTEND_APPNAME ./frontend/k8s/$sdenv.env
-set_keyvalue RUNPORT_HTTP $WEB_HTTP_RUNPORT_PUBLIC_FRONTEND ./frontend/k8s/$sdenv.env
-set_keyvalue RUNPORT_HTTPS $WEB_HTTPS_RUNPORT_PUBLIC_FRONTEND ./frontend/k8s/$sdenv.env
-set_keyvalue TAG $image_version ./frontend/k8s/$sdenv.env
-set_keyvalue HUB $DOCKERHUB:$HUBPORT ./frontend/k8s/$sdenv.env
-set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$sdenv.env
-set_keyvalue REPLICAS $FRONTEND_WEBSERVICE_REPLICAS ./frontend/k8s/$sdenv.env
-set_keyvalue SERVICE $FRONTEND_WEBSERVICE ./frontend/k8s/$sdenv.env
-set_keyvalue SELECTOR $FRONTEND_SELECTOR ./frontend/k8s/$sdenv.env
-set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT ./frontend/k8s/$sdenv.env
-set_keyvalue POD_TEMPLATE $FRONTEND_POD_TEMPLATE ./frontend/k8s/$sdenv.env
-set_keyvalue CONTAINER $FRONTEND_DEPLOYMENT ./frontend/k8s/$sdenv.env
-set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET ./frontend/k8s/$sdenv.env
+set_keyvalue REPOSITORY $FRONTEND_APPNAME ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
+set_keyvalue RUNPORT_HTTP $WEB_HTTP_RUNPORT_PUBLIC_FRONTEND ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
+set_keyvalue TAG $image_version ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
+set_keyvalue HUB $DOCKERHUB:$HUBPORT ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
+set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
+set_keyvalue REPLICAS $FRONTEND_WEBSERVICE_REPLICAS ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
+set_keyvalue SERVICE $FRONTEND_WEBSERVICE ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
+set_keyvalue SELECTOR $FRONTEND_SELECTOR ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
+set_keyvalue DEPLOYMENT $FRONTEND_DEPLOYMENT ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
+set_keyvalue POD_TEMPLATE $FRONTEND_POD_TEMPLATE ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
+set_keyvalue CONTAINER $FRONTEND_DEPLOYMENT ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
+set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
 
 set -ae
-source ./frontend/k8s/$sdenv.env || exit 1
+source ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env || exit 1
 set +a
-# envsubst < ./frontend/k8s/web.template.yaml | kubectl apply -f -
-envsubst >./frontend/k8s/web.yaml <./frontend/k8s/web.template.yaml
-sed -i '/^[[:space:]]*#/d' ./frontend/k8s/web.yaml
-info ${FUNCNAME[0]}: new ./frontend/k8s/web.yaml, ./frontend/k8s/$sdenv.env properties: 
-cat ./frontend/k8s/$sdenv.env
+# envsubst < ./frontend/k8s/$GLOBAL_NAMESPACE/web.template.yaml | kubectl apply -f -
+envsubst >./frontend/k8s/$GLOBAL_NAMESPACE/web.yaml <./frontend/k8s/$GLOBAL_NAMESPACE/web.template.yaml
+sed -i '/^[[:space:]]*#/d' ./frontend/k8s/$GLOBAL_NAMESPACE/web.yaml
+info ${FUNCNAME[0]}: new ./frontend/k8s/$GLOBAL_NAMESPACE/web.yaml, ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env properties: 
+cat ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env
 
 )
 }
@@ -362,175 +355,63 @@ function configure_middleware {
 # GLOBAL_NAMESPACE=$namespace configure_middleware $image_version
 ###################################
 (
-GLOBAL_NAMESPACE=$namespace configure_middleware_api $image_version
+GLOBAL_NAMESPACE=$namespace configure_middleware_data $image_version
 GLOBAL_NAMESPACE=$namespace configure_ingress_middleware $image_version
 )
 }
 
 
-function configure_middleware_api {
+function configure_middleware_data {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace configure_middleware_api $image_version
+# GLOBAL_NAMESPACE=$namespace configure_middleware_data $image_version
 ###################################
 (
 set -u
-component=api
+component=data
 image_version=$1
-MIDDLEWARE_API_REPLICAS=1
-set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME-$component ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TAG $image_version ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue HUB $DOCKERHUB:$HUBPORT ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue REPLICAS $MIDDLEWARE_API_REPLICAS ./middleware/k8s/properties/$sdenv$component.env
+MIDDLEWARE_DATA_REPLICAS=1
+set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME-$component ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue TAG $image_version ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue HUB $DOCKERHUB:$HUBPORT ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue REPLICAS $MIDDLEWARE_DATA_REPLICAS ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
 
-set_keyvalue HTTP_PORT $API_HTTP_PORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue SSL_PORT $API_HTTPS_PORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
+set_keyvalue HTTP_PORT $DATA_HTTP_PORT_K8S_MIDDLEWARE ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue HTTP_PORT_NAME $DATA_HTTP_PORTNAME_K8S_MIDDLEWARE ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue HTTP_TARGET_PORT $DATA_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue CONTAINER_PORT $DATA_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue HTTP_NODE_PORT $DATA_HTTP_NODEPORT_K8S_MIDDLEWARE ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue LISTEN_PORT_HTTP $DATA_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
 
-set_keyvalue HTTP_TARGET_PORT $API_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue SSL_TARGET_PORT $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue CONTAINER_PORT $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
+set_keyvalue SERVICE $MIDDLEWARE_DATA_SERVICE ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue SELECTOR $MIDDLEWARE_DATA_SELECTOR ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue DEPLOYMENT $MIDDLEWARE_DATA_DEPLOYMENT ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue POD_TEMPLATE $MIDDLEWARE_DATA_POD_TEMPLATE ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue CONTAINER $MIDDLEWARE_DATA_DEPLOYMENT ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
 
-set_keyvalue HTTP_NODE_PORT $API_HTTP_NODEPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue SSL_NODE_PORT $API_HTTPS_NODEPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
+set_keyvalue CORS_ORIGIN $CORS_ORIGIN_HTTP ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue TLS_MOUNT_PATH $MIDDLEWARE_TLS_MOUNT_PATH ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue TLS_CERT_VOLUME $MIDDLEWARE_TLS_CERT_VOLUME ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue SECRET $MIDDLEWARE_SECRET ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue CERTIFICATE cert.pem ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue CERTIFICATE_KEY key.pem ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
 
-set_keyvalue LISTEN_PORT_HTTP $API_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue LISTEN_PORT_HTTPS $API_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue SELECTOR $MIDDLEWARE_API_SELECTOR ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue DEPLOYMENT $MIDDLEWARE_API_DEPLOYMENT ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue POD_TEMPLATE $MIDDLEWARE_API_POD_TEMPLATE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue CONTAINER $MIDDLEWARE_API_DEPLOYMENT ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue CORS_ORIGIN $CORS_ORIGIN_HTTPS ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TLS_MOUNT_PATH $MIDDLEWARE_TLS_MOUNT_PATH ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TLS_CERT_VOLUME $MIDDLEWARE_TLS_CERT_VOLUME ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue SECRET $MIDDLEWARE_SECRET ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue CERTIFICATE cert.pem ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue CERTIFICATE_KEY key.pem ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue LOG_LEVEL $MIDDLEWARE_LOGLEVEL ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue NODE_ENV development ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue PG_HOST $PG_HOST ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue PG_DATABASE $PG_DATABASE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue PG_USER $PG_USER ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue PG_PASSWORD $PG_PASSWORD ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue PG_PORT $PG_PORT ./middleware/k8s/properties/$sdenv$component.env
+set_keyvalue LOG_LEVEL $MIDDLEWARE_LOGLEVEL ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue PG_HOST $PG_HOST ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue PG_DATABASE $PG_DATABASE ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue PG_USER $PG_USER ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue PG_PASSWORD $PG_PASSWORD ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue PG_PORT $PG_PORT ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
 
 set -ae
-source ./middleware/k8s/properties/$sdenv$component.env || exit 1
+source ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env || exit 1
 set +a
-# envsubst < ./middleware/k8s/template/api.template.yaml | kubectl apply -f -
-envsubst >./middleware/k8s/api.yaml <./middleware/k8s/template/api.template.yaml
-sed -i '/^[[:space:]]*#/d' ./middleware/k8s/api.yaml
-info ${FUNCNAME[0]}: new ./middleware/k8s/api.yaml, ./middleware/k8s/properties/$sdenv$component.env properties: 
-cat ./middleware/k8s/properties/$sdenv$component.env
-
-)
-}
-
-
-function configure_middleware_apt {
-##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace configure_middleware_apt $image_version
-###################################
-(
-set -u
-component=apt
-image_version=$1
-MIDDLEWARE_APT_REPLICAS=1
-set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME-$component ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TAG $image_version ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue HUB $DOCKERHUB:$HUBPORT ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue REPLICAS $MIDDLEWARE_APT_REPLICAS ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue HTTP_PORT $APT_HTTP_PORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue HTTP_TARGET_PORT $APT_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue CONTAINER_PORT $APT_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue HTTP_NODE_PORT $APT_HTTP_NODEPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue LISTEN_PORT_HTTP $APT_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue SERVICE $MIDDLEWARE_APT_SERVICE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue SELECTOR $MIDDLEWARE_APT_SELECTOR ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue DEPLOYMENT $MIDDLEWARE_APT_DEPLOYMENT ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue POD_TEMPLATE $MIDDLEWARE_APT_POD_TEMPLATE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue CONTAINER $MIDDLEWARE_APT_DEPLOYMENT ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue CORS_ORIGIN $CORS_ORIGIN_HTTPS ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TLS_MOUNT_PATH $MIDDLEWARE_TLS_MOUNT_PATH ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TLS_CERT_VOLUME $MIDDLEWARE_TLS_CERT_VOLUME ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue SECRET $MIDDLEWARE_SECRET ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue CERTIFICATE cert.pem ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue CERTIFICATE_KEY key.pem ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue LOG_LEVEL $MIDDLEWARE_LOGLEVEL ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue NODE_ENV development ./middleware/k8s/properties/$sdenv$component.env
-
-set -ae
-source ./middleware/k8s/properties/$sdenv$component.env || exit 1
-set +a
-# envsubst < ./middleware/k8s/template/apt.template.yaml | kubectl apply -f -
-envsubst >./middleware/k8s/apt.yaml <./middleware/k8s/template/apt.template.yaml
-sed -i '/^[[:space:]]*#/d' ./middleware/k8s/apt.yaml
-info ${FUNCNAME[0]}: new ./middleware/k8s/apt.yaml, ./middleware/k8s/properties/$sdenv$component.env properties: 
-cat ./middleware/k8s/properties/$sdenv$component.env
-
-)
-}
-
-
-function configure_middleware_chat {
-##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace configure_middleware_chat $image_version
-###################################
-(
-set -u
-component=chat
-image_version=$1
-MIDDLEWARE_API_REPLICAS=1
-set_keyvalue REPOSITORY $MIDDLEWARE_APPNAME-$component ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TAG $image_version ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue HUB $DOCKERHUB:$HUBPORT ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue REPLICAS $MIDDLEWARE_API_REPLICAS ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue HTTP_PORT $CHAT_HTTP_PORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue SSL_PORT $CHAT_HTTPS_PORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue CONTAINER_PORT $CHAT_HTTP_PORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue HTTP_TARGET_PORT $CHAT_HTTP_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue SSL_TARGET_PORT $CHAT_HTTPS_RUNPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue HTTP_NODE_PORT $CHAT_HTTP_NODEPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue SSL_NODE_PORT $CHAT_HTTPS_NODEPORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue SERVICE $MIDDLEWARE_CHAT_SERVICE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue SELECTOR $MIDDLEWARE_CHAT_SELECTOR ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue DEPLOYMENT $MIDDLEWARE_CHAT_DEPLOYMENT ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue POD_TEMPLATE $MIDDLEWARE_CHAT_POD_TEMPLATE ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue CONTAINER $MIDDLEWARE_CHAT_DEPLOYMENT ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue LOG_LEVEL $MIDDLEWARE_LOGLEVEL ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue CORS_ORIGIN $CORS_ORIGIN_HTTP ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TLS_MOUNT_PATH $MIDDLEWARE_TLS_MOUNT_PATH ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TLS_CERT_VOLUME $MIDDLEWARE_TLS_CERT_VOLUME ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue SECRET $MIDDLEWARE_SECRET ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue CERTIFICATE cert.pem ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue CERTIFICATE_KEY key.pem ./middleware/k8s/properties/$sdenv$component.env
-
-set_keyvalue NODE_ENV development ./middleware/k8s/properties/$sdenv$component.env
-set -ae
-source ./middleware/k8s/properties/$sdenv$component.env || exit 1
-set +a
-envsubst >./middleware/k8s/chat.yaml <./middleware/k8s/template/chat.template.yaml
-sed -i '/^[[:space:]]*#/d' ./middleware/k8s/chat.yaml
-info ${FUNCNAME[0]}: new ./middleware/k8s/chat.yaml, ./middleware/k8s/properties/$sdenv$component.env properties: 
-cat ./middleware/k8s/properties/$sdenv$component.env
+# envsubst < ./middleware/k8s/$GLOBAL_NAMESPACE/template/$component.template.yaml | kubectl apply -f -
+envsubst >./middleware/k8s/$GLOBAL_NAMESPACE/$component.yaml <./middleware/k8s/$GLOBAL_NAMESPACE/template/$component.template.yaml
+sed -i '/^[[:space:]]*#/d' ./middleware/k8s/$GLOBAL_NAMESPACE/$component.yaml
+info ${FUNCNAME[0]}: new ./middleware/k8s/$GLOBAL_NAMESPACE/$component.yaml, ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env properties: 
+cat ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
 
 )
 }
@@ -546,7 +427,6 @@ component=postgres
 image_version=$1
 set_keyvalue REPOSITORY $BACKEND_APPNAME ./backend/k8s/$sdenv.env
 set_keyvalue TAG $image_version ./backend/k8s/$sdenv.env
-# set_keyvalue HUB $DOCKERHUB ./backend/k8s/$sdenv.env
 set_keyvalue HUB $DOCKERHUB:$HUBPORT ./backend/k8s/$sdenv.env
 set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./backend/k8s/$sdenv.env
 set_keyvalue RUNPORT_POSTGRE $POSTGRE_SQL_RUNPORT ./backend/k8s/$sdenv.env
@@ -591,20 +471,21 @@ set -u
 component=web
 # image_version=$1
 #web
-set_keyvalue SERVICE $FRONTEND_WEBSERVICE ./frontend/k8s/$sdenv-ingress.env
-set_keyvalue INGRESS $FRONTEND_WEBSERVICE_INGRESS ./frontend/k8s/$sdenv-ingress.env
-set_keyvalue INGRESS_HOST $FRONTEND_WEBSERVICE_INGRESS_HOSTNAME ./frontend/k8s/$sdenv-ingress.env
-set_keyvalue INGRESS_PORT $WEBSERVICE_INGRESS_PORT_K8S_FRONTEND ./frontend/k8s/$sdenv-ingress.env
-set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET ./frontend/k8s/$sdenv-ingress.env
+set_keyvalue NAMESPACE $GLOBAL_NAMESPACE ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env
+set_keyvalue SERVICE $FRONTEND_WEBSERVICE ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env
+set_keyvalue INGRESS $FRONTEND_WEBSERVICE_INGRESS ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env
+set_keyvalue INGRESS_HOST $FRONTEND_WEBSERVICE_INGRESS_HOSTNAME ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env
+set_keyvalue INGRESS_PORT $WEB_HTTP_RUNPORT_PUBLIC_FRONTEND ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env
+set_keyvalue TLS_SECRET $FRONTEND_TLS_SECRET ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env
 
 set -ae
-source ./frontend/k8s/$sdenv-ingress.env || exit 1
+source ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env || exit 1
 set +a
-# envsubst < ./frontend/k8s/web.template.yaml | kubectl apply -f -
-envsubst >./frontend/k8s/web-ingress.yaml <./frontend/k8s/web-ingress.template.yaml
-sed -i '/^[[:space:]]*#/d' ./frontend/k8s/web-ingress.yaml
-info ${FUNCNAME[0]}: new ./frontend/k8s/web-ingress.yaml, ./frontend/k8s/$sdenv-ingress.env properties: 
-cat ./frontend/k8s/$sdenv-ingress.env
+# envsubst < ./frontend/k8s/$GLOBAL_NAMESPACE/web.template.yaml | kubectl apply -f -
+envsubst >./frontend/k8s/$GLOBAL_NAMESPACE/web-ingress.yaml <./frontend/k8s/$GLOBAL_NAMESPACE/web-ingress.template.yaml
+sed -i '/^[[:space:]]*#/d' ./frontend/k8s/$GLOBAL_NAMESPACE/web-ingress.yaml
+info ${FUNCNAME[0]}: new ./frontend/k8s/$GLOBAL_NAMESPACE/web-ingress.yaml, ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env properties: 
+cat ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env
 
 )
 }
@@ -615,105 +496,45 @@ function configure_ingress_middleware {
 # read -p "at ${FUNCNAME[0]}"
 (
 set -u
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_ingress_middleware_api $image_version
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE configure_ingress_middleware_data $image_version
 )
 }
 
 
-function configure_ingress_middleware_api {
+function configure_ingress_middleware_data {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace configure_ingress_middleware_api $image_version
+# GLOBAL_NAMESPACE=$namespace configure_ingress_middleware_data $image_version
 ###################################
 # read -p "at ${FUNCNAME[0]}"
 (
 set -u
-component=api
-set_keyvalue SERVICE $MIDDLEWARE_API_SERVICE ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue INGRESS $MIDDLEWARE_API_SERVICE_INGRESS ./middleware/k8s/properties/$sdenv$component-ingress.env
+component=data
+set_keyvalue SERVICE $MIDDLEWARE_DATA_SERVICE ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env
+set_keyvalue INGRESS $MIDDLEWARE_DATA_SERVICE_INGRESS ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env
 
-set_keyvalue API_HOSTNAME $MIDDLEWARE_API_INGRESS_HOSTNAME ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue API_PORT $API_HTTPS_PORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue PRODUCTS_HOSTNAME $MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue PRODUCTS_PORT $API_HTTPS_PORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component-ingress.env
+set_keyvalue DATA_HOSTNAME $MIDDLEWARE_DATA_INGRESS_HOSTNAME ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env
+set_keyvalue DATA_PORT $DATA_HTTP_PORT_K8S_MIDDLEWARE ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env
+set_keyvalue DATA_URI /data ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env
 
-set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue SSL_TRUEFALSE true ./middleware/k8s/properties/$sdenv$component-ingress.env
+set_keyvalue PRODUCTS_HOSTNAME $MIDDLEWARE_PRODUCTS_INGRESS_HOSTNAME ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env
+set_keyvalue PRODUCTS_PORT $PRODUCTS_HTTP_PORT_K8S_MIDDLEWARE ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env
+set_keyvalue PRODUCTS_URI /products ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env
+
+set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env
+set_keyvalue SSL_TRUEFALSE true ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env
 
 set -ae
-source ./middleware/k8s/properties/$sdenv$component-ingress.env || exit 1
+source ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env || exit 1
 set +a
-# envsubst < ./middleware/k8s/template/$component.template.yaml | kubectl apply -f -
-envsubst >./middleware/k8s/$component-ingress.yaml <./middleware/k8s/template/$component-ingress.template.yaml
-sed -i '/^[[:space:]]*#/d' ./middleware/k8s/$component-ingress.yaml
-info ${FUNCNAME[0]}: new ./middleware/k8s/$component-ingress.yaml, ./middleware/k8s/properties/$sdenv$component-ingress.env properties: 
-cat ./middleware/k8s/properties/$sdenv$component-ingress.env
+# envsubst < ./middleware/k8s/$GLOBAL_NAMESPACE/template/$component.template.yaml | kubectl apply -f -
+envsubst >./middleware/k8s/$GLOBAL_NAMESPACE/$component-ingress.yaml <./middleware/k8s/$GLOBAL_NAMESPACE/template/$component-ingress.template.yaml
+sed -i '/^[[:space:]]*#/d' ./middleware/k8s/$GLOBAL_NAMESPACE/$component-ingress.yaml
+info ${FUNCNAME[0]}: new ./middleware/k8s/$GLOBAL_NAMESPACE/$component-ingress.yaml, ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env properties: 
+cat ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env
 
 )
 }
 
-
-function configure_ingress_middleware_apt {
-##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace configure_ingress_middleware_apt $image_version
-###################################
-# read -p "at ${FUNCNAME[0]}"
-(
-set -u
-component=apt
-# image_version=$1
-set_keyvalue SERVICE $MIDDLEWARE_APT_SERVICE ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue INGRESS $MIDDLEWARE_APT_SERVICE_INGRESS ./middleware/k8s/properties/$sdenv$component-ingress.env
-
-set_keyvalue HOSTNAME $DOMAIN_HOSTNAME ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue APT_PATH $MIDDLEWARE_APT_PATH ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue APT_HOSTNAME $MIDDLEWARE_APT_INGRESS_HOSTNAME ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue APT_PORT $APT_HTTP_PORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component-ingress.env
-
-set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue SSL_TRUEFALSE true ./middleware/k8s/properties/$sdenv$component-ingress.env
-
-set -ae
-source ./middleware/k8s/properties/$sdenv$component-ingress.env || exit 1
-set +a
-# envsubst < ./middleware/k8s/template/$component.template.yaml | kubectl apply -f -
-envsubst >./middleware/k8s/$component-ingress.yaml <./middleware/k8s/template/$component-ingress.template.yaml
-sed -i '/^[[:space:]]*#/d' ./middleware/k8s/$component-ingress.yaml
-info ${FUNCNAME[0]}: new ./middleware/k8s/$component-ingress.yaml, ./middleware/k8s/properties/$sdenv$component-ingress.env properties: 
-cat ./middleware/k8s/properties/$sdenv$component-ingress.env
-
-)
-}
-
-
-function configure_ingress_middleware_chat {
-##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace configure_ingress_middleware_api $image_version
-###################################
-# read -p "at ${FUNCNAME[0]}"
-(
-set -u
-# image_version=$1
-component=chat
-set_keyvalue SERVICE $MIDDLEWARE_CHAT_SERVICE ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue INGRESS $MIDDLEWARE_CHAT_SERVICE_INGRESS ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue CHAT_HOSTNAME $MIDDLEWARE_CHAT_INGRESS_HOSTNAME ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue TLS_SECRET $MIDDLEWARE_TLS_SECRET ./middleware/k8s/properties/$sdenv$component-ingress.env
-
-set_keyvalue CHAT_PORT $CHAT_HTTP_PORT_K8S_MIDDLEWARE ./middleware/k8s/properties/$sdenv$component-ingress.env
-set_keyvalue SSL_TRUEFALSE false ./middleware/k8s/properties/$sdenv$component-ingress.env
-
-
-set -ae
-source ./middleware/k8s/properties/$sdenv$component-ingress.env || exit 1
-set +a
-# envsubst < ./middleware/k8s/template/$component.template.yaml | kubectl apply -f -
-envsubst >./middleware/k8s/$component-ingress.yaml <./middleware/k8s/template/$component-ingress.template.yaml
-sed -i '/^[[:space:]]*#/d' ./middleware/k8s/$component-ingress.yaml
-info ${FUNCNAME[0]}: new ./middleware/k8s/$component-ingress.yaml, ./middleware/k8s/properties/$sdenv$component-ingress.env properties: 
-cat ./middleware/k8s/properties/$sdenv$component-ingress.env
-
-)
-}
 
 
 function frontend_18 {
@@ -803,8 +624,8 @@ npm install
 find ./$FRONTEND_APPNAME/src -type f -name "*.js" -exec bash -c 'for f; do echo mv "$f" "${f%.js}.jsx"; done' _ {} +
 find ./$FRONTEND_APPNAME/src -type f -name "*.js" -exec bash -c 'for f; do mv "$f" "${f%.js}.jsx"; done' _ {} +
 
-SEARCH='process.env.REACT_APP_API_URL'
-REPLACE='import.meta.env.VITE_API_URL'
+SEARCH='process.env.REACT_APP_DATA_URL'
+REPLACE='import.meta.env.VITE_DATA_URL'
 find ./$FRONTEND_APPNAME/src -type f \( -name "*.jsx" \) -exec sed -i "s|$SEARCH|$REPLACE|g" {} +
 
 frontend_update
@@ -881,7 +702,7 @@ for dep in ${dependency_list[@]}; do
 done
 
 # pushd ./$working_directory
-project_build=./$working_directory/build
+project_build=./$working_directory/build && rm -rf $project_build/*
 mkdir -p ./$working_directory/build && pushd ./$project_build
 node_refresh $node_version
 
@@ -946,9 +767,9 @@ function k8s_webservice {
 (
 set -e
 set -a
-source ./frontend/k8s/$sdenv*.env || exit 1
+source ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv*.env || exit 1
 set +a
-runit "kubectl apply -f ./frontend/k8s/web.yaml -f ./frontend/k8s/web-ingress.yaml\
+runit "kubectl apply -f ./frontend/k8s/$GLOBAL_NAMESPACE/web.yaml -f ./frontend/k8s/$GLOBAL_NAMESPACE/web-ingress.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE --for=condition=Ready pod -l app=$FRONTEND_SELECTOR --timeout=$KUBECTL_TIMEOUT
 "
 
@@ -961,7 +782,7 @@ function k8s_webservice_update {
 # GLOBAL_NAMESPACE=$namespace k8s_webservice_update
 ###################################
 (
-export $(grep -v '^#' ./frontend/k8s/$sdenv.env | xargs)
+export $(grep -v '^#' ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env | xargs)
 set -ue
 configure_webservice $TAG
 banner1 logit
@@ -973,7 +794,7 @@ logit "kubectl set image deployment/web web=$HUB/$REPOSITORY:$TAG\
 }
 
 
-GLOBAL_MIDDLEWARE_COMPONENT_LIST=( api )
+GLOBAL_MIDDLEWARE_COMPONENT_LIST=( data )
 function middleware {
 ##########  RUN COMMAND  ##########
 # middleware
@@ -982,17 +803,11 @@ function middleware {
 node_version=${1:-22}
 working_directory=middleware
 banner2 working_directory $working_directory, node_version $node_version
-middleware_certificate
+# middleware_certificate
 
-set_keyvalue KEY_NAME certs/key.pem ./middleware/k8s/properties/$sdenv.env
-set_keyvalue CERT_NAME certs/cert.pem ./middleware/k8s/properties/$sdenv.env
-set_keyvalue CERTIFICATE_KEY key.pem ./middleware/k8s/properties/$sdenv.env
-set_keyvalue CERTIFICATE cert.pem ./middleware/k8s/properties/$sdenv.env
-dependency_list=(
+dependency_list+=(
   ./$working_directory/src/$node_version/etc\
   ./$working_directory/src/$node_version/src\
-  ./$working_directory/src/$node_version/etc/certs/cert.pem\
-  ./$working_directory/src/$node_version/etc/certs/key.pem\
 )
 for dep in ${dependency_list[@]}; do
   expanded_path=$(eval echo "$dep")
@@ -1007,6 +822,7 @@ done
 
 project_build=./$working_directory/build
 mkdir -p ./$working_directory/build && pushd ./$project_build
+node_refresh $node_version
 
 mkdir -p $MIDDLEWARE_APPNAME && cd $_
 cp ../../src/$node_version/* ../../src/$node_version/.* .
@@ -1020,18 +836,18 @@ echo "Components ${#GLOBAL_MIDDLEWARE_COMPONENT_LIST[@]}"
 for component in ${GLOBAL_MIDDLEWARE_COMPONENT_LIST[@]};do
   banner1 building from GLOBAL_MIDDLEWARE_COMPONENT_LIST: $component
   pushd $component || continue
-    node_refresh $node_version
+    # node_refresh $node_version
     # cp ../.npmrc .
     npm install
     npm ci
   popd
 done
-elif [ -z "$GLOBAL_MIDDLEWARE_COMPONENT_LIST" ];then warn no component, did you meain menu \"middleware api\"? && return 1
+elif [ -z "$GLOBAL_MIDDLEWARE_COMPONENT_LIST" ];then warn no component, did you meain menu \"middleware data\"? && return 1
 else
 while IFS= read -r component; do
   banner3 building from argument: $component
   pushd $component || continue
-    node_refresh $node_version
+    # node_refresh $node_version
     # cp ../.npmrc .
     npm install
     npm ci
@@ -1071,6 +887,15 @@ function middleware_certificate {
     && cp -p ./$CERTIFICATE_BUILD_DIRECTORY/*.pem ./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_APPNAME\
     && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE middleware_src_certificates\
     || warn found certificates in ./$CERTIFICATE_BUILD_DIRECTORY/ - not generating for $MIDDLEWARE_APPNAME
+
+  set_keyvalue KEY_NAME certs/key.pem ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv.env
+  set_keyvalue CERT_NAME certs/cert.pem ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv.env
+  set_keyvalue CERTIFICATE_KEY key.pem ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv.env
+  set_keyvalue CERTIFICATE cert.pem ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv.env
+  dependency_list=(
+    ./$working_directory/src/$node_version/etc/certs/cert.pem\
+    ./$working_directory/src/$node_version/etc/certs/key.pem\
+  )
 )
 }
 
@@ -1104,27 +929,27 @@ GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secrets # TLS
 )
 }
 
-function chat_secrets {
+function middle_secrets {
 ##########  RUN COMMAND  ##########
-# chat_secrets
+# middle_secrets
 ###################################
 (
-component=chat
+component=middle_secrets
 key=
 base=
 model=
 internal=
-set_keyvalue AZURE_API_KEY $(echo -n $key|base64|tr -d '\n') ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue AZURE_API_BASE $(echo -n $base|base64) ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue AZURE_DEPLOYMENT $(echo -n $model|base64) ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue INTERNAL_API_KEY $(echo -n $internal|base64) ./middleware/k8s/properties/$sdenv$component.env
+set_keyvalue AZURE_DATA_KEY $(echo -n $key|base64|tr -d '\n') ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue AZURE_DATA_BASE $(echo -n $base|base64) ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue AZURE_DEPLOYMENT $(echo -n $model|base64) ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue INTERNAL_DATA_KEY $(echo -n $internal|base64) ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
 set -ae
-source ./middleware/k8s/properties/$sdenv$component.env || exit 1
+source ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env || exit 1
 set +a
-envsubst < ./middleware/k8s/template/azure-secrets.template.yaml | kubectl apply -f -
-# envsubst >./middleware/k8s/azure-secrets.yaml <./middleware/k8s/template/azure-secrets.template.yaml
-sed -i '/^[[:space:]]*#/d' ./middleware/k8s/template/azure-secrets.template.yaml
-info ${FUNCNAME[0]}: ./middleware/k8s/azure-secrets.yaml, ./middleware/k8s/properties/$sdenv$component.env properties: 
+envsubst < ./middleware/k8s/$GLOBAL_NAMESPACE/template/azure-secrets.template.yaml | kubectl apply -f -
+# envsubst >./middleware/k8s/$GLOBAL_NAMESPACE/azure-secrets.yaml <./middleware/k8s/$GLOBAL_NAMESPACE/template/azure-secrets.template.yaml
+sed -i '/^[[:space:]]*#/d' ./middleware/k8s/$GLOBAL_NAMESPACE/template/azure-secrets.template.yaml
+info ${FUNCNAME[0]}: ./middleware/k8s/$GLOBAL_NAMESPACE/azure-secrets.yaml, ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env properties: 
  
 )
 }
@@ -1143,18 +968,18 @@ function build_image_middleware {
 (
 image_version=$1
 set -u
-build_image_middleware_api $image_version
+build_image_middleware_data $image_version
 )
 }
 
 
-function build_image_middleware_api {
+function build_image_middleware_data {
 ##########  RUN COMMAND  ##########
-# build_image_middleware_api $image_version
+# build_image_middleware_data $image_version
 ###################################
 (
 image_version=$1
-component=api
+component=data
 banner2 building image_version: $image_version image: $component
 set -u
 if [ -z "$image_version" ];then image_version=latest;fi
@@ -1168,106 +993,34 @@ image=$appname-$component
 echo -e \\nBuilding $image:$image_version
 
 # DOCKER_ARGUMENT=EXPOSE_PORT_HTTPS
-# DOCKER_ARGUMENT_VALUE=$API_HTTPS_NODEPORT_K8S_MIDDLEWARE
+# DOCKER_ARGUMENT_VALUE=$DATA_HTTPS_NODEPORT_K8S_MIDDLEWARE
 set_registry
 runit "docker build $NOCACHE\
   -t $image:$image_version\
-  --build-arg EXPOSE_PORT_HTTPS=$API_HTTPS_NODEPORT_K8S_MIDDLEWARE\
-  --build-arg EXPOSE_PORT_HTTP=$API_HTTP_NODEPORT_K8S_MIDDLEWARE\
+  --build-arg EXPOSE_PORT_HTTP=$DATA_HTTP_NODEPORT_K8S_MIDDLEWARE\
   $build_directory"\
   || return 1
 runit "docker tag $image:$image_version $DOCKERHUB:$HUBPORT/$image:$image_version" || return 1
 runit "docker push $DOCKERHUB:$HUBPORT/$image:$image_version" || return 1
-set_keyvalue REPOSITORY $image ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TAG $image_version ./middleware/k8s/properties/$sdenv$component.env
+set_keyvalue REPOSITORY $image ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
+set_keyvalue TAG $image_version ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component.env
 
 echo Pushed $DOCKERHUB/$image:$image_version
+kubectl set image deployment/$component $component=$DOCKERHUB:$HUBPORT/$image:$image_version -n $GLOBAL_NAMESPACE\
+    && kubectl wait --for=condition=available deployment/$component --timeout=60s\
+    || echo -e "\tmust be a new deployment, let's apply YAML"\
+    && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_${component}\
+    || echo something bad happened
 
 )
 }
 
 
-function build_image_middleware_apt {
+function default_k8s_data {
 ##########  RUN COMMAND  ##########
-# build_image_middleware_apt $image_version
+# default_k8s_data
 ###################################
-(
-image_version=$1
-component=apt
-set -u
-if [ -z "$image_version" ];then image_version=latest;fi
-if [ ! -d ./middleware ];then echo must be at project root && return 1;fi
-build_directory=middleware/build
-NOCACHE=
-if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
-appname=$MIDDLEWARE_APPNAME
-cp ./$build_directory/src/etc/Dockerfile.$component ./$build_directory/Dockerfile
-image=$appname-$component
-echo -e \\nBuilding $image:$image_version
-
-# DOCKER_ARGUMENT=EXPOSE_PORT_HTTPS
-# DOCKER_ARGUMENT_VALUE=$API_HTTPS_NODEPORT_K8S_MIDDLEWARE
-set_registry
-runit "docker build $NOCACHE\
-  -t $image:$image_version\
-  --build-arg EXPOSE_PORT_HTTP=$APT_HTTP_RUNPORT_K8S_MIDDLEWARE\
-  $build_directory"\
-  || return 1
-runit "docker tag $image:$image_version $DOCKERHUB:$HUBPORT/$image:$image_version" || return 1
-runit "docker push $DOCKERHUB:$HUBPORT/$image:$image_version" || return 1
-set_keyvalue REPOSITORY $image ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TAG $image_version ./middleware/k8s/properties/$sdenv$component.env
-
-echo Pushed $DOCKERHUB/$image:$image_version
-
-)
-}
-
-
-function build_image_middleware_chat {
-##########  RUN COMMAND  ##########
-# build_image_middleware_chat $image_version
-###################################
-(
-image_version=$1
-component=chat
-set -u
-if [ -z "$image_version" ];then image_version=latest;fi
-if [ ! -d ./middleware ];then echo must be at project root && return 1;fi
-build_directory=middleware/build
-NOCACHE=
-if [[ $sdenv = 'prod' ]];then NOCACHE=--no-cache;fi
-appname=$MIDDLEWARE_APPNAME
-cp ./$build_directory/src/etc/Dockerfile.$component ./$build_directory/Dockerfile
-image=$appname-$component
-echo -e \\nBuilding $image:$image_version
-
-# DOCKER_ARGUMENT=EXPOSE_PORT_HTTPS
-# DOCKER_ARGUMENT_VALUE=$API_HTTPS_NODEPORT_K8S_MIDDLEWARE
-set_registry
-runit "docker build $NOCACHE\
-  -t $image:$image_version\
-  --build-arg EXPOSE_PORT_HTTPS=$CHAT_HTTPS_NODEPORT_K8S_MIDDLEWARE\
-  --build-arg EXPOSE_PORT_HTTP=$CHAT_HTTP_NODEPORT_K8S_MIDDLEWARE\
-  $build_directory"\
-  || return 1
-runit "docker tag $image:$image_version $DOCKERHUB:$HUBPORT/$image:$image_version" || return 1
-runit "docker push $DOCKERHUB:$HUBPORT/$image:$image_version" || return 1
-set_keyvalue REPOSITORY $image ./middleware/k8s/properties/$sdenv$component.env
-set_keyvalue TAG $image_version ./middleware/k8s/properties/$sdenv$component.env
-
-echo Pushed $DOCKERHUB/$image:$image_version
-cat ./middleware/k8s/properties/$sdenv$component.env
-
-)
-}
-
-
-function default_k8s_api {
-##########  RUN COMMAND  ##########
-# default_k8s_api
-###################################
-GLOBAL_NAMESPACE=default k8s_api
+GLOBAL_NAMESPACE=default k8s_data
 }
 
 function k8s_middleware {
@@ -1284,9 +1037,9 @@ for component in ${GLOBAL_MIDDLEWARE_COMPONENT_LIST[@]};do
 banner1 kubectl apply from GLOBAL_MIDDLEWARE_COMPONENT_LIST: $component
 SELECTOR_VARIABLE=MIDDLEWARE_$(echo $component)_SELECTOR
 set -a
-source ./middleware/k8s/properties/$sdenv*$component*.env || exit 1
+source ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv*$component*.env || exit 1
 set +a
-runit "kubectl apply -f ./middleware/k8s/$component.yaml -f ./middleware/k8s/$component-ingress.yaml\
+runit "kubectl apply -f ./middleware/k8s/$GLOBAL_NAMESPACE/$component.yaml -f ./middleware/k8s/$GLOBAL_NAMESPACE/$component-ingress.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
     --for=condition=Ready pod -l app=${!SELECTOR_VARIABLE} --timeout=$KUBECTL_TIMEOUT
 "
@@ -1300,51 +1053,19 @@ fi
 )
 }
 
-function k8s_api {
+function k8s_data {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace k8s_api
+# GLOBAL_NAMESPACE=$namespace k8s_data
 ###################################
 (
 set -e
 set -a
-source ./middleware/k8s/properties/$sdenv*.env || exit 1
+source ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv*.env || exit 1
 set +a
-runit "kubectl apply -f ./middleware/k8s/api.yaml -f ./middleware/k8s/api-ingress.yaml\
+component=data
+runit "kubectl apply -f ./middleware/k8s/$GLOBAL_NAMESPACE/$component.yaml -f ./middleware/k8s/$GLOBAL_NAMESPACE/$component-ingress.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
-    --for=condition=Ready pod -l app=$MIDDLEWARE_API_SELECTOR --timeout=$KUBECTL_TIMEOUT
-"
-)
-}
-
-function k8s_apt {
-##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace k8s_apt
-###################################
-(
-set -e
-set -a
-source ./middleware/k8s/properties/$sdenv*.env || exit 1
-set +a
-runit "kubectl apply -f ./middleware/k8s/apt.yaml -f ./middleware/k8s/apt-ingress.yaml\
-  && kubectl wait --namespace $GLOBAL_NAMESPACE\
-    --for=condition=Ready pod -l app=$MIDDLEWARE_APT_SELECTOR --timeout=$KUBECTL_TIMEOUT
-"
-)
-}
-
-function k8s_chat {
-##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace k8s_chat
-###################################
-(
-set -e
-chat_secrets
-set -a
-source ./middleware/k8s/properties/$sdenv*.env || exit 1
-set +a
-runit "kubectl apply -f ./middleware/k8s/chat.yaml -f ./middleware/k8s/chat-ingress.yaml\
-  && kubectl wait --namespace $GLOBAL_NAMESPACE\
-    --for=condition=Ready pod -l app=$MIDDLEWARE_CHAT_SELECTOR --timeout=$KUBECTL_TIMEOUT
+    --for=condition=Ready pod -l app=$MIDDLEWARE_DATA_SELECTOR --timeout=$KUBECTL_TIMEOUT
 "
 )
 }
@@ -1368,7 +1089,7 @@ function k8s_secrets {
 (
 set -ue
 ### REUSE THE SAME CERT FOR DEVELOPMENT
-# GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secret_api
+# GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secret_data
 # GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_secret_web
 
 CERTIFICATE_FILE_NAME=cert.pem
@@ -1388,21 +1109,21 @@ runit "kubectl create secret tls $FRONTEND_TLS_SECRET\
 )
 }
 
-function k8s_secret_api {
+function k8s_secret_data {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace k8s_secret_api
+# GLOBAL_NAMESPACE=$namespace k8s_secret_data
 ###################################
 (
 set -e
 MIDDLEWARE_CERTIFICATE_FILE_NAME=cert.pem
 MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=key.pem
 runit "kubectl create secret generic $MIDDLEWARE_SECRET\
-    --from-file=$MIDDLEWARE_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_API_SELECTOR/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
-    --from-file=$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_API_SELECTOR/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
+    --from-file=$MIDDLEWARE_CERTIFICATE_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_DATA_SELECTOR/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
+    --from-file=$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_DATA_SELECTOR/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
 "
 runit "kubectl create secret tls $MIDDLEWARE_TLS_SECRET\
-    --cert=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_API_SELECTOR/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
-    --key=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_API_SELECTOR/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
+    --cert=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_DATA_SELECTOR/$MIDDLEWARE_CERTIFICATE_FILE_NAME\
+    --key=./$CERTIFICATE_BUILD_DIRECTORY/$MIDDLEWARE_DATA_SELECTOR/$MIDDLEWARE_CERTIFICATE_KEY_FILE_NAME
 "
 )
 }
@@ -1431,51 +1152,22 @@ function k8s_ingress {
 (
 set -u
 GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_ingress_web
-GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_ingress_api
+GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE k8s_ingress_data
 )
 }
 
 
-function k8s_ingress_api {
+function k8s_ingress_data {
 ##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace k8s_ingress_api
+# GLOBAL_NAMESPACE=$namespace k8s_ingress_data
 ###################################
 (
-component=api
+component=data
 set -e
 set -a
-source ./middleware/k8s/properties/$sdenv$component-ingress.env || exit 1
+source ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv$component-ingress.env || exit 1
 set +a
-runit "kubectl apply -f ./middleware/k8s/$component-ingress.yaml"
-)
-}
-
-
-function k8s_ingress_chat {
-##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace k8s_ingress_chat
-###################################
-(
-component=chat
-set -e
-set -a
-source ./middleware/k8s/properties/$sdenv$component-ingress.env || exit 1
-set +a
-runit "kubectl apply -f ./middleware/k8s/$component-ingress.yaml"
-)
-}
-
-function k8s_ingress_apt {
-##########  RUN COMMAND  ##########
-# GLOBAL_NAMESPACE=$namespace k8s_ingress_apt
-###################################
-(
-component=apt
-set -e
-set -a
-source ./middleware/k8s/properties/$sdenv$component-ingress.env || exit 1
-set +a
-runit "kubectl apply -f ./middleware/k8s/$component-ingress.yaml"
+runit "kubectl apply -f ./middleware/k8s/$GLOBAL_NAMESPACE/$component-ingress.yaml"
 )
 }
 
@@ -1488,9 +1180,9 @@ function k8s_ingress_web {
 component=web
 set -e
 set -a
-source ./frontend/k8s/$sdenv-ingress.env || exit 1
+source ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env || exit 1
 set +a
-runit "kubectl apply -f ./frontend/k8s/$component-ingress.yaml"
+runit "kubectl apply -f ./frontend/k8s/$GLOBAL_NAMESPACE/$component-ingress.yaml"
 )
 }
 
@@ -1614,6 +1306,23 @@ is_set_u_enabled() {
   [ $? -ne 0 ]
 }
 
+delete_env_files() {
+  local target_dir="$1"
+
+  if [[ -z "$target_dir" ]]; then
+    echo "Usage: delete_env_files <directory>"
+    return 1
+  fi
+
+  if [[ ! -d "$target_dir" ]]; then
+    echo "Error: '$target_dir' is not a valid directory."
+    return 1
+  fi
+
+  echo "Searching for .env files under: $target_dir"
+  find "$target_dir" -type f -name "*.env" -print -exec rm -v {} \;
+}
+
 function formatrun {
 (
 raw_cmd=$(cat)
@@ -1690,3 +1399,5 @@ eval $CMD
 ls *.pem
 )
 }
+
+. ./chat-bootstrap.sh

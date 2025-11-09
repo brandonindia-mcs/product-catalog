@@ -10,25 +10,32 @@ function menutop_2 {
   
 
 echo -e "
-$(cyan NPM \& Install)         $(cyan Build \(npm\))         $(cyan Ingress)        $(cyan Configure)           $(cyan k8s)            $(cyan sys)
-21)webservice     20)frontend_update  69)deploy all    24)webservice      5)all          0)sys_check      
-31)middleweare    30)middleware       64)configure     34)middleware     25)webservice   3)Build+Deploy 
-                middleware)build *    504)nginx        64)ingress        35)middleware   6)chat secrets
-mdw)install *                         514)logs         34.1)api          35.1)api        7)secrets              
-                       $(cyan Install)        524)follow logs  34.2)chat         35.2)chat       8)generate_selfsignedcert_cnf product-catalog-frontend
- 40)postgres          33)middleware   69.1)web         34.3)apt        35.3)apt          649)middleware_certificate 
-40.0)delete_postgres                  69.2)api                                         11)configure
-                                      69.3)apt                                        0000)show all secrets
-$(cyan Clear)         $(cyan frontend web)   $(cyan api)            $(cyan "chat/apt")      $(cyan ingress)        $(cyan backend)
-90)all        77.1)desc      78.1)desc      79.1)desc     76.1)logs      82)postgres_out
-91)web        77.2)deploy    78.2)deploy    79.2)deploy   76.3)logs
-92)api        77.3)logs      78.3)logs      79.3)logs     75)endpoints
-93)chat       77.4)out       78.4)out       79.4)out              $(cyan "           Validation           ")
-97)ingress                                  79.5)mock                 51)web_https  53)web  
-97.1)web                                                              52)api_https  76)describe
-97.2)api                                                              64.1)validate API w/ Trusted 
-97.3)chat                                                             64.2)validate API w/ resolver
-
+$(cyan NPM \& Install)         $(cyan Build \(npm\))     $(cyan Ingress)        $(cyan Configure)           $(cyan k8s)            
+21)webservice     20)frontend_update  69)deploy all    24)webservice      5)all         
+31)middleweare    30)middleware       64)configure     34)middleware     25)webservice  
+                middleware)build *    504)nginx        64)ingress        35)middleware  
+mdw)install *                         514)logs         34.1)data         35.1)data       
+                       $(cyan Install)        524)follow logs                           
+ 40)postgres          33)middleware   69.1)web                                          
+40.0)delete_postgres                  69.2)data                                          
+                                                                                        
+$(cyan Clear)         $(cyan web)            $(cyan data)                          $(cyan ingress)        $(cyan backend)
+90)all        77.1)desc      78.1)desc                    76.1)logs      82)postgres_out
+91)web        77.2)deploy    78.2)deploy                  76.3)logs
+92)api        77.3)logs      78.3)logs                    75)endpoints
+97)ingress    77.4)out       78.4)out                             
+97.1)web                                                    
+97.2)api                                                    
+    $(cyan "           Validation        ")         $(cyan sys)                    
+    51)web_https  53)web                0)sys_check                             
+    52)api_https  76)describe           3)Build+Deploy                              
+    64.1)validate API w/ Trusted        6)chat secrets                                
+    64.2)validate API w/ resolver       7)secrets                                  
+                                      0000)show all secrets                                                        
+                                        649)middleware_certificate                                                              
+                                        11)configure                                                            
+                                  8)generate_selfsignedcert_cnf                
+                                      >product-catalog-frontend
 $(cyan Registry): 71.1)front    71.2)middle    71.3)back  71.4)get images  tag)repo *  99)clear images
 "
 #       98)postgres

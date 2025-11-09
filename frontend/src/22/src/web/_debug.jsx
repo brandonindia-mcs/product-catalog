@@ -17,24 +17,6 @@ export default function _debug() {
     }
     setLoading(false);
   }, []);
-  // useEffect(() => {
-  //   const url = import.meta.env.VITE_CHAT_URL || '';
-  //   if (!url) {
-  //     setError('VITE_CHAT_URL is not defined');
-  //   } else {
-  //     setChatUrl(url);
-  //   }
-  //   setLoading(false);
-  // }, []);
-  useEffect(() => {
-    const url = import.meta.env.VITE_APT_URL || '';
-    if (!url) {
-      setError('VITE_APT_URL is not defined');
-    } else {
-      setAptUrl(url);
-    }
-    setLoading(false);
-  }, []);
 
   if (loading) return <p>Loading stuff here...</p>;
   if (error) return <p className="error">{error}</p>;
@@ -44,8 +26,6 @@ export default function _debug() {
       <h2>Debugging Information</h2>
       <div>
         <p className="_debug-green">import.meta.env.VITE_API_URL: {apiUrl}</p>
-        {/* <p className="_debug-green">import.meta.env.VITE_CHAT_URL: {chatUrl}</p> */}
-        <p className="_debug-green">import.meta.env.VITE_APT_URL: {aptUrl}</p>
       </div>
     </section>
   );

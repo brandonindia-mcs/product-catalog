@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: $NAMESPACE
+  name: $INGRESS
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "$SSL_TRUEFALSE"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "$SSL_TRUEFALSE"
+    # nginx.ingress.kubernetes.io/rewrite-target: /$1
+    # nginx.ingress.kubernetes.io/proxy-read-timeout: "15"
+    # nginx.ingress.kubernetes.io/proxy-send-timeout: "15"
+spec:
+  #### BIND TO NGINX FROM: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
+  ingressClassName: nginx
+  # tls:
+  #   - hosts:
+  #       - $CHAT_HOSTNAME
+  #     secretName: $TLS_SECRET
+  rules:
+    - host: $CHAT_HOSTNAME
+      http:
+        paths:
+          - path: $CHAT_URI
+            pathType: Prefix
+            backend:
+              service:
+                name: $SERVICE
+                port:
+                  number: $CHAT_PORT

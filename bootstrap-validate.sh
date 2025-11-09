@@ -243,14 +243,15 @@ done
 
 }
 NS=default
-PRODUCT_CATALOG_SECURE_API_FQDN=https://product-catalog.progress.me:32443
-PRODUCT_CATALOG_CHAT_FQDN=https://product-catalog.progress.me:3001
+PRODUCT_CATALOG_SECURE_API_FQDN=http://product-catalog.progress.notls:32001
 function validate_insecure_api {
-curl -vk -X POST $PRODUCT_CATALOG_SECURE_API_FQDN/api \
+curl -vk -X POST $PRODUCT_CATALOG_SECURE_API_FQDN/api/chat \
   -H "Content-Type: application/json" \
   -d '{"messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hello"}]}'
 
 }
+# curl -v -X POST http://product-catalog.progress.notls:32001/api/chat -H "Content-Type: application/json" -d '{"messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hello"}]}'
+
 function validate_insecure_chat {
 url=http://$(NS=default get_last_pod_ip chat):3001/chat
 curl -v -X POST $url \
@@ -288,8 +289,8 @@ kubectl get svc -n ingress-nginx
 kubectl get svc ingress-nginx-controller -n ingress-nginx -o yaml
 
 kubectl logs -n ingress-nginx -l app.kubernetes.io/component=$component
-curl -v http://product-catalog.progress.me/
-curl -vk https://product-catalog.progress.me/
+curl -v http://product-catalog.progress.notls/
+curl -vk https://product-catalog.progress.notls/
 kubectl describe ingress web-ingress
 kubectl get svc web-service
 kubectl get pods -l app=web

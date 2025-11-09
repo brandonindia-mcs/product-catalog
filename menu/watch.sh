@@ -43,14 +43,14 @@ function watch_deployment {
 }
 function banner_alt { echo; echo -n "$(tput setaf 0;tput setab 6)$(date "+%Y-%m-%d %H:%M:%S") BANNER ${FUNCNAME[2]}::${FUNCNAME[1]} ${*}$(tput sgr 0)"; }
 function watch_namespace {
-(namespace=${1:-default} &&
+(namespace=${1:-default} && timeout=${2:-7} &&
  while true; do banner_alt\
                 && watch_pod $namespace\
                 && watch_service $namespace\
                 && watch_deployment $namespace\
                 && watch_ingress $namespace\
                 && watch_ingress_nginx
- sleep 7
+ sleep $timeout
  done
 )
 }

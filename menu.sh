@@ -136,6 +136,7 @@
   function run_configure_api() {        parent && GLOBAL_NAMESPACE=$1 configure_middleware_api $2 ; }
   function run_configure_chat() {       parent && GLOBAL_NAMESPACE=$1 configure_middleware_chat $2 ; }
   function run_configure_apt() {        parent && GLOBAL_NAMESPACE=$1 configure_middleware_apt $2 ; }
+  function run_configure_data() {       parent && GLOBAL_NAMESPACE=$1 configure_middleware_data $2 ; }
   function run_configure_postgres() {   parent && GLOBAL_NAMESPACE=$1 configure_postgres $2 ; }
   function run_configure_ingress() {    parent && GLOBAL_NAMESPACE=$1 configure_ingress $2 ; }
   function run_configure() {            parent && GLOBAL_NAMESPACE=$1 configure $2 ; }
@@ -162,6 +163,7 @@
   function run_k8s_api() {        parent    &&  configure_ingress_middleware_api  $1 $2 && GLOBAL_NAMESPACE=$1 k8s_api ; }
   function run_k8s_chat() {       parent    &&  configure_ingress_middleware_chat $1 $2 && GLOBAL_NAMESPACE=$1 k8s_chat ; }
   function run_k8s_apt() {        parent    &&  configure_ingress_middleware_apt  $1 $2 && GLOBAL_NAMESPACE=$1 k8s_apt ; }
+  function run_k8s_data() {       parent    &&  configure_ingress_middleware_data  $1 $2 && GLOBAL_NAMESPACE=$1 k8s_data ; }
 
   function run_k8s_postgres() {   parent && run_image_backend $2    &&  run_configure_postgres $1 $2    && GLOBAL_NAMESPACE=$1 k8s_postgres ; }
 
