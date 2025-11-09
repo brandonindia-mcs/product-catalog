@@ -73,6 +73,8 @@ function product_catalog {
 (
   # "# NOT CALLING # && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE $function $1"\
   # && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE $function $1\
+cleanup_yaml frontend/k8s/$GLOBAL_NAMESPACE
+cleanup_yaml middleware/k8s/$GLOBAL_NAMESPACE
 info ${FUNCNAME[0]}\
   && function=install_postgres && yellow ${FUNCNAME[0]}: callling $function\
   "# NOT CALLING # && GLOBAL_NAMESPACE=$GLOBAL_NAMESPACE $function $1"\
@@ -135,8 +137,7 @@ function update_webservice {
 # GLOBAL_NAMESPACE=$namespace update_webservice $image_version
 ###################################
 (
-# >./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env && warn ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv.env reset
-# >./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env && warn ./frontend/k8s/$GLOBAL_NAMESPACE/$sdenv-ingress.env reset
+cleanup_yaml frontend/k8s/$GLOBAL_NAMESPACE
 frontend_update\
   && set -u\
   && build_image_frontend $1\
@@ -151,9 +152,7 @@ function install_middleware {
 # GLOBAL_NAMESPACE=$namespace install_middleware $image_version
 ###################################
 (
-# >./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv.env && warn ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv.env reset
-# >./middleware/k8s/$GLOBAL_NAMESPACE/${sdenv}data.env && warn ./middleware/k8s/$GLOBAL_NAMESPACE/${sdenv}data.env reset
-# >./middleware/k8s/$GLOBAL_NAMESPACE/${sdenv}data-ingress.env && warn ./middleware/k8s/$GLOBAL_NAMESPACE/${sdenv}data-ingress.env reset
+cleanup_yaml middleware/k8s/$GLOBAL_NAMESPACE
 middleware\
   && set -ue\
   && build_image_middleware $1\
@@ -355,7 +354,9 @@ function configure_middleware {
 # GLOBAL_NAMESPACE=$namespace configure_middleware $image_version
 ###################################
 (
+cleanup_yaml middleware/k8s/$GLOBAL_NAMESPACE
 GLOBAL_NAMESPACE=$namespace configure_middleware_data $image_version
+GLOBAL_NAMESPACE=$namespace configure_middleware_chat $image_version
 GLOBAL_NAMESPACE=$namespace configure_ingress_middleware $image_version
 )
 }
@@ -1310,7 +1311,7 @@ delete_env_files() {
   local target_dir="$1"
 
   if [[ -z "$target_dir" ]]; then
-    echo "Usage: delete_env_files <directory>"
+    echo "Usage: ${FUNCNAME[0]} <directory>"
     return 1
   fi
 
@@ -1321,6 +1322,28 @@ delete_env_files() {
 
   echo "Searching for .env files under: $target_dir"
   find "$target_dir" -type f -name "*.env" -print -exec rm -v {} \;
+}
+
+delete_yaml_files() {
+  local target_dir="$1"
+
+  if [[ -z "$target_dir" ]]; then
+    echo "Usage: ${FUNCNAME[0]} <directory>"
+    return 1
+  fi
+
+  if [[ ! -d "$target_dir" ]]; then
+    echo "Error: '$target_dir' is not a valid directory."
+    return 1
+  fi
+
+  echo "Deleting .yaml files (excluding *.template.yaml) under: $target_dir"
+  find "$target_dir" -type f -name "*.yaml" ! -name "*.template.yaml" -print0 | xargs -0 rm -v
+}
+
+cleanup_yaml() {
+  delete_env_files $1
+  delete_yaml_files $1
 }
 
 function formatrun {
