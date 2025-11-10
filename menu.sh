@@ -115,7 +115,7 @@
     fi
   }
   function bakenv {
-    /bin/bash $HOME/bin/backup-env.sh /home/developer/devnet/offline-product-catalog /home/developer/product-catalog
+    /bin/bash $HOME/bin/backup-env.sh /home/developer/devnet/offline-product-catalog/env.backup /home/developer/product-catalog
   }
   function version() { echo $(date +%Y%m%d)$(echo -n `__git_ps1` | sed 's/[()\/]/-/g; s/--/-/g; s/^//')$(date +%H%M) ; }
   function parent() { green ${FUNCNAME[1]} ; }
