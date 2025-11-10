@@ -1,4 +1,3 @@
 !product-catalog-frontend/.env
 *.env*
 Dockerfile
-!src/**/etc/Dockerfile
