@@ -1,5 +1,4 @@
 !product-catalog-frontend/.env
-package-lock.json
-Dockerfile
-package.json
 *.env*
+Dockerfile
+!src/**/etc/Dockerfile
