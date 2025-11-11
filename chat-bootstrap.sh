@@ -129,8 +129,8 @@ set -a
 source ./middleware/k8s/$GLOBAL_NAMESPACE/properties/$sdenv*.env || exit 1
 set +a
 # component=chat
-runit "kubectl apply -f ./middleware/k8s/$GLOBAL_NAMESPACE/$component.yaml -f ./middleware/k8s/$GLOBAL_NAMESPACE/$component-ingress.yaml"\
-    && kubectl wait --for=condition=available deployment/$component --timeout=60s
+runit "kubectl apply -f ./middleware/k8s/$GLOBAL_NAMESPACE/$component.yaml -f ./middleware/k8s/$GLOBAL_NAMESPACE/$component-ingress.yaml\
+    && kubectl wait --for=condition=available deployment/$component --timeout=60s"
 )
 }
 

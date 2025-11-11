@@ -4,7 +4,15 @@
 GLOBAL_VERSION=$(date +%Y%m%d%H%M%s)
 KUBECTL_TIMEOUT=15s
 alias stamp="echo \$(date +%Y%m%d%H%M%S)"
-
+set_cors_domains() {
+(
+  file="CORS_DOMAINS"
+  if [[ -r ./$file ]]; then
+    # Read file content into variable, trimming trailing newline
+    IFS= read -r -d '' CORS_DOMAINS_VAR < <(printf '%s\0' "$(<"$file")")
+  fi
+)
+}
 export APPNAME=product-catalog
 export DOMAIN_HOSTNAME=${APPNAME}.progress.notls
 
@@ -46,7 +54,17 @@ export PRODUCTS_HTTP_PORT_K8S_MIDDLEWARE=80
 # export DATA_INGRESS_PORT_K8S_MIDDLEWARE=$DATA_HTTPS_PORT_K8S_MIDDLEWARE
 
 export MIDDLEWARE_LOGLEVEL=debug
-export CORS_ORIGIN_HTTP=http://$DOMAIN_HOSTNAME
+# Initialize with base value
+CORS_ORIGIN_HTTP=",http://${DOMAIN_HOSTNAME}"
+
+# Append contents of CORS_DOMAINS if file exists and is non-empty
+if [[ -s CORS_DOMAINS ]]; then
+  IFS= read -r -d '' cors_domains < <(printf '%s\0' "$(<CORS_DOMAINS)")
+  CORS_ORIGIN_HTTP+=",${cors_domains}"
+fi
+
+# Export the final value
+export CORS_ORIGIN_HTTP
 export NODE_TESTING_PORT=3333
 
 export NODE_ENV=development
@@ -969,7 +987,8 @@ function build_image_middleware {
 (
 image_version=$1
 set -u
-build_image_middleware_data $image_version
+# build_image_middleware_data $image_version
+# build_image_middleware_chat $image_version
 )
 }
 
@@ -1066,8 +1085,7 @@ set +a
 component=data
 runit "kubectl apply -f ./middleware/k8s/$GLOBAL_NAMESPACE/$component.yaml -f ./middleware/k8s/$GLOBAL_NAMESPACE/$component-ingress.yaml\
   && kubectl wait --namespace $GLOBAL_NAMESPACE\
-    --for=condition=Ready pod -l app=$MIDDLEWARE_DATA_SELECTOR --timeout=$KUBECTL_TIMEOUT
-"
+    --for=condition=Ready pod -l app=$MIDDLEWARE_DATA_SELECTOR --timeout=$KUBECTL_TIMEOUT"
 )
 }
 
@@ -1364,7 +1382,7 @@ eval "$*"
 }
 
 function runit {
-banner2
+banner3
 echo -e "$*"
 eval "$*"
 }

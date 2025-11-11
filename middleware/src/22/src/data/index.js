@@ -6,7 +6,6 @@ import fastifyFactory from 'fastify';
 import fastifyCors from '@fastify/cors';
 import { Pool } from 'pg';
 
-
 const httpPort = parseInt(process.env.LISTEN_PORT_HTTP || process.argv[2] || 80 || 443)
 const httpListenHost = '0.0.0.0'
 const listenPort = httpPort
@@ -20,10 +19,10 @@ const resolvedLogLevel = validLogLevels.includes(process.env.LOG_LEVEL)
 
 // // Shared logger config
 const loggerConfig = {
-level: resolvedLogLevel,
+  level: resolvedLogLevel,
   transport: {
     target: 'pino-pretty',
-    options: { 
+    options: {
       translateTime: 'SYS:standard',
       ignore: 'pid,hostname' // optional: cleaner output
     }
@@ -72,12 +71,22 @@ const pool = new Pool({
   // ssl: process.env.DB_SSL === 'true'
 });
 
+const allowedOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
 // Shared route registration function
 const registerRoutes = (app) => {
   app.register(fastifyCors, {
-    origin: process.env.CORS_ORIGIN,
-    methods: ['GET', 'POST'],
-    credentials: true
+    origin: (origin, cb) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST']
   });
 
   app.get('/products', async (req, reply) => {

@@ -4,3 +4,4 @@ node_modules
 *.tar.gz
 build/
 *token
+CORS_DOMAINS

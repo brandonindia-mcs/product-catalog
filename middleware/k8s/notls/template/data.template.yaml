@@ -62,7 +62,7 @@ spec:
             - name: NODE_ENV
               value: $NODE_ENV
             - name: CORS_ORIGIN
-              value: $CORS_ORIGIN
+              value: "$CORS_ORIGIN"
               #####***  ALLOW SKETCHY CERTS, NOT FOR PRODUCTION  ***####
               #####***  AS-IN SELF-SIGNED OR OTHERWISE  ************####
             - name: NODE_TLS_REJECT_UNAUTHORIZED
