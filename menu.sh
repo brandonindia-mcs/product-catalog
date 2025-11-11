@@ -122,7 +122,7 @@
   function run_system_check() { parent && system_check && echo -e "\n\tsdenv is $sdenv\n\tDOCKERHUB is $DOCKERHUB" ; }
   function system_check() { setenv && . ./bootstrap.sh && . ./bootstrap-validate.sh 2>/dev/null || echo ./bootstrap-validate.sh not found... continuing ; }
 
-. ./menu/helpers.sh
+. ./menu/registry_helpers.sh
 . ./menu/display_menu.sh
 . ./menu/show_menu.sh
 ####################  RUN METHODS ARE DRIVERS FOR BOOTSTRAP  ##################
