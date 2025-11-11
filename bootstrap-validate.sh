@@ -270,15 +270,6 @@ function escape {
   echo "$escaped"
 }
 
-  function get_pod { kubectl get pod -n $NS -l app=$1 -o jsonpath='{.items[0].metadata.name}' ; }
-  function getpod { NS=$NS get_pod $1 ; }
-  function getlabels { kubectl get deployment -n $NS $1 -o jsonpath="{.spec.selector.matchLabels}" ; }
-  function get_last_pod { kubectl get pods -n $NS -l app=$1 --sort-by=.metadata.creationTimestamp -o jsonpath="{.items[-1].metadata.name}" ; }
-  function get_last_pod_ip { kubectl get pod -n $NS $(get_last_pod $1) -o jsonpath='{.status.podIP}' ; }
-  # function get_last_nginx_ip { $(NS=ingress-nginx get_last_pod ingress-nginx-controller)   --sort-by=.metadata.creationTimestamp   -o jsonpath='{.items[-1].status.podIP}' ; }
-  function get_last_running_pod_ip {  kubectl get pod -n $NS --field-selector=status.phase=Running -o jsonpath='{.items[0].status.podIP}' ; }
-
-
 function validate_web {
 # (
 component=${1:-controller}
