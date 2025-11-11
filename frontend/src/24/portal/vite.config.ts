@@ -14,6 +14,12 @@ export default defineConfig({
         // rewrite: path => path.replace(/^\/catalog/, ''),
         changeOrigin: true,
         secure: false
+      },
+      '/api/chat': {
+        target: env.VITE_CHAT_URL,
+        // rewrite: path => path.replace(/^\/catalog/, ''),
+        changeOrigin: true,
+        secure: false
       }
     }
   }
