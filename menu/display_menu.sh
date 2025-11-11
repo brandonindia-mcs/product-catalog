@@ -26,16 +26,16 @@ $(cyan Clear)         $(cyan web)            $(cyan data)                       
 97)ingress    77.4)out       78.4)out                             
 97.1)web                                                    
 97.2)api                                                    
-    $(cyan "           Validation        ")         $(cyan sys)                    
-    51)web_https  53)web                0)sys_check                             
-    52)api_https  76)describe           3)Build+Deploy                              
-    64.1)validate API w/ Trusted        6)chat secrets                                
-    64.2)validate API w/ resolver       7)secrets                                  
-                                      0000)show all secrets                                                        
-                                        649)middleware_certificate                                                              
-                                        11)configure                                                            
-                                  8)generate_selfsignedcert_cnf                
-                                      >product-catalog-frontend
+    $(cyan "           Validation        ")                        $(cyan sys)                    
+    51)web_https  53)web                0)sys_check                 001)docker_refresh
+    52)api_https  76)describe           3)Build+Deploy              
+    64.1)validate API w/ Trusted       06)chat secrets              
+    64.2)validate API w/ resolver      07)secrets                   
+                                      0000)show all secrets         
+                                        11)configure                
+                                  08)generate_selfsignedcert_cnf    
+                                      >product-catalog-frontend     
+                                  
 $(cyan Registry): 71.1)front    71.2)middle    71.3)back  71.4)get images  tag)repo *  99)clear images
 "
 #       98)postgres

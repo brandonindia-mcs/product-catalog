@@ -1,5 +1,11 @@
 #!/bin/bash
-
+if [ -n "$1" ];then export GLOBAL_NAMESPACE=$1
+elif [ -n "$GLOBAL_NAMESPACE" ];then
+  :
+else
+  export GLOBAL_NAMESPACE=default
+fi
+kubectl config set-context --current --namespace $GLOBAL_NAMESPACE
 (
 
 ####################  ONE OFFS ################## 

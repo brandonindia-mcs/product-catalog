@@ -1,9 +1,12 @@
 
 
+  function yellow { println '\e[0;33m%s\e[0m' "$*"; }
   function show_menu() {
     menutop
-    read -p "Enter choice or exit: " choice
-    namespace=notls && image_version="$namespace-$(version)" && export GLOBAL_NAMESPACE=$namespace
+    namespace=$GLOBAL_NAMESPACE
+    # namespace=notls && export GLOBAL_NAMESPACE=$namespace
+    read -p "Enter choice or exit ($(yellow $namespace)): " choice
+    image_version="$namespace-$(version)"
     banner "choice #$choice (namespace: $namespace, tag: $image_version)"
     case $choice in
        frontend*)system_check && list="$(echo "$choice" | awk '{for (i=2; i<=NF; i++) print $i}')" run_frontend_update_c $namespace $image_version ;;
@@ -12,17 +15,16 @@
        mdw*)system_check && list="$(echo "$choice" | awk '{for (i=2; i<=NF; i++) print $i}')" && run_configure_${list} $namespace $image_version && run_configure_ingress $namespace $image_version && list=${list} run_middleware_c $namespace $image_version && configure_ingress_middleware_${list} $namespace $image_version && build_image_middleware_${list} $image_version ;;
        clr*)system_check && list="$(echo "$choice" | awk '{for (i=2; i<=NF; i++) print $i}')" && delete_component $list ;;
     deploy*)system_check && list="$(echo "$choice" | awk '{for (i=2; i<=NF; i++) print $i}')" && list=${list} && run_configure_${list} $namespace $image_version && run_k8s_${list} $namespace $image_version ;;
+    # ns*)system_check && list="$(echo "$choice" | awk '{for (i=2; i<=NF; i++) print $i}')" && kubectl config set-context --current --namespace $list && export GLOBAL_NAMESPACE=$list ;;
        0)   run_system_check ;;
-       1)   system_check && run_install_all $namespace $image_version ;;
        3)   system_check && run_product_catalog $namespace $image_version ;;
-       5)   system_check && run_k8s_all $namespace $image_version ;;
-       6)   system_check && run_chat_secrets $namespace $image_version ;;
-       7)   system_check && run_k8s_secrets $namespace $image_version ;;
-       8)   system_check && run_generate_selfsignedcert_cnf $namespace $image_version product-catalog-frontend ;;
+      01)   system_check && run_install_all $namespace $image_version ;;
+      05)   system_check && run_k8s_all $namespace $image_version ;;
+      06)   system_check && run_chat_secrets $namespace $image_version ;;
+      07)   system_check && run_k8s_secrets $namespace $image_version ;;
+      08)   system_check && run_generate_selfsignedcert_cnf $namespace $image_version product-catalog-frontend ;;
       #  9)   system_check && run_generate_selfsignedcert_cnf $namespace $image_version product-catalog-middleware ;;
-       9)   system_check && node_version=20 && working_directory=middleware && GLOBAL_NAMESPACE=$namespace middleware_certificate ;;
-    #  9.2)   system_check && node_version=20 && working_directory=middleware && GLOBAL_NAMESPACE=$namespace middleware_certificate ;;
-    #  9.3)   system_check && node_version=20 && working_directory=middleware && GLOBAL_NAMESPACE=$namespace middleware_certificate ;;
+     001)   if [ -r ~/devnet/offline-product-catalog/DOCKER_LOGIN  ];then rm -rf ~/.docker && /bin/bash ~/devnet/offline-product-catalog/DOCKER_LOGIN;fi ;;
       12)   system_check && run_k8s_nginx ;;
       11)   system_check && run_configure $namespace $image_version ;;
       20)   system_check && run_frontend_update $namespace $image_version ;;
