@@ -31,7 +31,7 @@ export default function ProductDetail() {
     const fetchProduct = async () => {
       attempts += 1;
       try {
-        const resp = await axios.get(`${API_BASE}/catalog/${encodeURIComponent(id)}`, {
+        const resp = await axios.get(`${API_BASE}/products/${encodeURIComponent(id)}`, {
           timeout: timeoutMs,
           signal // axios supports AbortController signal in modern versions; fallback handled below
         });

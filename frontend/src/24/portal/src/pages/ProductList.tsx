@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios, { AxiosError } from 'axios';
 import type { Product } from '../types/Product';
@@ -8,7 +8,7 @@ export default function ProductList() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const API_BASE = useMemo(() => (import.meta.env.VITE_API_URL || '').replace(/\/$/, ''), []);
+  const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
   useEffect(() => {
     const controller = new AbortController();

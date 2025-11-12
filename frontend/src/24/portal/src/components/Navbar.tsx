@@ -9,6 +9,7 @@ const Navbar = () => {
       <Link to="/" style={{ marginRight: '1rem' }}>Home</Link>
       <Link to="/about" style={{ marginRight: '1rem' }}>About</Link>
       <Link to="/catalog" style={{ marginRight: '1rem' }}>Catalog</Link>
+      <Link to="/chat" style={{ marginRight: '1rem' }}>Chat</Link>
     </nav>
       <div>
         <a href="https://vite.dev" target="_blank">
