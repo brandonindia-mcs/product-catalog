@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --ext .ts,.tsx .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc -p ./tsconfig.json --noEmit"
   },
   "dependencies": {
     "@emotion/cache": "^11.2.1",
@@ -31,6 +31,7 @@
     "react-redux": "^9.2.0"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.12.0",
     "@types/react": "^18.2.25",
     "@types/react-dom": "^18.2.7",
