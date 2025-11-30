@@ -1,3 +1,6 @@
+#!/bin/bash
+
+if [[ ! $(basename $PWD) = enterprise ]];then usage must be under enterprise/ && return 1;fi
 ### Enterprise Next.js Starter Guide
 ### https://copilot.microsoft.com/shares/pages/sNo6CMPwZVL2XfuBPXJYH
 ## Enterprise starter: Next.js + TypeScript + Redux Toolkit + MUI + React Query + Sentry — complete wiring and runnable code
@@ -68,6 +71,38 @@ npm install -D eslint prettier
 # touch theme/theme.ts
 # # Create file in utils/
 # touch utils/ssrCookie.ts
+
+cat >./tsconfig.json <<EOF
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "lib": ["DOM", "DOM.Iterable", "ES2024"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "types": ["node", "jest"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "allowSyntheticDefaultImports": true,
+    "allowJs": false,
+    "emitDecoratorMetadata": false
+  },
+  "include": ["next-env.d.ts", "pages/**/*", "src/**/*", "types/**/*"],
+  "exclude": ["node_modules", ".next", "out", "dist"]
+}
+EOF
 
 ## Key runtime and environment configuration
 cat >./next.config.js <<EOF

@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "help": "next --help",
     "build": "next build",
     "start": "next start",
     "lint": "eslint --ext .ts,.tsx .",

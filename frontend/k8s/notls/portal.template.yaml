@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  name: $DEPLOYMENT
+  namespace: $NAMESPACE
+spec:
+  replicas: $REPLICAS
+  selector:
+    matchLabels:
+      app: $SELECTOR
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: $POD_TEMPLATE
+    spec:
+      containers:
+      - image: $HUB/$REPOSITORY:$TAG
+        imagePullPolicy: IfNotPresent
+        name: $CONTAINER
+        ports:
+        - containerPort: $RUNPORT_HTTP
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 250m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: $SERVICE
+  namespace: $NAMESPACE
+spec:
+  ports:
+  - name: http
+    port: $RUNPORT_HTTP
+    targetPort: $RUNPORT_HTTP
+    protocol: TCP
+  selector:
+    app: $SELECTOR
